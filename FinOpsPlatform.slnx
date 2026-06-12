@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/FinOps.Api/FinOps.Api.csproj" />
+    <Project Path="src/FinOps.Application/FinOps.Application.csproj" />
+    <Project Path="src/FinOps.Domain/FinOps.Domain.csproj" />
+    <Project Path="src/FinOps.Infrastructure/FinOps.Infrastructure.csproj" />
+    <Project Path="src/FinOps.Tests/FinOps.Tests.csproj" />
+    <Project Path="src/FinOps.Worker/FinOps.Worker.csproj" />
+  </Folder>
+</Solution>
