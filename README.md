@@ -2,9 +2,11 @@
 
 基于 .NET 10、Terraform、PostgreSQL 和 React 构建的多云 FinOps 与资源治理平台。
 
-当前版本已完成 Day 1 工程骨架和 Day 2 Azure Terraform 基础设施，包含
+当前版本已完成 Day 1 工程骨架、Day 2 Azure Terraform 基础设施和 Day 3
+Azure SDK 认证，包含
 Web API、后台 Worker、Clean Architecture 基础分层、PostgreSQL 本地环境、
-健康检查，以及可重复验证的 Azure 资源生命周期。
+健康检查、可重复验证的 Azure 资源生命周期，以及通过
+`DefaultAzureCredential` 读取 Azure 订阅的能力。
 
 ## 项目结构
 
@@ -135,3 +137,29 @@ az account show
 详细配置和手动命令见
 [`terraform/azure/README.md`](terraform/azure/README.md) 与
 [`docs/terraform.md`](docs/terraform.md)。
+
+## Azure SDK 认证
+
+本地开发使用 Azure CLI 登录和 `DefaultAzureCredential`：
+
+```powershell
+az login
+az account show
+dotnet run --project src/FinOps.Api --urls http://localhost:5000
+```
+
+验证真实 Azure 订阅读取：
+
+```powershell
+Invoke-RestMethod http://localhost:5000/api/cloud/azure/subscriptions
+```
+
+Azure SDK 仅由 `FinOps.Infrastructure` 引用；API 通过 Application 层的
+`IAzureSubscriptionReader` 调用，不直接依赖 Azure SDK。详细设计见
+[`docs/azure-integration.md`](docs/azure-integration.md)。
+
+完整 Day 3 端到端验收：
+
+```powershell
+./scripts/Test-AzureSdkIntegration.ps1
+```

@@ -1,3 +1,8 @@
+using Azure.Core;
+using Azure.Identity;
+using Azure.ResourceManager;
+using FinOps.Application.Cloud.Azure;
+using FinOps.Infrastructure.Azure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -6,6 +11,14 @@ namespace FinOps.Infrastructure;
 
 public static class DependencyInjection
 {
+    public static IServiceCollection AddInfrastructure(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        services.AddAzureCloudServices(configuration);
+        return services;
+    }
+
     public static IHealthChecksBuilder AddPostgreSqlTcpCheck(
         this IHealthChecksBuilder healthChecks,
         IConfiguration configuration)
@@ -20,5 +33,23 @@ public static class DependencyInjection
             new PostgreSqlTcpHealthCheck(options),
             failureStatus: HealthStatus.Unhealthy,
             tags: ["ready"]);
+    }
+
+    private static void AddAzureCloudServices(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        var tenantId = configuration["Azure:TenantId"];
+        var credentialOptions = new DefaultAzureCredentialOptions();
+
+        if (!string.IsNullOrWhiteSpace(tenantId))
+        {
+            credentialOptions.TenantId = tenantId;
+        }
+
+        services.AddSingleton<TokenCredential>(_ => new DefaultAzureCredential(credentialOptions));
+        services.AddSingleton(serviceProvider =>
+            new ArmClient(serviceProvider.GetRequiredService<TokenCredential>()));
+        services.AddSingleton<IAzureSubscriptionReader, AzureSubscriptionReader>();
     }
 }

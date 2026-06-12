@@ -12,3 +12,8 @@ GET {{FinOps.Api_HostAddress}}/health
 GET {{FinOps.Api_HostAddress}}/health/live
 
 ###
+
+GET {{FinOps.Api_HostAddress}}/api/cloud/azure/subscriptions
+Accept: application/json
+
+###
