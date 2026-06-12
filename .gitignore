@@ -1,10 +1,19 @@
-**/bin/
-**/obj/
 .env
+.env.*
+!.env.example
+.DS_Store
+Thumbs.db
 .idea/
 .vs/
 .vscode/
+**/bin/
+**/obj/
 TestResults/
+coverage/
+*.coverage
+*.coveragexml
+*.log
+*.nupkg
 *.user
 
 # Terraform local state and generated evidence
@@ -16,5 +25,4 @@ TestResults/
 *.tfvars.json
 !.terraform.tfvars.example
 terraform/evidence/
-crash.log
 crash.*.log

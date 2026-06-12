@@ -182,30 +182,33 @@ try {
     Write-Host "Day 4 verified: $secondCount Azure resources persisted, $matchingCount in $resourceGroupName, no duplicates."
 }
 finally {
-    if ($applyAttempted) {
-        Invoke-Terraform (@("destroy", "-input=false", "-auto-approve") + $terraformArguments)
+    try {
+        if ($applyAttempted) {
+            Invoke-Terraform (@("destroy", "-input=false", "-auto-approve") + $terraformArguments)
 
-        $remainingState = @(& terraform -chdir="$terraformDirectory" state list)
-        if ($LASTEXITCODE -ne 0 -or $remainingState.Count -ne 0) {
-            throw "Terraform destroy could not be verified."
-        }
-
-        if ($resourceGroupName) {
-            $groupExists = [System.Convert]::ToBoolean(
-                (& az group exists --name $resourceGroupName)
-            )
-            if ($groupExists) {
-                throw "Azure Resource Group '$resourceGroupName' still exists."
+            $remainingState = @(& terraform -chdir="$terraformDirectory" state list)
+            if ($LASTEXITCODE -ne 0 -or $remainingState.Count -ne 0) {
+                throw "Terraform destroy could not be verified."
             }
+
+            if ($resourceGroupName) {
+                $groupExists = [System.Convert]::ToBoolean(
+                    (& az group exists --name $resourceGroupName)
+                )
+                if ($groupExists) {
+                    throw "Azure Resource Group '$resourceGroupName' still exists."
+                }
+            }
+
+            $destroyVerified = $true
         }
-
-        $destroyVerified = $true
     }
-
-    if (docker compose ps --status running --services | Select-String -SimpleMatch "postgres") {
-        Invoke-PostgreSql `
-            -TargetDatabase "postgres" `
-            -Sql "DROP DATABASE IF EXISTS $Database WITH (FORCE);"
+    finally {
+        if (docker compose ps --status running --services | Select-String -SimpleMatch "postgres") {
+            Invoke-PostgreSql `
+                -TargetDatabase "postgres" `
+                -Sql "DROP DATABASE IF EXISTS $Database WITH (FORCE);"
+        }
     }
 
     if ($destroyVerified) {

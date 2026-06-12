@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json;
 using FinOps.Infrastructure.Azure;
 
 namespace FinOps.Tests.Infrastructure;
@@ -34,5 +35,25 @@ public sealed class AzureResourceInventoryProviderTests
         Assert.Equal("demo", resource.ResourceName);
         Assert.Equal("australiaeast", resource.Region);
         Assert.Equal("dev", resource.Tags["environment"]);
+    }
+
+    [Fact]
+    public void ParseResources_RejectsRowsWithoutRequiredFields()
+    {
+        var json = """
+            [
+              {
+                "name": "demo",
+                "type": "microsoft.storage/storageaccounts",
+                "subscriptionId": "sub-1"
+              }
+            ]
+            """;
+
+        var exception = Assert.Throws<JsonException>(() =>
+            AzureResourceInventoryProvider.ParseResources(
+                BinaryData.FromBytes(Encoding.UTF8.GetBytes(json))));
+
+        Assert.Contains("'id'", exception.Message, StringComparison.Ordinal);
     }
 }

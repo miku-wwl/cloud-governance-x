@@ -18,8 +18,6 @@ $applyAttempted = $false
 $resourceGroupName = $null
 $destroyVerified = $false
 
-New-Item -ItemType Directory -Force -Path $evidenceDirectory | Out-Null
-
 $terraformArguments = @(
     "-var=location=$Location",
     "-var=name_prefix=$NamePrefix",
@@ -39,13 +37,16 @@ function Invoke-Terraform {
 }
 
 try {
-    & az account show `
+    $azureAccount = & az account show `
         --query "{subscriptionId:id,subscriptionName:name,tenantId:tenantId,state:state}" `
-        --output json |
-        Set-Content -Encoding utf8 (Join-Path $evidenceDirectory "azure-account.json")
+        --output json
     if ($LASTEXITCODE -ne 0) {
         throw "Azure CLI is not authenticated. Run 'az login' first."
     }
+
+    New-Item -ItemType Directory -Force -Path $evidenceDirectory | Out-Null
+    $azureAccount |
+        Set-Content -Encoding utf8 (Join-Path $evidenceDirectory "azure-account.json")
 
     Invoke-Terraform @("init", "-input=false")
     Invoke-Terraform @("fmt", "-check")
