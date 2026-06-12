@@ -7,4 +7,5 @@ public sealed record CloudCostDailyDto(
     string ServiceName,
     string? ResourceGroup,
     decimal Cost,
-    string Currency);
+    string Currency,
+    string RawJson);

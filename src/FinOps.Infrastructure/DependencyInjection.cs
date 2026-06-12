@@ -57,6 +57,13 @@ public static class DependencyInjection
             new ArmClient(serviceProvider.GetRequiredService<TokenCredential>()));
         services.AddSingleton<IAzureSubscriptionReader, AzureSubscriptionReader>();
         services.AddScoped<ICloudResourceInventoryProvider, AzureResourceInventoryProvider>();
+        services.Configure<AzureCostOptions>(
+            configuration.GetSection(AzureCostOptions.SectionName));
+        services.AddHttpClient<ICloudCostProvider, AzureCostProvider>(client =>
+        {
+            client.BaseAddress = new Uri("https://management.azure.com/");
+            client.Timeout = TimeSpan.FromSeconds(60);
+        });
     }
 
     private static void AddPostgreSql(
@@ -71,6 +78,7 @@ public static class DependencyInjection
         services.AddDbContextFactory<FinOpsDbContext>(dbOptions =>
             dbOptions.UseNpgsql(options.GetConnectionString()));
         services.AddScoped<ICloudResourceRepository, CloudResourceRepository>();
+        services.AddScoped<ICloudCostRepository, CloudCostRepository>();
         services.AddScoped<IEtlJobRunRepository, EtlJobRunRepository>();
     }
 }

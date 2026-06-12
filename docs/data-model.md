@@ -63,3 +63,23 @@ manual API trigger write through the same application service.
 An index on `(job_name, started_at desc)` supports recent execution history.
 ETL run updates use a separate `DbContext` so an inventory persistence failure
 does not prevent the failure status from being recorded.
+
+## `cloud_cost_daily`
+
+Day 6 stores Azure Cost Management daily aggregates grouped by service and
+resource group. `raw_json.source` distinguishes real and fallback rows.
+
+| Column | PostgreSQL type | Purpose |
+| --- | --- | --- |
+| `id` | `uuid` | Internal primary key |
+| `provider` | `varchar(32)` | Cloud provider |
+| `account_id` | `varchar(128)` | Azure subscription ID |
+| `usage_date` | `date` | Cost usage date |
+| `service_name` | `varchar(256)` | Azure service dimension |
+| `resource_group` | `varchar(256)` | Resource group or `(unassigned)` |
+| `cost` | `numeric(20,8)` | Aggregated pretax cost |
+| `currency` | `varchar(16)` | Billing currency |
+| `raw_json` | `jsonb` | Normalized row and provenance |
+
+The unique identity is `(provider, account_id, usage_date, service_name,
+resource_group, currency)`, so repeated queries update existing aggregates.

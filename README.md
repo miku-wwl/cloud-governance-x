@@ -2,8 +2,9 @@
 
 基于 .NET 10、Terraform、PostgreSQL 和 React 构建的多云 FinOps 与资源治理平台。
 
-当前版本已完成 Day 1～5：工程骨架、Azure Terraform、Azure SDK 认证、
-Azure Resource Graph 资源清单同步和正式 ETL 执行追踪，包含
+当前版本已完成 Day 1～6：工程骨架、Azure Terraform、Azure SDK 认证、
+Azure Resource Graph 资源清单同步、正式 ETL 执行追踪和 Azure Cost
+Management 成本 POC，包含
 Web API、后台 Worker、Clean Architecture 基础分层、PostgreSQL 本地环境、
 健康检查、可重复验证的 Azure 资源生命周期，以及通过
 `DefaultAzureCredential` 读取 Azure 订阅和资源清单并写入 PostgreSQL 的能力。
@@ -233,3 +234,25 @@ Invoke-RestMethod `
 
 脚本使用独立的 `finops_day5` 数据库，验证 Worker、真实 Azure 手动同步、
 执行历史 API 以及强制认证失败记录，最后删除测试数据库和临时日志。
+
+## Azure Cost POC
+
+Day 6 使用 Azure Cost Management Query API 拉取最近 7 天日成本，并按
+`ServiceName` 和 `ResourceGroup` 分组后 Upsert 到 `cloud_cost_daily`。
+
+```powershell
+Invoke-RestMethod `
+  "http://localhost:5000/api/admin/sync/azure/costs?days=7" `
+  -Method Post
+```
+
+成本 API 需要当前身份在订阅 scope 具备 Cost Management 读取权限。账单为空、
+学生订阅不支持或 API 暂时不可用时，默认生成明确标记为 `source=sample` 的
+7 天样例数据，保证本地演示不会卡死。样例数据不会伪装为真实账单，可通过
+`raw_json` 追溯来源。
+
+完整 Day 6 端到端验收：
+
+```powershell
+./scripts/Test-AzureCostPoc.ps1
+```

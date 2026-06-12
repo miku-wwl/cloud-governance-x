@@ -11,6 +11,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddScoped<ICloudResourceSyncService, CloudResourceSyncService>();
+builder.Services.AddScoped<ICloudCostSyncService, CloudCostSyncService>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddProblemDetails();
 
@@ -48,6 +49,17 @@ app.MapPost(
     async (ICloudResourceSyncService syncService, CancellationToken cancellationToken) =>
     {
         var result = await syncService.SyncAsync(cancellationToken);
+        return Results.Ok(result);
+    });
+
+app.MapPost(
+    "/api/admin/sync/azure/costs",
+    async (
+        ICloudCostSyncService syncService,
+        int? days,
+        CancellationToken cancellationToken) =>
+    {
+        var result = await syncService.SyncRecentAsync(days ?? 7, cancellationToken);
         return Results.Ok(result);
     });
 

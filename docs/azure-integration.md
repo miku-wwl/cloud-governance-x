@@ -85,6 +85,17 @@ work:
 Azure implementations for inventory, costs, and compliance are added on the
 days where each integration is exercised end to end.
 
+## Day 6 Cost Management
+
+`AzureCostProvider` calls the subscription-scope Cost Management Query REST API
+with `DefaultAzureCredential`. It requests custom daily `PreTaxCost`, grouped by
+`ServiceName` and `ResourceGroup`, and maps response columns by name because the
+service returns dynamic column and row arrays.
+
+The implementation uses API version `2025-03-01`. If cost data is empty or
+unavailable, explicitly marked sample rows keep the POC demonstrable.
+`AzureCost:ForceSampleData` provides deterministic end-to-end verification.
+
 ## Day 4 Resource Graph Inventory
 
 `AzureResourceInventoryProvider` queries Azure Resource Graph with:
