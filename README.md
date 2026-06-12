@@ -2,8 +2,8 @@
 
 基于 .NET 10、Terraform、PostgreSQL 和 React 构建的多云 FinOps 与资源治理平台。
 
-当前版本已完成 Day 1～4：工程骨架、Azure Terraform、Azure SDK 认证和
-Azure Resource Graph 资源清单同步，包含
+当前版本已完成 Day 1～5：工程骨架、Azure Terraform、Azure SDK 认证、
+Azure Resource Graph 资源清单同步和正式 ETL 执行追踪，包含
 Web API、后台 Worker、Clean Architecture 基础分层、PostgreSQL 本地环境、
 健康检查、可重复验证的 Azure 资源生命周期，以及通过
 `DefaultAzureCredential` 读取 Azure 订阅和资源清单并写入 PostgreSQL 的能力。
@@ -200,3 +200,36 @@ id, name, type, location, resourceGroup, subscriptionId, tags
 该脚本使用独立的 `finops_day4` 测试数据库，临时创建 Azure 资源，运行两次
 Worker 并验证幂等性，随后销毁 Azure 资源、删除测试数据库和本地 Terraform
 运行产物。数据模型见 [`docs/data-model.md`](docs/data-model.md)。
+
+## Azure Resource ETL
+
+Day 5 将资源同步正式化为可审计 ETL Job。Worker 与 API 手动触发入口共用
+`CloudResourceSyncService`，每次运行都会写入 `etl_job_runs`：
+
+```text
+job_name, provider, started_at, finished_at, status,
+records_processed, error_message
+```
+
+手动触发同步并查看历史：
+
+```powershell
+Invoke-RestMethod `
+  http://localhost:5000/api/admin/sync/azure/resources `
+  -Method Post
+
+Invoke-RestMethod `
+  "http://localhost:5000/api/admin/etl-runs?jobName=azure-resource-sync&take=20"
+```
+
+成功执行记录处理数量；Azure 调用或数据库写入失败时，运行状态更新为
+`Failed` 并保留错误消息，同时 API 返回失败、Worker 以非零退出码结束。
+
+完整 Day 5 端到端验收：
+
+```powershell
+./scripts/Test-AzureResourceEtl.ps1
+```
+
+脚本使用独立的 `finops_day5` 数据库，验证 Worker、真实 Azure 手动同步、
+执行历史 API 以及强制认证失败记录，最后删除测试数据库和临时日志。

@@ -3,6 +3,7 @@ using Azure.Identity;
 using Azure.ResourceManager;
 using FinOps.Application.Cloud.Azure;
 using FinOps.Application.Cloud;
+using FinOps.Application.Etl;
 using FinOps.Infrastructure.Azure;
 using FinOps.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -67,8 +68,9 @@ public static class DependencyInjection
             .Get<PostgreSqlHealthCheckOptions>()
             ?? new PostgreSqlHealthCheckOptions();
 
-        services.AddDbContext<FinOpsDbContext>(dbOptions =>
+        services.AddDbContextFactory<FinOpsDbContext>(dbOptions =>
             dbOptions.UseNpgsql(options.GetConnectionString()));
         services.AddScoped<ICloudResourceRepository, CloudResourceRepository>();
+        services.AddScoped<IEtlJobRunRepository, EtlJobRunRepository>();
     }
 }

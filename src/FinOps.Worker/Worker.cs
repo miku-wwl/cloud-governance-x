@@ -21,7 +21,8 @@ public sealed class Worker(
             var result = await syncService.SyncAsync(stoppingToken);
 
             logger.LogInformation(
-                "Azure resource sync completed. Retrieved: {Retrieved}, inserted: {Inserted}, updated: {Updated}.",
+                "Azure resource sync completed. Job run: {JobRunId}, retrieved: {Retrieved}, inserted: {Inserted}, updated: {Updated}.",
+                result.JobRunId,
                 result.Retrieved,
                 result.Inserted,
                 result.Updated);

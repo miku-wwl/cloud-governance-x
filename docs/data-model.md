@@ -43,3 +43,23 @@ dotnet tool run dotnet-ef migrations list `
 ```
 
 The Worker applies pending migrations before resource synchronization.
+
+## `etl_job_runs`
+
+Day 5 records the lifecycle of every formal ETL execution. The Worker and the
+manual API trigger write through the same application service.
+
+| Column | PostgreSQL type | Purpose |
+| --- | --- | --- |
+| `id` | `uuid` | Job run identifier |
+| `job_name` | `varchar(128)` | Stable ETL name, such as `azure-resource-sync` |
+| `provider` | `varchar(32)` | Cloud provider |
+| `started_at` | `timestamptz` | Execution start time |
+| `finished_at` | `timestamptz` | Terminal completion time |
+| `status` | `varchar(32)` | `Running`, `Succeeded`, or `Failed` |
+| `records_processed` | `integer` | Resource rows handled by the run |
+| `error_message` | `varchar(4000)` | Failure summary without stack trace |
+
+An index on `(job_name, started_at desc)` supports recent execution history.
+ETL run updates use a separate `DbContext` so an inventory persistence failure
+does not prevent the failure status from being recorded.
