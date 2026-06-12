@@ -2,7 +2,10 @@ using Azure.Core;
 using Azure.Identity;
 using Azure.ResourceManager;
 using FinOps.Application.Cloud.Azure;
+using FinOps.Application.Cloud;
 using FinOps.Infrastructure.Azure;
+using FinOps.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -15,6 +18,7 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
+        services.AddPostgreSql(configuration);
         services.AddAzureCloudServices(configuration);
         return services;
     }
@@ -51,5 +55,20 @@ public static class DependencyInjection
         services.AddSingleton(serviceProvider =>
             new ArmClient(serviceProvider.GetRequiredService<TokenCredential>()));
         services.AddSingleton<IAzureSubscriptionReader, AzureSubscriptionReader>();
+        services.AddScoped<ICloudResourceInventoryProvider, AzureResourceInventoryProvider>();
+    }
+
+    private static void AddPostgreSql(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        var options = configuration
+            .GetSection(PostgreSqlHealthCheckOptions.SectionName)
+            .Get<PostgreSqlHealthCheckOptions>()
+            ?? new PostgreSqlHealthCheckOptions();
+
+        services.AddDbContext<FinOpsDbContext>(dbOptions =>
+            dbOptions.UseNpgsql(options.GetConnectionString()));
+        services.AddScoped<ICloudResourceRepository, CloudResourceRepository>();
     }
 }

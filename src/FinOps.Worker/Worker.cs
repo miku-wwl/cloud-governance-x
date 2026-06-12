@@ -1,16 +1,39 @@
+using FinOps.Application.Cloud;
+using FinOps.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
+
 namespace FinOps.Worker;
 
-public sealed class Worker(ILogger<Worker> logger) : BackgroundService
+public sealed class Worker(
+    IServiceScopeFactory scopeFactory,
+    IHostApplicationLifetime applicationLifetime,
+    ILogger<Worker> logger) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        logger.LogInformation("FinOps Worker started at {StartedAt}.", DateTimeOffset.UtcNow);
-
-        using var timer = new PeriodicTimer(TimeSpan.FromMinutes(1));
-
-        while (await timer.WaitForNextTickAsync(stoppingToken))
+        try
         {
-            logger.LogInformation("FinOps Worker heartbeat at {HeartbeatAt}.", DateTimeOffset.UtcNow);
+            await using var scope = scopeFactory.CreateAsyncScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<FinOpsDbContext>();
+            await dbContext.Database.MigrateAsync(stoppingToken);
+
+            var syncService = scope.ServiceProvider.GetRequiredService<ICloudResourceSyncService>();
+            var result = await syncService.SyncAsync(stoppingToken);
+
+            logger.LogInformation(
+                "Azure resource sync completed. Retrieved: {Retrieved}, inserted: {Inserted}, updated: {Updated}.",
+                result.Retrieved,
+                result.Inserted,
+                result.Updated);
+        }
+        catch (Exception exception)
+        {
+            logger.LogCritical(exception, "Azure resource sync failed.");
+            Environment.ExitCode = 1;
+        }
+        finally
+        {
+            applicationLifetime.StopApplication();
         }
     }
 }

@@ -84,3 +84,40 @@ work:
 
 Azure implementations for inventory, costs, and compliance are added on the
 days where each integration is exercised end to end.
+
+## Day 4 Resource Graph Inventory
+
+`AzureResourceInventoryProvider` queries Azure Resource Graph with:
+
+```kusto
+Resources
+| project id, name, type, location, resourceGroup, subscriptionId, tags
+| order by id asc
+```
+
+The provider requests object-array results in pages of 1,000 records and follows
+the Resource Graph skip token until all pages are read. Azure SDK response types
+remain inside Infrastructure; Application receives normalized
+`CloudResourceDto` records.
+
+The Worker is a one-shot ETL host for Day 4:
+
+1. Apply pending EF Core migrations.
+2. Read Azure resources through `ICloudResourceInventoryProvider`.
+3. Upsert them into PostgreSQL through `ICloudResourceRepository`.
+4. Log retrieved, inserted, and updated counts.
+5. Exit.
+
+Run a normal sync:
+
+```powershell
+docker compose up -d
+dotnet run --project src/FinOps.Worker
+```
+
+Run the complete temporary Azure deployment, double sync, idempotency check,
+and cleanup:
+
+```powershell
+./scripts/Test-AzureResourceInventory.ps1
+```
