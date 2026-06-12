@@ -35,4 +35,6 @@ For a complete create, verify, and destroy lifecycle from the repository root:
 ./scripts/Test-AzureTerraformLifecycle.ps1
 ```
 
-Local state, plans, variable overrides, and evidence files are excluded from Git.
+Local state, plans, variable overrides, and evidence files are excluded from
+Git. The lifecycle script removes its runtime artifacts after a verified
+destroy unless `-KeepEvidence` is specified.

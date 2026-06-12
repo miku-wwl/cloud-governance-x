@@ -19,7 +19,7 @@ public static class DependencyInjection
         return services;
     }
 
-    public static IHealthChecksBuilder AddPostgreSqlTcpCheck(
+    public static IHealthChecksBuilder AddPostgreSqlHealthCheck(
         this IHealthChecksBuilder healthChecks,
         IConfiguration configuration)
     {
@@ -30,7 +30,7 @@ public static class DependencyInjection
 
         return healthChecks.AddCheck(
             "postgresql",
-            new PostgreSqlTcpHealthCheck(options),
+            new PostgreSqlHealthCheck(options),
             failureStatus: HealthStatus.Unhealthy,
             tags: ["ready"]);
     }

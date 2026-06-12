@@ -37,6 +37,10 @@ Api/Worker -> Infrastructure -> Application -> Domain
 - .NET SDK 10.0.300 或兼容的 10.0 SDK
 - Docker Desktop / Docker Compose
 
+根目录的 `global.json` 将 SDK 基线固定为 .NET 10.0.300，并允许使用更新的
+.NET 10 feature band。它用于避免开发机和 CI 意外选择 .NET 9 或未来的
+.NET 11，不是构建产物。
+
 ## 本地启动
 
 启动 PostgreSQL：
@@ -80,8 +84,8 @@ Invoke-WebRequest http://localhost:5000/health/live
 Invoke-WebRequest http://localhost:5000/health
 ```
 
-Day 1 的 PostgreSQL 检查只验证网络可达性。数据库协议连接、EF Core
-`DbContext` 和迁移将在后续数据模型阶段加入。
+PostgreSQL readiness 会使用 Npgsql 建立真实数据库连接并执行 `SELECT 1`。
+EF Core `DbContext` 和迁移将在后续数据模型阶段加入。
 
 ## 配置
 
@@ -92,6 +96,9 @@ Day 1 的 PostgreSQL 检查只验证网络可达性。数据库协议连接、EF
   "PostgreSql": {
     "Host": "localhost",
     "Port": 5432,
+    "Database": "finops",
+    "Username": "finops",
+    "Password": "finops_dev_password",
     "TimeoutSeconds": 3
   }
 }

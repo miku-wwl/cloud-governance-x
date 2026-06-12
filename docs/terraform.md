@@ -50,7 +50,9 @@ The reusable verification script runs the complete Day 2 acceptance flow:
 It initializes providers, validates formatting, creates a saved plan, applies
 it, queries Azure Resource Manager through Azure CLI, validates expected
 resource types, destroys the deployment, and confirms the resource group no
-longer exists.
+longer exists. After a verified destroy it removes provider cache, local state,
+the saved plan, and evidence by default. Use `-KeepEvidence` when the local JSON
+evidence is needed for troubleshooting or a demo.
 
 Use `-KeepResources` only when the resources are needed for the next development
 session:

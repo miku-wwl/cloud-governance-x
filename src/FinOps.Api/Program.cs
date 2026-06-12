@@ -10,7 +10,7 @@ builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services
     .AddHealthChecks()
     .AddCheck("self", () => HealthCheckResult.Healthy(), tags: ["live"])
-    .AddPostgreSqlTcpCheck(builder.Configuration);
+    .AddPostgreSqlHealthCheck(builder.Configuration);
 
 var app = builder.Build();
 

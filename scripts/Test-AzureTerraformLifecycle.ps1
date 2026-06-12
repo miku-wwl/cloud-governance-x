@@ -6,7 +6,8 @@ param(
     [string]$Owner = "cloud-governance-x",
     [string]$CostCenter = "learning",
     [switch]$EnableLogAnalytics,
-    [switch]$KeepResources
+    [switch]$KeepResources,
+    [switch]$KeepEvidence
 )
 
 $ErrorActionPreference = "Stop"
@@ -15,6 +16,7 @@ $evidenceDirectory = Join-Path $PSScriptRoot "../terraform/evidence/day2"
 $planPath = Join-Path $terraformDirectory "day2.tfplan"
 $applyAttempted = $false
 $resourceGroupName = $null
+$destroyVerified = $false
 
 New-Item -ItemType Directory -Force -Path $evidenceDirectory | Out-Null
 
@@ -104,7 +106,25 @@ try {
 }
 finally {
     if ($applyAttempted -and -not $KeepResources) {
+        if (-not $resourceGroupName) {
+            $resourceGroupName = & terraform -chdir="$terraformDirectory" `
+                output -raw resource_group_name 2>$null
+
+            if ($LASTEXITCODE -ne 0) {
+                $resourceGroupName = $null
+            }
+        }
+
         Invoke-Terraform (@("destroy", "-input=false", "-auto-approve") + $terraformArguments)
+
+        $remainingState = @(& terraform -chdir="$terraformDirectory" state list)
+        if ($LASTEXITCODE -ne 0) {
+            throw "Unable to verify that Terraform state is empty after destroy."
+        }
+
+        if ($remainingState.Count -ne 0) {
+            throw "Terraform destroy completed but resources remain in state: $($remainingState -join ', ')"
+        }
 
         if ($resourceGroupName) {
             $groupExists = & az group exists --name $resourceGroupName
@@ -124,6 +144,37 @@ finally {
             }
         }
 
-        Write-Host "Destroy verified: the Day 2 Resource Group no longer exists."
+        Write-Host "Destroy verified: Terraform state is empty and the Day 2 Resource Group is absent."
+        $destroyVerified = $true
+    }
+
+    if ($destroyVerified) {
+        $generatedPaths = @(
+            (Join-Path $terraformDirectory ".terraform"),
+            $planPath,
+            (Join-Path $terraformDirectory "terraform.tfstate"),
+            (Join-Path $terraformDirectory "terraform.tfstate.backup")
+        )
+
+        if (-not $KeepEvidence) {
+            $generatedPaths += $evidenceDirectory
+        }
+
+        foreach ($generatedPath in $generatedPaths) {
+            if (Test-Path -LiteralPath $generatedPath) {
+                Remove-Item -LiteralPath $generatedPath -Recurse -Force
+            }
+        }
+
+        $evidenceRoot = Split-Path -Parent $evidenceDirectory
+        if (
+            -not $KeepEvidence -and
+            (Test-Path -LiteralPath $evidenceRoot) -and
+            -not (Get-ChildItem -LiteralPath $evidenceRoot -Force)
+        ) {
+            Remove-Item -LiteralPath $evidenceRoot -Force
+        }
+
+        Write-Host "Local Terraform runtime artifacts were removed."
     }
 }
