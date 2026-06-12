@@ -1,0 +1,14 @@
+# Copy this file to terraform.tfvars only when overriding defaults.
+location        = "australiaeast"
+name_prefix     = "finops"
+environment     = "dev"
+owner           = "your-name"
+cost_center     = "learning"
+
+# Optional because ingestion can create ongoing charges.
+enable_log_analytics         = false
+log_analytics_retention_days = 30
+
+additional_tags = {
+  purpose = "portfolio-demo"
+}

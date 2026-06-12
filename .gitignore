@@ -6,3 +6,15 @@
 .vscode/
 TestResults/
 *.user
+
+# Terraform local state and generated evidence
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfvars
+*.tfvars.json
+!.terraform.tfvars.example
+terraform/evidence/
+crash.log
+crash.*.log
