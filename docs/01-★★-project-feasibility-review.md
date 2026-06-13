@@ -5,7 +5,7 @@
 本报告基于以下内容进行评估：
 
 - `outline.md` 中的项目定位和求职目标；
-- `construction-plan.md` 中的 30 天建设计划；
+- 已被取代的旧版 30 天建设计划；
 - 当前已经完成并真实闭环的 Day 1～7 工程；
 - 现有代码、数据库迁移、自动化测试、Terraform 和端到端脚本；
 - Day 8～30 尚未实现的 Azure 治理、前端、消息系统和 AWS 接入。
@@ -266,7 +266,7 @@ API 和 Worker 启动时都会自动执行 migration。对当前端到端学习�
 而 30 天计划明确使用 C# 完成异常检测，并把 Kubernetes 深度治理、复杂 RBAC
 等内容列为后补。
 
-必须以 `construction-plan.md` 的 MVP 边界为准。否则项目会同时变成 FinOps、
+旧版评估当时以 30 天 MVP 边界为准。否则项目会同时变成 FinOps、
 CMDB、CSPM、监控平台、容器治理平台和消息平台，30 天一定失控。
 
 建议把 Prometheus/Grafana、深度闲置检测和镜像治理定义为第二阶段，不纳入

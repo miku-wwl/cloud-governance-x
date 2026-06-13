@@ -9,8 +9,15 @@ Web API、后台 Worker、Clean Architecture 基础分层、PostgreSQL 本地环
 健康检查、可重复验证的 Azure 资源生命周期，以及通过
 `DefaultAzureCredential` 读取 Azure 订阅和资源清单并写入 PostgreSQL 的能力。
 
-项目整体架构、范围边界和 30 天工期可行性评估见
-[`docs/01-★★-project-feasibility-review.md`](docs/01-★★-project-feasibility-review.md)。
+项目指导文件分为三层：
+
+- [`outline.md`](outline.md)：生产级目标、边界和长期原则；
+- [`construction/`](construction/)：阶段计划、逐 Day 施工、验收、review 和学习路线；
+- [`docs/`](docs/)：当前项目事实、配置、Terraform、Azure 集成和数据模型专题。
+
+旧 30 天作品集计划的历史评估保留在
+[`docs/01-★★-project-feasibility-review.md`](docs/01-★★-project-feasibility-review.md)，
+不再作为当前施工依据。
 
 ## 项目结构
 
@@ -25,7 +32,12 @@ src/
 terraform/
 └── azure/                   # Day 2 Azure 基础设施
 scripts/                     # 端到端验收脚本
-docs/                        # 架构与运行文档
+construction/
+├── 01-★★★-construction-plan.md          # 跨阶段建设计划
+├── 02-★★★-day8-production-roadmap.md    # 全局逐 Day 路线
+├── 03-★★★-manual-review-boundaries.md   # 全仓 Review 与学习地图
+└── phase-0/                              # 阶段 0：Day 8～11
+docs/                        # 项目事实、架构与运行专题
 ```
 
 依赖方向：

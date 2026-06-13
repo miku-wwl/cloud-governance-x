@@ -1,14 +1,15 @@
-# 06 ★★★ Day 1～7 人工 Review 与学习路线
+# 03 ★★★ Day 1～7 人工 Review 与学习路线
 
 > 盘点日期：2026-06-14
 >
-> 盘点对象：当前仓库 108 个 Git 跟踪文件
+> 盘点对象：原 Day 1～7 基线的 108 个 Git 跟踪文件；后续路线文档不计入本稿的
+> 逐文件清单
 >
 > 目标：给所有文件划定职责边界，减少以后人工 review 的重复阅读和无效阅读。
 
-## 文档编号与星级
+## 文档分区与星级
 
-`docs/` 按工程理解顺序编号：
+`docs/` 只保留项目事实、配置、架构和运行专题：
 
 | 顺序 | 文档 | 重要性 | 用途 |
 | --- | --- | --- | --- |
@@ -17,7 +18,24 @@
 | 03 | Terraform | ★★ | 理解 Day 2 Azure 基础设施生命周期 |
 | 04 | Azure Integration | ★★★ | 理解 Day 3～7 的 Azure 外部集成 |
 | 05 | Data Model | ★★★ | 理解资源、成本和 ETL 的数据库语义 |
-| 06 | 人工 Review 与学习路线 | ★★★ | 串联全部文件并指导日常审查 |
+
+`construction/` 根目录保存跨阶段总控文件：
+
+| 顺序 | 文档 | 重要性 | 用途 |
+| --- | --- | --- | --- |
+| 01 | 生产级阶段化建设计划 | ★★★ | 定义阶段、依赖和出关门禁 |
+| 02 | Day 8 之后生产化路线 | ★★★ | 定义逐 Day 施工顺序 |
+| 03 | 人工 Review 与学习路线 | ★★★ | 串联文件并指导人工审查 |
+
+`construction/phase-0/` 保存阶段 0 的局部施工文件：
+
+| 顺序 | 文档 | 重要性 | 用途 |
+| --- | --- | --- | --- |
+| 00 | 阶段 0 Day 8～11 总指南 | ★★★ | 定义阶段证据和闭环规则 |
+| 01 | Day 8 能力基线 | ★★★ | 冻结当前能力、限制和生产差距 |
+| 02 | Day 9 基线验收 | ★★★ | 重跑本地、PostgreSQL、Terraform 和 Azure E2E |
+| 03 | Day 10 架构与数据流 | ★★★ | 绘制当前架构、数据流和信任边界 |
+| 04 | Day 11 风险与出关 | ★★★ | 建立风险、分类、依赖、ADR 和阶段结论 |
 
 星级含义：
 
@@ -150,7 +168,7 @@
 
 1. `README.md`
 2. `outline.md`
-3. `construction-plan.md`，只读 Day 1～7
+3. `construction/01-★★★-construction-plan.md`，只读 Day 1～7 基线相关内容
 4. `docs/01-★★-project-feasibility-review.md`，重点看当前完成度和范围风险
 
 需要回答：
@@ -620,17 +638,18 @@ init → fmt/validate → plan → apply → Azure 核验 → destroy → 清理
 | 文件 | Day | 等级 | 人工审查重点 |
 | --- | --- | --- | --- |
 | `README.md` | X | R2 | 当前能力与实际一致；命令可执行；不能把 React/AWS 计划写成已完成 |
-| `outline.md` | 规划 | R1 | 项目愿景；与 30 天 MVP 的范围冲突是否明确 |
-| `construction-plan.md` | 规划 | R2 | 每日交付、验收标准、依赖顺序和范围膨胀 |
+| `outline.md` | 规划 | R1 | 项目愿景与生产化施工边界是否一致 |
+| `construction/01-★★★-construction-plan.md` | 规划 | R2 | 阶段交付、验收标准、依赖顺序和范围膨胀 |
 | `docs/01-★★-project-feasibility-review.md` | X | R1 | 评估事实是否仍有效；数字和计划是否过期 |
 | `docs/02-★★★-configuration-guide.md` | D1～D7 | R1 | 配置字段解释是否与实际文件同步 |
-| `docs/06-★★★-manual-review-boundaries.md` | X | R2 | 文件覆盖、顺序、星级和影响矩阵是否仍有效 |
+| `construction/03-★★★-manual-review-boundaries.md` | X | R2 | 文件覆盖、顺序、星级和影响矩阵是否仍有效 |
 
 ### 联动规则
 
 - 修改任何用户可见能力时，检查 `README.md`。
 - 修改配置键时，检查 `docs/02-★★★-configuration-guide.md`。
-- 修改工期或范围时，联合检查 `outline.md`、`construction-plan.md` 和可行性报告。
+- 修改工期或范围时，联合检查 `outline.md`、
+  `construction/01-★★★-construction-plan.md` 和可行性报告。
 - 这组文件不参与运行，但错误表述会直接损害演示可信度。
 
 ## 5.2 Z1：工具链与仓库卫生
@@ -1050,7 +1069,7 @@ init → fmt/validate → plan → apply → Azure 核验 → destroy → 清理
 
 ### 8.1 建立 `review-map`
 
-将本稿收敛成稳定的 `docs/review-map.md`，保留：
+将本稿收敛成稳定的 `construction/review-map.md`，保留：
 
 - 势力范围；
 - 风险等级；
@@ -1069,6 +1088,7 @@ src/FinOps.Infrastructure/Azure/**   -> Azure tests + 对应 Azure E2E
 terraform/azure/**                   -> fmt + validate + Day 2 E2E
 src/**/Persistence/**                -> tests + 对应 PostgreSQL E2E
 docs/**                              -> link + diff check
+construction/**                      -> link + diff check
 ```
 
 以后根据 `git diff --name-only` 自动输出“本次应该审什么、跑什么”。
@@ -1166,7 +1186,8 @@ R0 文件只接受以下审查：
 
 ## 10. 当前结论
 
-当前 108 个文件不应该被当成 108 个同等重要的 review 单元。合理拆分后：
+原 Day 1～7 基线的 108 个文件不应该被当成 108 个同等重要的 review 单元。
+合理拆分后：
 
 - 约 15 个文件是核心高风险行为；
 - Domain、Application 契约、EF Configuration 和 Worker 属于强联动区；

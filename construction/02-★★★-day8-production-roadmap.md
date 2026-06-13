@@ -16,8 +16,9 @@
 
 1. Day 1～7 已经形成了一条真实可运行的 Azure、PostgreSQL、API、Worker 和
    Terraform 链路，继续使用 Day 编号有利于回顾学习过程。
-2. 新版 `construction-plan.md` 使用“阶段”描述生产成熟度，而不是描述每天做
-   什么。单独增加一份 Day 级施工索引，可以把长期阶段拆成可执行任务。
+2. `construction/01-★★★-construction-plan.md` 使用“阶段”描述生产成熟度，
+   而不是描述每天做什么。单独增加一份 Day 级施工索引，可以把长期阶段拆成
+   可执行任务。
 3. 你会频繁进行人工 review。把工作切成小的闭环单元，可以让每次 review 只
    聚焦有限的代码、数据和风险，不必反复全仓审查。
 4. 生产级项目不能继续使用旧的“30 天内堆完功能”思路。认证、多租户、迁移、
@@ -78,8 +79,8 @@ Day 编号：已经完成 Day 1～7，下一施工单元是 Day 8。
 | 文件 | 负责回答的问题 | 权威范围 |
 | --- | --- | --- |
 | `outline.md` | 项目最终要成为什么，哪些原则不能突破 | 产品、架构和生产质量纲领 |
-| `construction-plan.md` | 要经过哪些阶段，每个阶段如何出关 | 阶段依赖、门禁和 Definition of Done |
-| `day8-production-roadmap.md` | 从 Day 8 开始具体按什么顺序实践和学习 | Day 级施工顺序和 review 节奏 |
+| `construction/01-★★★-construction-plan.md` | 要经过哪些阶段，每个阶段如何出关 | 阶段依赖、门禁和 Definition of Done |
+| `construction/02-★★★-day8-production-roadmap.md` | 从 Day 8 开始具体按什么顺序实践和学习 | Day 级施工顺序和 review 节奏 |
 | `docs/` | 某个专题当前如何设计、配置、运行和审查 | 专题知识与长期文档 |
 | `tmp/` | 本次命令输出、临时报告和验证证据 | 本地临时材料，不提交 Git |
 
@@ -90,7 +91,7 @@ Day 编号：已经完成 Day 1～7，下一施工单元是 Day 8。
     >
 outline.md
     >
-construction-plan.md 的阶段门禁
+construction/01-★★★-construction-plan.md 的阶段门禁
     >
 本文件的 Day 顺序
     >
@@ -106,7 +107,7 @@ Day 计划可以调整，生产原则和已经确认的安全门禁不能为了�
 ### 4.1 开工前
 
 1. 阅读本文件中该 Day 的目标、前置条件和验收证据；
-2. 阅读 `outline.md`、`construction-plan.md` 的对应阶段；
+2. 阅读 `outline.md`、`construction/01-★★★-construction-plan.md` 的对应阶段；
 3. 检查 Git 状态，不覆盖用户已有修改；
 4. 检查上一 Day 或上一阶段门禁是否已通过；
 5. 列出本次允许修改的势力范围和明确不修改的范围；
@@ -238,6 +239,10 @@ Release A、B、C 和生产上线前执行跨阶段 review：
 ### 阶段目标
 
 把 Day 1～7 从“已经做过”变成“行为、风险和证据都可以被重复验证”。
+
+详细施工入口：
+
+[`phase-0/00-★★★-phase-0-guide.md`](phase-0/00-★★★-phase-0-guide.md)
 
 | Day | 本日工程闭环 | 必须验收的证据 | 学习与人工 review 重点 |
 | --- | --- | --- | --- |
@@ -511,9 +516,10 @@ Day 150：下一个独立闭环单元
 ## 26. 以后让 Codex 实践某个 Day 的推荐指令
 
 ```text
-请按照 day8-production-roadmap.md 实践 Day XX。
+请按照 construction/02-★★★-day8-production-roadmap.md 实践 Day XX。
 
-先核对前置 Day 和 construction-plan.md 对应阶段是否已经出关。
+先核对前置 Day 和 construction/01-★★★-construction-plan.md
+对应阶段是否已经出关。
 只处理本 Day 的范围，先设计再实现。
 必须完成代码、migration、自动化测试、真实手工或 staging E2E、失败路径、
 资源清理、文档更新和 tmp/dayXX-closeout-report.md。
