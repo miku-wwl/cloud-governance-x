@@ -21,10 +21,11 @@ Web API、后台 Worker、Clean Architecture 基础分层、PostgreSQL 本地环
 [`docs/01-★★-project-feasibility-review.md`](docs/01-★★-project-feasibility-review.md)，
 不再作为当前施工依据。
 
-Day 8 建立的当前能力真值与生产差距见：
+阶段 0 当前能力事实与运行复验见：
 
 - [`docs/phase-0/current-capability-baseline.md`](docs/phase-0/current-capability-baseline.md)；
-- [`docs/phase-0/production-gap-register.md`](docs/phase-0/production-gap-register.md)。
+- [`docs/phase-0/production-gap-register.md`](docs/phase-0/production-gap-register.md)；
+- [`docs/phase-0/baseline-verification-summary.md`](docs/phase-0/baseline-verification-summary.md)。
 
 ## 项目结构
 

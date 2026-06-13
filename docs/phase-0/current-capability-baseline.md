@@ -3,15 +3,16 @@
 ## 1. 文档定位
 
 - 基线日期：2026 年 6 月 14 日
-- 基线起点 Commit：`09619a9`
-- 基线范围：Day 1～7 已提交工程，以及 Day 8 的静态事实复核
-- 当前阶段：阶段 0，Day 8
+- 运行复验 Commit：`6ce8e25`
+- 基线范围：Day 1～7 已提交工程、Day 8 静态复核与 Day 9 运行复验
+- 当前阶段：阶段 0，Day 9
 - Day 8 状态：`ReadyForReview`
+- Day 9 状态：`ReadyForReview`
 
 本文是“当前仓库有什么”的事实源，不描述愿景，也不把后续计划写成现状。
-Day 8 只完成静态审查和历史证据映射；依赖 Docker、PostgreSQL、Azure 和
-Terraform 的运行证据将在 Day 9 重新执行，因此云端运行事实会保守标记为
-`PresentUnverified`。
+Day 9 已在同一提交上重新执行本地、PostgreSQL、Terraform 和真实 Azure
+验证。运行结论见 `docs/phase-0/baseline-verification-summary.md`，原始输出
+保存在被 Git 忽略的 `tmp/phase-0-evidence/day09/`。
 
 ## 2. 状态词典
 
@@ -19,7 +20,7 @@ Terraform 的运行证据将在 Day 9 重新执行，因此云端运行事实会
 | --- | --- |
 | `VerifiedBaseline` | 当前源码、配置、测试或静态检查直接证明该事实 |
 | `ImplementedLimited` | 已实现，但仅适合本地、学习或有限数据语义 |
-| `PresentUnverified` | 代码和历史 E2E 脚本存在，Day 9 尚未重新取得运行证据 |
+| `PresentUnverified` | 代码存在，但当前环境或当前复验轮次尚未取得有效运行证据 |
 | `Planned` | 仅存在于纲领或施工计划 |
 | `ProductionProhibited` | 当前行为明确禁止进入生产 |
 | `DeprecatedHistorical` | 旧计划或旧表述，仅保留历史价值 |
@@ -43,16 +44,16 @@ Terraform 的运行证据将在 Day 9 重新执行，因此云端运行事实会
 | 能力 | 当前状态 | 当前实现与证据 | 当前限制 | 生产结论 | 后续阶段 |
 | --- | --- | --- | --- | --- | --- |
 | 本地 Azure 身份 | `ImplementedLimited` | `DefaultAzureCredential`，本地验收依赖 Azure CLI | 未建立 Managed Identity、Workload Identity 和最小权限 | 仅本地允许 | 阶段 2、5 |
-| 订阅读取 | `PresentUnverified` | `AzureSubscriptionReader` 枚举当前身份可见订阅；`Test-AzureSdkIntegration.ps1` 有历史 E2E | Day 9 尚未重跑；管理 API 匿名 | 禁止公开部署 | Day 9、阶段 2 |
-| Terraform 基础资源 | `PresentUnverified` | Resource Group、Storage、Service Bus Namespace/Queue、可选 Log Analytics | 仅开发规模，Storage 仍启用 shared key | 禁止直接生产 | Day 9、阶段 12 |
-| apply/destroy 生命周期 | `PresentUnverified` | `Test-AzureTerraformLifecycle.ps1` 创建、验证并销毁临时资源 | Day 9 尚未重跑 | 受限 | Day 9、阶段 12 |
+| 订阅读取 | `VerifiedBaseline` | Day 9 真实 E2E 使用 Azure CLI 身份读取启用状态订阅，并与 CLI 结果一致 | 管理 API 匿名，身份仍是本地用户身份 | 禁止公开部署 | 阶段 2 |
+| Terraform 基础资源 | `VerifiedBaseline` | Day 9 创建并核验 Resource Group、Storage、Service Bus Namespace/Queue | 仅开发规模，Storage 仍启用 shared key | 禁止直接生产 | 阶段 12 |
+| apply/destroy 生命周期 | `VerifiedBaseline` | Day 9 完整 apply/destroy，确认 state 为空且 Resource Group 不存在 | 使用本地 state 和个人 Azure CLI 身份 | 受限 | 阶段 12 |
 | Terraform state | `ProductionProhibited` | 当前使用本地 state，state/plan 已被 Git 忽略 | 无远端锁、加密、审计、环境隔离 | 禁止团队生产 | 阶段 12 |
 
 ### 3.3 资源数据
 
 | 能力 | 当前状态 | 当前实现与证据 | 当前限制 | 生产结论 | 后续阶段 |
 | --- | --- | --- | --- | --- | --- |
-| Resource Graph 采集 | `PresentUnverified` | 按 Azure tenant 分组订阅，查询 Resource Graph | Day 9 尚未重跑真实 Azure | 受限 | Day 9、阶段 5 |
+| Resource Graph 采集 | `VerifiedBaseline` | Day 9 创建临时资源并由 Resource Graph 发现；两次 Worker 同步结果稳定 | 仍无 checkpoint、失活语义和生产身份 | 受限 | 阶段 5 |
 | 多订阅枚举 | `VerifiedBaseline` | 当前身份可见订阅均加入查询，并按 tenant 分组 | 无 CloudAccount onboarding、scope allowlist | 禁止多租户生产 | 阶段 2、5 |
 | 分页 | `VerifiedBaseline` | 每页 Top 1000，持续消费 `SkipToken` | 无 checkpoint 和跨运行续传 | 受限 | 阶段 4、5 |
 | 字段映射 | `VerifiedBaseline` | 保存 provider、subscription、resource id/name/type、region、resource group、tags | 未保存 lifecycle、managedBy、SKU 等生产字段 | 受限 | 阶段 3、5 |
@@ -64,7 +65,7 @@ Terraform 的运行证据将在 Day 9 重新执行，因此云端运行事实会
 
 | 能力 | 当前状态 | 当前实现与证据 | 当前限制 | 生产结论 | 后续阶段 |
 | --- | --- | --- | --- | --- | --- |
-| Cost Management 查询 | `PresentUnverified` | REST Query API，按订阅查询自定义日期范围 | Day 9 尚未在关闭 fallback 后重跑 | 受限 | Day 9、阶段 6 |
+| Cost Management 查询 | `VerifiedBaseline` | Day 9 在关闭 fallback 后取得 HTTP 200 和 28 行真实成本，`sample data: False` | 仍受订阅账单延迟、权限和有限成本语义约束 | 受限 | 阶段 6 |
 | 成本粒度 | `ImplementedLimited` | Daily + ServiceName + ResourceGroup + Currency | 不是资源级成本；无 charge type、billing period、amortized cost | 禁止声称精确资源归因 | 阶段 3、6 |
 | 成本 Upsert | `VerifiedBaseline` | 六列业务唯一键，重复同步更新 cost/raw_json | 账单修订语义和 lineage 不完整 | 受限 | 阶段 3、6 |
 | 成本查询 API | `VerifiedBaseline` | daily、by-service、by-resource-group；按币种独立计算占比 | 无分页、版本、认证、租户范围 | 禁止公开部署 | 阶段 2、8 |
@@ -88,7 +89,7 @@ Terraform 的运行证据将在 Day 9 重新执行，因此云端运行事实会
 | 能力 | 当前状态 | 当前实现与证据 | 当前限制 | 生产结论 | 后续阶段 |
 | --- | --- | --- | --- | --- | --- |
 | 自动化测试 | `VerifiedBaseline` | 10 个测试文件、19 个 `[Fact]`，覆盖映射、领域行为和应用服务 | 主要为单元测试，无数据库集成、架构、安全和并发测试 | 受限 | 阶段 1～4 |
-| E2E 脚本 | `PresentUnverified` | 6 个 PowerShell 脚本覆盖 Day 2～7，使用独立数据库并清理临时日志/资源 | Day 8 不重跑；部分成本脚本允许 fallback | 受限 | Day 9 |
+| E2E 脚本 | `VerifiedBaseline` | Day 9 串行执行 6 个脚本全部通过，并额外完成严格真实成本复验 | 仍是本地开发身份和单订阅规模 | 受限 | 阶段 1～15 |
 | CI、staging、SLO、备份 | `Planned` | 施工计划中存在，仓库无实现 | 无自动发布门禁和恢复证据 | 禁止生产 | Release A、阶段 11～15 |
 | 用户、RBAC、tenant、audit | `Planned` | 当前没有身份中间件、业务 tenant schema 或审计模型 | 无法保护管理操作和证明组织隔离 | 禁止生产 | 阶段 2～3 |
 | Policy、Monitor、finding、waiver | `Planned` | 只有 compliance DTO/interface，无 Provider 和持久化实现 | 不能声称合规治理能力 | 未实现 | 阶段 7、9 |
@@ -120,9 +121,12 @@ Terraform 的运行证据将在 Day 9 重新执行，因此云端运行事实会
 - 历史 E2E：`scripts/`
 - Terraform：`terraform/azure/`
 - Day 8 本地审查证据：`tmp/phase-0-evidence/`
+- Day 9 永久总结：`docs/phase-0/baseline-verification-summary.md`
+- Day 9 原始证据：`tmp/phase-0-evidence/day09/`
 
-## 6. Day 9 交接条件
+## 6. Day 10 交接条件
 
-Day 9 必须重新执行编译、19 个测试、PostgreSQL、API、Worker、6 个 E2E 脚本
-和 Terraform 生命周期，并将本表中的 `PresentUnverified` 按运行结果升级为
-`VerifiedBaseline` 或降级为失败项。真实成本验证必须显式关闭 sample fallback。
+Day 9 的自动与手工验收已完成，清理审计通过，没有产品缺陷或外部阻断。人工
+review 确认本表和 `baseline-verification-summary.md` 后，可以进入 Day 10，
+绘制当前组件、部署、数据流和信任边界；不得把本次开发身份 E2E 等同于生产身份
+或 staging 证据。
