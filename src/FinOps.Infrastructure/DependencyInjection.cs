@@ -79,6 +79,7 @@ public static class DependencyInjection
             dbOptions.UseNpgsql(options.GetConnectionString()));
         services.AddScoped<ICloudResourceRepository, CloudResourceRepository>();
         services.AddScoped<ICloudCostRepository, CloudCostRepository>();
+        services.AddScoped<ICloudCostQueryRepository, CloudCostQueryRepository>();
         services.AddScoped<IEtlJobRunRepository, EtlJobRunRepository>();
     }
 }

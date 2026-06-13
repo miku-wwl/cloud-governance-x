@@ -96,6 +96,28 @@ The implementation uses API version `2025-03-01`. If cost data is empty or
 unavailable, explicitly marked sample rows keep the POC demonstrable.
 `AzureCost:ForceSampleData` provides deterministic end-to-end verification.
 
+## Day 7 Cost ETL
+
+The cost pipeline is available through both host types:
+
+```text
+POST /api/admin/sync/azure/costs
+Etl__Job=Costs dotnet run --project src/FinOps.Worker
+```
+
+Both entry points use `CloudCostSyncService`, write `azure-cost-sync` execution
+history, and call the same idempotent repository. The Worker defaults to
+`Resources`; `Etl:Job` explicitly selects `Resources` or `Costs`.
+
+Read APIs aggregate in PostgreSQL and return normalized DTOs:
+
+- `GET /api/costs/daily`
+- `GET /api/costs/by-service`
+- `GET /api/costs/by-resource-group`
+
+Service and resource-group percentages are calculated independently per
+currency, so values from different billing currencies are never combined.
+
 ## Day 4 Resource Graph Inventory
 
 `AzureResourceInventoryProvider` queries Azure Resource Graph with:

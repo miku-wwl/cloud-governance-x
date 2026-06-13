@@ -2,9 +2,9 @@
 
 基于 .NET 10、Terraform、PostgreSQL 和 React 构建的多云 FinOps 与资源治理平台。
 
-当前版本已完成 Day 1～6：工程骨架、Azure Terraform、Azure SDK 认证、
+当前版本已完成 Day 1～7：工程骨架、Azure Terraform、Azure SDK 认证、
 Azure Resource Graph 资源清单同步、正式 ETL 执行追踪和 Azure Cost
-Management 成本 POC，包含
+Management 成本 ETL 与查询 API，包含
 Web API、后台 Worker、Clean Architecture 基础分层、PostgreSQL 本地环境、
 健康检查、可重复验证的 Azure 资源生命周期，以及通过
 `DefaultAzureCredential` 读取 Azure 订阅和资源清单并写入 PostgreSQL 的能力。
@@ -256,3 +256,38 @@ Invoke-RestMethod `
 ```powershell
 ./scripts/Test-AzureCostPoc.ps1
 ```
+
+## Azure Cost ETL
+
+Day 7 将成本 POC 正式化。成本同步既可以由管理 API 手动触发，也可以由
+一次性 Worker Job 执行：
+
+```powershell
+$env:Etl__Job = "Costs"
+$env:Etl__CostDays = "7"
+dotnet run --project src/FinOps.Worker
+```
+
+成本查询 API：
+
+| 地址 | 用途 |
+| --- | --- |
+| `GET /api/costs/daily` | 按日期和币种返回成本趋势 |
+| `GET /api/costs/by-service` | 按服务返回成本与币种内占比 |
+| `GET /api/costs/by-resource-group` | 按资源组返回成本与币种内占比 |
+
+三个查询都支持 `provider`、`from`、`to` 参数；默认查询 Azure 最近 7 天。
+
+```powershell
+Invoke-RestMethod `
+  "http://localhost:5000/api/costs/by-service?provider=Azure&from=2026-06-01&to=2026-06-07"
+```
+
+完整 Day 7 端到端验收：
+
+```powershell
+./scripts/Test-AzureCostEtl.ps1
+```
+
+脚本使用独立的 `finops_day7` 数据库，由 Cost Worker 写入真实 Azure 成本，
+再通过管理 API 重跑验证幂等性，并交叉核对日趋势、服务和资源组 API 总额。

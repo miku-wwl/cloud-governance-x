@@ -12,6 +12,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddScoped<ICloudResourceSyncService, CloudResourceSyncService>();
 builder.Services.AddScoped<ICloudCostSyncService, CloudCostSyncService>();
+builder.Services.AddScoped<ICloudCostQueryService, CloudCostQueryService>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddProblemDetails();
 
@@ -51,6 +52,36 @@ app.MapPost(
         var result = await syncService.SyncAsync(cancellationToken);
         return Results.Ok(result);
     });
+
+app.MapGet(
+    "/api/costs/daily",
+    (
+        ICloudCostQueryService queryService,
+        string? provider,
+        DateOnly? from,
+        DateOnly? to,
+        CancellationToken cancellationToken) =>
+        queryService.GetDailyAsync(provider, from, to, cancellationToken));
+
+app.MapGet(
+    "/api/costs/by-service",
+    (
+        ICloudCostQueryService queryService,
+        string? provider,
+        DateOnly? from,
+        DateOnly? to,
+        CancellationToken cancellationToken) =>
+        queryService.GetByServiceAsync(provider, from, to, cancellationToken));
+
+app.MapGet(
+    "/api/costs/by-resource-group",
+    (
+        ICloudCostQueryService queryService,
+        string? provider,
+        DateOnly? from,
+        DateOnly? to,
+        CancellationToken cancellationToken) =>
+        queryService.GetByResourceGroupAsync(provider, from, to, cancellationToken));
 
 app.MapPost(
     "/api/admin/sync/azure/costs",
