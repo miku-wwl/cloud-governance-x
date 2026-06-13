@@ -1,6 +1,8 @@
 # Cloud Governance X
 
-基于 .NET 10、Terraform、PostgreSQL 和 React 构建的多云 FinOps 与资源治理平台。
+Cloud Governance X 的目标是建设生产级多云 FinOps 与资源治理平台。当前仓库
+基于 .NET 10、Terraform 和 PostgreSQL，已经完成 Azure 资源与成本数据底座；
+React 前端、AWS 接入和生产平台能力仍属于后续计划。
 
 当前版本已完成 Day 1～7：工程骨架、Azure Terraform、Azure SDK 认证、
 Azure Resource Graph 资源清单同步、正式 ETL 执行追踪和 Azure Cost
@@ -18,6 +20,11 @@ Web API、后台 Worker、Clean Architecture 基础分层、PostgreSQL 本地环
 旧 30 天作品集计划的历史评估保留在
 [`docs/01-★★-project-feasibility-review.md`](docs/01-★★-project-feasibility-review.md)，
 不再作为当前施工依据。
+
+Day 8 建立的当前能力真值与生产差距见：
+
+- [`docs/phase-0/current-capability-baseline.md`](docs/phase-0/current-capability-baseline.md)；
+- [`docs/phase-0/production-gap-register.md`](docs/phase-0/production-gap-register.md)。
 
 ## 项目结构
 
@@ -270,7 +277,7 @@ Invoke-RestMethod `
 成本 API 需要当前身份在订阅 scope 具备 Cost Management 读取权限。账单为空、
 学生订阅不支持或 API 暂时不可用时，默认生成明确标记为 `source=sample` 的
 7 天样例数据，保证本地演示不会卡死。样例数据不会伪装为真实账单，可通过
-`raw_json` 追溯来源。
+`raw_json` 追溯来源。该 fallback 只允许用于本地学习和演示，生产环境禁止启用。
 
 完整 Day 6 端到端验收：
 
@@ -310,5 +317,7 @@ Invoke-RestMethod `
 ./scripts/Test-AzureCostEtl.ps1
 ```
 
-脚本使用独立的 `finops_day7` 数据库，由 Cost Worker 写入真实 Azure 成本，
-再通过管理 API 重跑验证幂等性，并交叉核对日趋势、服务和资源组 API 总额。
+脚本使用独立的 `finops_day7` 数据库，由 Cost Worker 写入 Azure Cost
+Management 返回的数据；当外部成本数据不可用时，当前默认配置会写入明确标记
+的样例数据。随后脚本通过管理 API 重跑验证幂等性，并交叉核对日趋势、服务和
+资源组 API 总额。Day 9 将在关闭 fallback 的条件下重新验证真实成本链路。

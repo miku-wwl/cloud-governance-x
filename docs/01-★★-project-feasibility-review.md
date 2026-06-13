@@ -1,5 +1,14 @@
 # 01 ★★ 项目整体合理性与工期可行性评估
 
+> **历史评估，不是当前施工依据。**
+>
+> 本文评估的是已经被替换的 30 天作品集计划，保留用于理解项目为什么转向
+> 生产级分阶段建设。当前项目纲领以 `outline.md` 为准，阶段计划以
+> `construction/01-★★★-construction-plan.md` 为准，逐日安排以
+> `construction/02-★★★-day8-production-roadmap.md` 为准。当前能力事实和
+> 生产差距分别以 `docs/phase-0/current-capability-baseline.md` 与
+> `docs/phase-0/production-gap-register.md` 为准。
+
 ## 1. 评估范围
 
 本报告基于以下内容进行评估：
@@ -43,7 +52,7 @@ Day 1～7 已建立可靠的数据底座：
 - Azure Terraform 创建、核验、销毁闭环；
 - Azure CLI 与 `DefaultAzureCredential` 认证；
 - Azure Resource Graph 资源清单；
-- Azure Cost Management 真实成本数据；
+- Azure Cost Management 成本查询实现，以及明确标记的样例 fallback；
 - 资源和成本 ETL 执行历史；
 - 重复同步幂等性；
 - PostgreSQL、API、Worker 和 Azure 的联合验证。
@@ -274,8 +283,8 @@ Day 1～30 的完成承诺。
 
 ## 5. 当前项目表述需要更准确
 
-README 当前第一句称项目“基于 .NET 10、Terraform、PostgreSQL 和 React
-构建”，但仓库尚未创建 React 前端；AWS 也尚未接入。
+本报告编写时，README 第一段曾让读者误以为 React 前端和 AWS 已经接入。
+该表述已在 Day 8 修正为“生产级多云是目标，当前实现是 Azure 数据底座”。
 
 在 Day 13 和 Day 24 完成前，建议区分：
 
