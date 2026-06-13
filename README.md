@@ -9,6 +9,9 @@ Web API、后台 Worker、Clean Architecture 基础分层、PostgreSQL 本地环
 健康检查、可重复验证的 Azure 资源生命周期，以及通过
 `DefaultAzureCredential` 读取 Azure 订阅和资源清单并写入 PostgreSQL 的能力。
 
+项目整体架构、范围边界和 30 天工期可行性评估见
+[`docs/project-feasibility-review.md`](docs/project-feasibility-review.md)。
+
 ## 项目结构
 
 ```text
