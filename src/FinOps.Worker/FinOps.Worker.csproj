@@ -1,10 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk.Worker">
 
   <ItemGroup>
+    <!-- 提供通用宿主生命周期、依赖注入、日志和配置能力。 -->
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.8" />
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Worker 通过基础设施适配器执行应用层用例。 -->
     <ProjectReference Include="..\FinOps.Application\FinOps.Application.csproj" />
     <ProjectReference Include="..\FinOps.Infrastructure\FinOps.Infrastructure.csproj" />
   </ItemGroup>

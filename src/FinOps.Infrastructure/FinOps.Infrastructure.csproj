@@ -1,22 +1,27 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <!-- 基础设施层实现应用层接口，并负责持久化领域数据。 -->
     <ProjectReference Include="..\FinOps.Application\FinOps.Application.csproj" />
     <ProjectReference Include="..\FinOps.Domain\FinOps.Domain.csproj" />
   </ItemGroup>
 
   <ItemGroup>
+    <!-- 引用宿主和配置抽象，但不会因此把该项目变成 Web 宿主。 -->
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Azure 身份认证、ARM 管理和 Resource Graph 资源清单客户端。 -->
     <PackageReference Include="Azure.Identity" Version="1.21.0" />
     <PackageReference Include="Azure.ResourceManager" Version="1.14.0" />
     <PackageReference Include="Azure.ResourceManager.ResourceGraph" Version="1.1.0" />
+    <!-- 只用于设计时数据库迁移，不把该包作为传递依赖暴露给上层。 -->
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.4">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+    <!-- PostgreSQL 驱动和对应的 EF Core 数据库提供程序。 -->
     <PackageReference Include="Npgsql" Version="10.0.3" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.2" />
   </ItemGroup>

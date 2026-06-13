@@ -1,10 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <!-- 测试项目只用于验证，不应打包成可发布的 NuGet 包。 -->
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- 提供测试发现、xUnit 执行、IDE 集成和代码覆盖率采集能力。 -->
     <PackageReference Include="coverlet.collector" Version="6.0.4" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageReference Include="xunit" Version="2.9.3" />
@@ -12,10 +14,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- 全局引入 xUnit，使每个测试文件不必重复编写 using。 -->
     <Using Include="Xunit" />
   </ItemGroup>
 
   <ItemGroup>
+    <!-- 验证应用行为以及基础设施层的映射和持久化逻辑。 -->
     <ProjectReference Include="..\FinOps.Application\FinOps.Application.csproj" />
     <ProjectReference Include="..\FinOps.Infrastructure\FinOps.Infrastructure.csproj" />
   </ItemGroup>

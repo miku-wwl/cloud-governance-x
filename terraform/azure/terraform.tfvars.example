@@ -1,11 +1,11 @@
-# Copy this file to terraform.tfvars only when overriding defaults.
+# 只有需要覆盖默认值时，才复制为不会提交到 Git 的 terraform.tfvars。
 location        = "australiaeast"
 name_prefix     = "finops"
 environment     = "dev"
 owner           = "your-name"
 cost_center     = "learning"
 
-# Optional because ingestion can create ongoing charges.
+# 可选功能：日志摄取可能持续产生费用，所以默认关闭。
 enable_log_analytics         = false
 log_analytics_retention_days = 30
 

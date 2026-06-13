@@ -1,6 +1,10 @@
 .env
 .env.*
 !.env.example
+
+# 本地端到端报告、命令日志和可随时删除的验证证据。
+tmp/
+
 .DS_Store
 Thumbs.db
 .idea/
@@ -16,7 +20,7 @@ coverage/
 *.nupkg
 *.user
 
-# Terraform local state and generated evidence
+# Terraform 本地状态和生成的验证证据。
 **/.terraform/
 *.tfstate
 *.tfstate.*

@@ -1,5 +1,8 @@
+# API、Worker、数据库迁移和测试共同使用的本地 PostgreSQL。
+# 未提交的 .env 可以覆盖变量；没有设置变量时使用 `:-` 后面的默认值。
 services:
   postgres:
+    # 固定数据库主版本，避免意外升级；Alpine 版本可以减小本地镜像体积。
     image: postgres:18-alpine
     container_name: finops-postgres
     environment:
@@ -7,16 +10,21 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-finops}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-finops_dev_password}
     ports:
+      # 左侧是宿主机端口，右侧是容器内部端口。
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
+      # 使用命名卷，使普通的 `docker compose down` 不会删除数据库数据。
       - finops-postgres-data:/var/lib/postgresql
     healthcheck:
+      # `$$` 用于延迟变量展开，让变量在容器内执行命令时再解析。
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 10
       start_period: 5s
+    # Docker 或宿主机重启后自动恢复，但手工停止后不会强制重启。
     restart: unless-stopped
 
 volumes:
+  # 确定不再需要本地数据时，使用 `docker compose down --volumes` 明确删除。
   finops-postgres-data:

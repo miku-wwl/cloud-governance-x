@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <!-- 应用层可以使用领域类型，但不能依赖宿主程序或云 SDK。 -->
     <ProjectReference Include="..\FinOps.Domain\FinOps.Domain.csproj" />
   </ItemGroup>
 

@@ -1,8 +1,13 @@
 <Project>
+  <!-- MSBuild 会将该文件自动导入当前目录下的所有项目。 -->
   <PropertyGroup>
+    <!-- 统一所有项目的目标框架和编译运行契约。 -->
     <TargetFramework>net10.0</TargetFramework>
+    <!-- 为整个解决方案启用可空引用类型分析。 -->
     <Nullable>enable</Nullable>
+    <!-- 自动生成常用的 System 和 Microsoft 命名空间引用。 -->
     <ImplicitUsings>enable</ImplicitUsings>
+    <!-- 将编译警告视为错误，避免问题长期积累。 -->
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 </Project>

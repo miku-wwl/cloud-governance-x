@@ -1,10 +1,20 @@
 <Solution>
+  <!--
+    SLNX 用于组织需要统一还原、构建和测试的项目。
+    真正的运行时依赖关系由各个 .csproj 中的 ProjectReference 单独声明。
+  -->
   <Folder Name="/src/">
+    <!-- HTTP 宿主：负责接口、启动流程、健康检查和依赖注入。 -->
     <Project Path="src/FinOps.Api/FinOps.Api.csproj" />
+    <!-- 与云厂商无关的接口契约和应用用例。 -->
     <Project Path="src/FinOps.Application/FinOps.Application.csproj" />
+    <!-- 核心实体和值对象，不依赖基础设施。 -->
     <Project Path="src/FinOps.Domain/FinOps.Domain.csproj" />
+    <!-- PostgreSQL、EF Core、Azure SDK 和外部服务适配器。 -->
     <Project Path="src/FinOps.Infrastructure/FinOps.Infrastructure.csproj" />
+    <!-- xUnit 自动化测试。 -->
     <Project Path="src/FinOps.Tests/FinOps.Tests.csproj" />
+    <!-- 一次性执行资源或成本 ETL 的命令宿主。 -->
     <Project Path="src/FinOps.Worker/FinOps.Worker.csproj" />
   </Folder>
 </Solution>

@@ -1,3 +1,4 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
+  <!-- 按设计不依赖其他项目或包；公共编译配置来自 Directory.Build.props。 -->
 </Project>

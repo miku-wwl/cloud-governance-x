@@ -95,6 +95,11 @@ PostgreSQL readiness 会使用 Npgsql 建立真实数据库连接并执行 `SELE
 
 ## 配置
 
+JSON、YAML、SLNX、MSBuild、项目引用、环境变量和 Terraform 配置的逐项作用见
+[`docs/configuration-guide.md`](docs/configuration-guide.md)。JSON 标准本身不
+支持注释，因此 JSON 文件保持严格合法，详细解释集中在该文档；支持注释的配置
+文件已经在原文件中直接标注。
+
 默认开发数据库配置位于 `src/FinOps.Api/appsettings.json`：
 
 ```json
