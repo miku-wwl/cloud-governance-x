@@ -10,7 +10,7 @@ Web API、后台 Worker、Clean Architecture 基础分层、PostgreSQL 本地环
 `DefaultAzureCredential` 读取 Azure 订阅和资源清单并写入 PostgreSQL 的能力。
 
 项目整体架构、范围边界和 30 天工期可行性评估见
-[`docs/project-feasibility-review.md`](docs/project-feasibility-review.md)。
+[`docs/01-★★-project-feasibility-review.md`](docs/01-★★-project-feasibility-review.md)。
 
 ## 项目结构
 
@@ -99,7 +99,7 @@ PostgreSQL readiness 会使用 Npgsql 建立真实数据库连接并执行 `SELE
 ## 配置
 
 JSON、YAML、SLNX、MSBuild、项目引用、环境变量和 Terraform 配置的逐项作用见
-[`docs/configuration-guide.md`](docs/configuration-guide.md)。JSON 标准本身不
+[`docs/02-★★★-configuration-guide.md`](docs/02-★★★-configuration-guide.md)。JSON 标准本身不
 支持注释，因此 JSON 文件保持严格合法，详细解释集中在该文档；支持注释的配置
 文件已经在原文件中直接标注。
 
@@ -160,7 +160,7 @@ az account show
 
 详细配置和手动命令见
 [`terraform/azure/README.md`](terraform/azure/README.md) 与
-[`docs/terraform.md`](docs/terraform.md)。
+[`docs/03-★★-terraform.md`](docs/03-★★-terraform.md)。
 
 ## Azure SDK 认证
 
@@ -180,7 +180,7 @@ Invoke-RestMethod http://localhost:5000/api/cloud/azure/subscriptions
 
 Azure SDK 仅由 `FinOps.Infrastructure` 引用；API 通过 Application 层的
 `IAzureSubscriptionReader` 调用，不直接依赖 Azure SDK。详细设计见
-[`docs/azure-integration.md`](docs/azure-integration.md)。
+[`docs/04-★★★-azure-integration.md`](docs/04-★★★-azure-integration.md)。
 
 完整 Day 3 端到端验收：
 
@@ -208,7 +208,8 @@ id, name, type, location, resourceGroup, subscriptionId, tags
 
 该脚本使用独立的 `finops_day4` 测试数据库，临时创建 Azure 资源，运行两次
 Worker 并验证幂等性，随后销毁 Azure 资源、删除测试数据库和本地 Terraform
-运行产物。数据模型见 [`docs/data-model.md`](docs/data-model.md)。
+运行产物。数据模型见
+[`docs/05-★★★-data-model.md`](docs/05-★★★-data-model.md)。
 
 ## Azure Resource ETL
 

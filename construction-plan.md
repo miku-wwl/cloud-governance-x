@@ -1055,9 +1055,9 @@ Dashboard 显示 provider 字段
 ```text
 README.md
 docs/architecture.md
-docs/data-model.md
-docs/terraform.md
-docs/azure-integration.md
+docs/05-★★★-data-model.md
+docs/03-★★-terraform.md
+docs/04-★★★-azure-integration.md
 docs/aws-integration.md
 docs/provider-adapter.md
 docs/finops-rules.md

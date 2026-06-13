@@ -1,4 +1,4 @@
-# Terraform
+# 03 ★★ Terraform
 
 ## Day 2 Azure Foundation
 

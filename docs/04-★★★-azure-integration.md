@@ -1,4 +1,4 @@
-# Azure Integration
+# 04 ★★★ Azure Integration
 
 ## Day 3 Authentication
 

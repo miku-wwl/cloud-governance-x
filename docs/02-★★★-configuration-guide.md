@@ -1,4 +1,4 @@
-# 配置文件说明
+# 02 ★★★ 配置文件说明
 
 本文详细解释 Day 1～7 使用的 JSON、YAML、SLNX、MSBuild、环境变量、
 项目文件和 Terraform 配置。
