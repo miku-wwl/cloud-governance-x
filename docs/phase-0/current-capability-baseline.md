@@ -4,11 +4,12 @@
 
 - 基线日期：2026 年 6 月 14 日
 - 运行复验 Commit：`6ce8e25`
-- 基线范围：Day 1～7 已提交工程、Day 8 静态复核、Day 9 运行复验与 Day 10 当前架构反查
-- 当前阶段：阶段 0，Day 10
+- 基线范围：Day 1～7 工程与 Day 8～11 阶段 0 审计、验证、架构及治理材料
+- 当前阶段：阶段 0，Day 11 `Validation`
 - Day 8 状态：`ReadyForReview`
 - Day 9 状态：`ReadyForReview`
 - Day 10 状态：`ReadyForReview`
+- Day 11 状态：`Validation`
 
 本文是“当前仓库有什么”的事实源，不描述愿景，也不把后续计划写成现状。
 Day 9 已在同一提交上重新执行本地、PostgreSQL、Terraform 和真实 Azure
@@ -127,11 +128,13 @@ Day 9 已在同一提交上重新执行本地、PostgreSQL、Terraform 和真实
 - Day 9 原始证据：`tmp/phase-0-evidence/day09/`
 - Day 10 当前架构：`docs/phase-0/current-architecture.md`
 - Day 10 本地审查证据：`tmp/phase-0-evidence/day10/`
+- Day 11 风险、分类、依赖、ADR 与 gate：`docs/phase-0/` 对应专题文档
+- Day 11 本地审查证据：`tmp/phase-0-evidence/`、`tmp/day11-closeout-report.md`
 
-## 6. Day 11 交接条件
+## 6. 阶段 0 Gate
 
-Day 9 的自动与手工验收已完成，清理审计通过，没有产品缺陷或外部阻断。Day 10
-已将当前组件、部署、数据流、身份来源和信任边界映射到真实文件。人工 review
-确认本表、运行总结与 `current-architecture.md` 后，可以进入 Day 11 风险登记
-和阶段 0 gate；不得把本地开发身份、local state 或 sample fallback 等同于
-生产能力。
+Day 11 永久治理材料和机械门禁已经形成，当前没有产品测试失败、未知 Azure
+资源、测试数据库、端口或 Terraform 运行产物阻断。阶段状态保持 `Validation`，
+等待人工 review 风险 Owner、数据分类、许可证未知项、ADR 和 secret scanner
+缺口。只有 `stage-0-gate-report.md` 经人工明确批准后，阶段 0 才能标记
+`Complete` 并进入 Day 12；阶段完成仍不代表系统可部署到生产。

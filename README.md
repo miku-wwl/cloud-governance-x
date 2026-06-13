@@ -26,7 +26,12 @@ Web API、后台 Worker、Clean Architecture 基础分层、PostgreSQL 本地环
 - [`docs/phase-0/current-capability-baseline.md`](docs/phase-0/current-capability-baseline.md)；
 - [`docs/phase-0/production-gap-register.md`](docs/phase-0/production-gap-register.md)；
 - [`docs/phase-0/baseline-verification-summary.md`](docs/phase-0/baseline-verification-summary.md)；
-- [`docs/phase-0/current-architecture.md`](docs/phase-0/current-architecture.md)。
+- [`docs/phase-0/current-architecture.md`](docs/phase-0/current-architecture.md)；
+- [`docs/phase-0/risk-register.md`](docs/phase-0/risk-register.md)；
+- [`docs/phase-0/data-classification.md`](docs/phase-0/data-classification.md)；
+- [`docs/phase-0/dependency-license-inventory.md`](docs/phase-0/dependency-license-inventory.md)；
+- [`docs/phase-0/adr-backlog.md`](docs/phase-0/adr-backlog.md)；
+- [`docs/phase-0/stage-0-gate-report.md`](docs/phase-0/stage-0-gate-report.md)。
 
 ## 项目结构
 
