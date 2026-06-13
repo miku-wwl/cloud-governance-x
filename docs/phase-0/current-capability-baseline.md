@@ -4,15 +4,17 @@
 
 - 基线日期：2026 年 6 月 14 日
 - 运行复验 Commit：`6ce8e25`
-- 基线范围：Day 1～7 已提交工程、Day 8 静态复核与 Day 9 运行复验
-- 当前阶段：阶段 0，Day 9
+- 基线范围：Day 1～7 已提交工程、Day 8 静态复核、Day 9 运行复验与 Day 10 当前架构反查
+- 当前阶段：阶段 0，Day 10
 - Day 8 状态：`ReadyForReview`
 - Day 9 状态：`ReadyForReview`
+- Day 10 状态：`ReadyForReview`
 
 本文是“当前仓库有什么”的事实源，不描述愿景，也不把后续计划写成现状。
 Day 9 已在同一提交上重新执行本地、PostgreSQL、Terraform 和真实 Azure
 验证。运行结论见 `docs/phase-0/baseline-verification-summary.md`，原始输出
-保存在被 Git 忽略的 `tmp/phase-0-evidence/day09/`。
+保存在被 Git 忽略的 `tmp/phase-0-evidence/day09/`。Day 10 当前组件、部署、
+数据流和信任边界见 `docs/phase-0/current-architecture.md`。
 
 ## 2. 状态词典
 
@@ -123,10 +125,13 @@ Day 9 已在同一提交上重新执行本地、PostgreSQL、Terraform 和真实
 - Day 8 本地审查证据：`tmp/phase-0-evidence/`
 - Day 9 永久总结：`docs/phase-0/baseline-verification-summary.md`
 - Day 9 原始证据：`tmp/phase-0-evidence/day09/`
+- Day 10 当前架构：`docs/phase-0/current-architecture.md`
+- Day 10 本地审查证据：`tmp/phase-0-evidence/day10/`
 
-## 6. Day 10 交接条件
+## 6. Day 11 交接条件
 
-Day 9 的自动与手工验收已完成，清理审计通过，没有产品缺陷或外部阻断。人工
-review 确认本表和 `baseline-verification-summary.md` 后，可以进入 Day 10，
-绘制当前组件、部署、数据流和信任边界；不得把本次开发身份 E2E 等同于生产身份
-或 staging 证据。
+Day 9 的自动与手工验收已完成，清理审计通过，没有产品缺陷或外部阻断。Day 10
+已将当前组件、部署、数据流、身份来源和信任边界映射到真实文件。人工 review
+确认本表、运行总结与 `current-architecture.md` 后，可以进入 Day 11 风险登记
+和阶段 0 gate；不得把本地开发身份、local state 或 sample fallback 等同于
+生产能力。

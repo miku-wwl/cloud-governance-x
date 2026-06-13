@@ -25,7 +25,8 @@ Web API、后台 Worker、Clean Architecture 基础分层、PostgreSQL 本地环
 
 - [`docs/phase-0/current-capability-baseline.md`](docs/phase-0/current-capability-baseline.md)；
 - [`docs/phase-0/production-gap-register.md`](docs/phase-0/production-gap-register.md)；
-- [`docs/phase-0/baseline-verification-summary.md`](docs/phase-0/baseline-verification-summary.md)。
+- [`docs/phase-0/baseline-verification-summary.md`](docs/phase-0/baseline-verification-summary.md)；
+- [`docs/phase-0/current-architecture.md`](docs/phase-0/current-architecture.md)。
 
 ## 项目结构
 
@@ -321,4 +322,5 @@ Invoke-RestMethod `
 脚本使用独立的 `finops_day7` 数据库，由 Cost Worker 写入 Azure Cost
 Management 返回的数据；当外部成本数据不可用时，当前默认配置会写入明确标记
 的样例数据。随后脚本通过管理 API 重跑验证幂等性，并交叉核对日趋势、服务和
-资源组 API 总额。Day 9 将在关闭 fallback 的条件下重新验证真实成本链路。
+资源组 API 总额。Day 9 已在关闭 fallback 的条件下取得 28 行真实成本，结论见
+[`docs/phase-0/baseline-verification-summary.md`](docs/phase-0/baseline-verification-summary.md)。
