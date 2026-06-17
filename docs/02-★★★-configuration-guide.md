@@ -199,6 +199,9 @@ Worker 的数据库连接超时时间更长，因为一次性 ETL 任务可能�
 - `FinOps.Infrastructure`：使用 EF Core、PostgreSQL 和 Azure SDK 实现
   Application 中定义的接口。
 - `FinOps.Api`：HTTP 可执行宿主，负责组合 Application 和 Infrastructure。
+  Day 15 起，HTTP endpoint registration 位于 `src/FinOps.Api/Endpoints/`，
+  按 Health、Cloud、Resources、Costs 和 ETL 拆分；`Program.cs` 只保留宿主
+  启动、服务装配、migration 和模块挂载。
 - `FinOps.Worker`：一次性执行资源或成本 ETL 的宿主。
 - `FinOps.Tests`：xUnit 自动化测试和可选覆盖率采集。
 
