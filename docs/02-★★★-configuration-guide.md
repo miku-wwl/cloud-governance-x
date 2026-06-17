@@ -34,6 +34,18 @@ API 和 Worker 原来的 `appsettings.Development.json` 已经删除，因为其
 
 ## 根目录配置
 
+### 静态门禁入口
+
+阶段 1 的本地静态门禁入口是：
+
+```powershell
+./scripts/Test-RepositoryStatic.ps1
+```
+
+该脚本由 Day 13 引入，用于把 JSON、YAML、XML、PowerShell、Markdown、
+Terraform、格式、依赖、secret、垃圾文件、build 和 test 检查串成一个可重复
+入口。任何阻断性子检查失败时，脚本返回非零退出码。
+
 ### `global.json`
 
 - `sdk.version`：把 .NET SDK `10.0.300` 设为本仓库的基线版本。

@@ -94,6 +94,15 @@ dotnet build --no-restore
 dotnet test --no-build
 ```
 
+阶段 1 开始后，本地静态门禁统一入口为：
+
+```powershell
+./scripts/Test-RepositoryStatic.ps1
+```
+
+该脚本会检查格式、解析配置文件、Terraform 静态验证、依赖可见性、secret
+模式、垃圾文件、build 和 test。Day 19 的 GitHub Actions 会复用同一入口。
+
 启动 API：
 
 ```powershell
