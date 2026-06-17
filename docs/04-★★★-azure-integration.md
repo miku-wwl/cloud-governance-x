@@ -95,6 +95,8 @@ service returns dynamic column and row arrays.
 The implementation uses API version `2025-03-01`. If cost data is empty or
 unavailable, explicitly marked sample rows keep the POC demonstrable.
 `AzureCost:ForceSampleData` provides deterministic end-to-end verification.
+The API version is part of the implementation contract and must be rechecked
+when changing Cost Management dimensions, billing scopes, or account types.
 
 ## Day 7 Cost ETL
 
@@ -129,8 +131,9 @@ Resources
 ```
 
 The provider requests object-array results in pages of 1,000 records and follows
-the Resource Graph skip token until all pages are read. Azure SDK response types
-remain inside Infrastructure; Application receives normalized
+the Resource Graph skip token until all pages are read. This is a full-scan
+development implementation, not a checkpointed production crawler. Azure SDK
+response types remain inside Infrastructure; Application receives normalized
 `CloudResourceDto` records.
 
 The Worker is a one-shot ETL host for Day 4:

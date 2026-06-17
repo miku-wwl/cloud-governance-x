@@ -51,6 +51,22 @@ Terraform lock SHA-256：
 执行者：Codex，运行环境为用户当前 Windows 开发机。原始输出位于被 Git 忽略的
 `tmp/phase-0-evidence/`，不作为唯一永久证据。
 
+### 3.1 2026-06-18 文档复核补充
+
+本次复核没有重新执行真实 Azure E2E，也没有升级依赖或 Terraform lock file；
+只刷新会随时间变化的工具和依赖事实：
+
+| 命令/检查 | 结果摘要 | Gate 影响 |
+| --- | --- | --- |
+| `dotnet --version` | `10.0.300`，符合 `global.json` | 无变化 |
+| `dotnet list package --vulnerable --include-transitive` | 当前 NuGet 源未报告漏洞 | 无变化；仍需阶段 14 SCA/SBOM |
+| `dotnet list package --deprecated` | `xunit 2.9.3` 仍为 Legacy | RISK-0023 保持 Open |
+| `dotnet list package --outdated` | EF Core Design、Hosting、Test SDK、xUnit runner、coverlet 有更新 | 新增 RISK-0027 |
+| `terraform -chdir=terraform/azure version` | 本机 CLI `1.14.0`，提示 `1.15.6` 可用；Provider lock 仍为 azurerm 4.77.0、random 3.9.0 | 新增 RISK-0027；不自动升级 |
+
+阶段结论仍为 `Validation`。复核没有发现新的产品测试失败或疑似真实 secret，
+但进一步确认阶段 1 必须建立固定的依赖和工具链门禁。
+
 ## 4. Secret 检查结论
 
 本机没有已批准的 `gitleaks`，因此没有运行自动 secret scanner，也没有声称 Git
@@ -96,11 +112,11 @@ PostgreSQL Compose 容器和 named volume 是正常本地开发依赖，不属�
 | Day 9 清理 | Passed | Azure/DB/端口/state 均清理 |
 | Day 10 图与代码一致 | PassedMechanical | 9 图渲染、代码反查和用户要求继续 Day 11 |
 | trust boundary 控制与缺口 | PassedMechanical | 当前架构 §12 |
-| 风险 Owner/严重度/目标阶段 | PassedMechanical / ReviewPending | 26 条风险 |
+| 风险 Owner/严重度/目标阶段 | PassedMechanical / ReviewPending | 27 条风险 |
 | 数据分类覆盖 | PassedMechanical / ReviewPending | 成本、资源、身份、凭据、日志、state、导出 |
 | 依赖和供应链登记 | PassedWithGaps | 直接依赖完成；正式 scanner 延后 |
 | secret 检查真实结论 | GapRegistered | 无疑似 secret；无 gitleaks/历史自动扫描 |
-| ADR 覆盖阶段 1～4 | PassedMechanical / ReviewPending | ADR-0001～0009 |
+| ADR 覆盖阶段 1～4 | PassedMechanical / ReviewPending | ADR-0001/0002/0018 已形成候选决策；ADR-0003～0009 保持队列 |
 | Git 无运行产物 | Passed | state/plan/tmp 未跟踪 |
 | 无未知 Azure 测试资源 | Passed | owner 标签查询 `[]` |
 | 无测试 DB/端口 | Passed | 无 `finops_day*`，测试端口无监听 |
@@ -119,8 +135,8 @@ PostgreSQL Compose 容器和 named volume 是正常本地开发依赖，不属�
 1. Critical 风险的 Owner 与目标阶段是否合理；
 2. 本地开发口令能否继续作为公开示例；
 3. 数据分类、retention 待决项是否完整；
-4. xUnit Legacy、容器 digest 和 scanner 缺口是否可带入阶段 1；
-5. ADR-0001/0002 是否足以作为阶段 1 起点；
+4. xUnit Legacy、依赖漂移、容器 digest 和 scanner 缺口是否可带入阶段 1；
+5. ADR-0001/0002/0018 的候选决策是否可接受为阶段 1 起点；
 6. 是否明确接受“阶段 0 完成不等于可生产部署”。
 
 只有 reviewer 明确批准后，阶段状态才能改为 `Complete` 并允许开始 Day 12。

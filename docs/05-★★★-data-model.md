@@ -42,7 +42,11 @@ dotnet tool run dotnet-ef migrations list `
   --startup-project src/FinOps.Infrastructure
 ```
 
-The Worker applies pending migrations before resource synchronization.
+The API and Worker currently apply pending migrations during startup. The Worker
+does this before either resource or cost synchronization. This startup migration
+pattern is convenient for the local baseline, but it is explicitly listed as a
+production gap because production should use a separate, controlled migration
+step.
 
 ## `etl_job_runs`
 

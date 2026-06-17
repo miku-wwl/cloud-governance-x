@@ -9,7 +9,8 @@ Azure Resource Graph 资源清单同步、正式 ETL 执行追踪和 Azure Cost
 Management 成本 ETL 与查询 API，包含
 Web API、后台 Worker、Clean Architecture 基础分层、PostgreSQL 本地环境、
 健康检查、可重复验证的 Azure 资源生命周期，以及通过
-`DefaultAzureCredential` 读取 Azure 订阅和资源清单并写入 PostgreSQL 的能力。
+`DefaultAzureCredential` 读取 Azure 订阅、资源清单和成本数据并写入
+PostgreSQL 的能力。
 
 项目指导文件分为三层：
 
@@ -64,14 +65,15 @@ Api/Worker -> Infrastructure -> Application -> Domain
 
 ## 环境要求
 
-- .NET SDK 10.0.300 或兼容的 10.0 SDK
+- .NET SDK 10.0.300 或兼容的 .NET 10 SDK
 - Docker Desktop / Docker Compose
 - Azure CLI
 - Terraform 1.9+
 
 根目录的 `global.json` 将 SDK 基线固定为 .NET 10.0.300，并允许使用更新的
 .NET 10 feature band。它用于避免开发机和 CI 意外选择 .NET 9 或未来的
-.NET 11，不是构建产物。
+.NET 11，不是构建产物。.NET 10 是当前 LTS 线；补丁和工具升级需要通过阶段
+1/14 的依赖门禁统一处理。
 
 ## 本地启动
 
@@ -103,7 +105,8 @@ dotnet run --project src/FinOps.Api --urls http://localhost:5000
 dotnet run --project src/FinOps.Worker
 ```
 
-Worker 会应用 EF Core migration、同步资源、输出处理数量后退出。
+Worker 会应用 EF Core migration，默认同步资源、输出处理数量后退出。设置
+`Etl__Job=Costs` 时执行成本同步。
 
 ## 健康检查
 
@@ -120,7 +123,8 @@ Invoke-WebRequest http://localhost:5000/health
 ```
 
 PostgreSQL readiness 会使用 Npgsql 建立真实数据库连接并执行 `SELECT 1`。
-资源数据通过 EF Core migration 写入 `cloud_resources`。
+EF Core migration 负责创建表结构；资源和成本数据由同步服务写入
+`cloud_resources` 与 `cloud_cost_daily`。
 
 ## 配置
 

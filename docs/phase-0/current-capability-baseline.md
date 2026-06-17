@@ -17,6 +17,11 @@ Day 9 已在同一提交上重新执行本地、PostgreSQL、Terraform 和真实
 保存在被 Git 忽略的 `tmp/phase-0-evidence/day09/`。Day 10 当前组件、部署、
 数据流和信任边界见 `docs/phase-0/current-architecture.md`。
 
+2026 年 6 月 18 日执行过一次文档与依赖事实复核：未重新跑真实 Azure E2E，
+未改变 Day 9 基线结论；新增的事实是当前 NuGet 源未报告已知漏洞，但部分
+NuGet 包和 Terraform CLI 已有可用更新，已登记为 RISK-0027。阶段状态仍为
+`Validation`，等待阶段 0 人工 gate。
+
 ## 2. 状态词典
 
 | 状态 | 定义 |

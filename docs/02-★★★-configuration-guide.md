@@ -54,11 +54,20 @@ API 和 Worker 原来的 `appsettings.Development.json` 已经删除，因为其
 执行 `dotnet tool restore` 会按照该清单安装工具。工具二进制保存在仓库之外，
 清单本身需要提交到 Git。
 
+2026 年 6 月 18 日复核时，`dotnet list package --outdated` 已报告部分
+.NET 10 patch 或测试工具可升级。当前文档记录的是仓库基线，不表示这些依赖
+永远保持不变；阶段 1/14 需要把依赖升级、回归测试和供应链扫描纳入固定门禁。
+
 ### `compose.yaml`
 
 该文件定义 API、Worker、数据库迁移和端到端测试共同使用的本地 PostgreSQL。
 文件中的中文注释解释了镜像版本、变量默认值、端口映射、健康检查、重启策略
 和命名卷。
+
+`postgres:18-alpine` 的官方 Docker 镜像在 PostgreSQL 18 起使用版本化
+`PGDATA` 路径；当前 Compose 把命名卷挂载到 `/var/lib/postgresql`，覆盖的是
+官方镜像声明的父级数据卷。不要在没有 dump/restore 或升级演练的情况下把同一
+本地卷改挂到其他 PostgreSQL 主版本。
 
 命名卷会在普通的 `docker compose down` 后保留数据。只有执行：
 

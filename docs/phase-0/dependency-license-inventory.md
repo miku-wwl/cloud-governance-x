@@ -88,9 +88,38 @@ provenance、漏洞扫描、基础镜像支持周期和重建策略。
 
 ## 8. 供应链结论
 
+### 8.1 2026-06-18 复核补充
+
+本次文档复核重新执行了依赖和工具状态检查，但未升级任何包、Provider、镜像或
+lock file：
+
+| 检查 | 当前结果 | 处理结论 |
+| --- | --- | --- |
+| `dotnet --version` | `10.0.300` | 符合 `global.json` |
+| `dotnet list package --vulnerable --include-transitive` | 未报告已知漏洞 | 仍只是当前 NuGet advisory 快照 |
+| `dotnet list package --deprecated` | `xunit 2.9.3` 仍标记 Legacy | 继续由 RISK-0023 跟踪 |
+| `dotnet list package --outdated` | EF Core Design、Hosting、Test SDK、xUnit runner、coverlet 有可用更新 | 新增 RISK-0027 跟踪依赖漂移 |
+| `terraform -chdir=terraform/azure version` | 本机 CLI `1.14.0`，提示 `1.15.6` 可用 | 仅登记升级候选，不自动改 state 或 lock |
+
+可用更新明细：
+
+| 项目 | 包/工具 | 当前 | 可用 |
+| --- | --- | --- | --- |
+| `FinOps.Infrastructure` | Microsoft.EntityFrameworkCore.Design | 10.0.4 | 10.0.9 |
+| `FinOps.Worker` | Microsoft.Extensions.Hosting | 10.0.8 | 10.0.9 |
+| `FinOps.Tests` | coverlet.collector | 6.0.4 | 10.0.1 |
+| `FinOps.Tests` | Microsoft.NET.Test.Sdk | 17.14.1 | 18.6.0 |
+| `FinOps.Tests` | xunit.runner.visualstudio | 3.1.4 | 3.1.5 |
+| local toolchain | Terraform CLI | 1.14.0 | 1.15.6 |
+
+这些结果不会改变 Day 9 运行基线是否通过，但说明阶段 1 应建立可重复的
+outdated/deprecated/vulnerable 检查；阶段 14 再完成组织认可的 SBOM、license
+和供应链签名门禁。
+
 1. 直接 NuGet、关键传递依赖、Terraform Provider、CLI 工具和 PostgreSQL 镜像
    已进入可追踪清单。
 2. NuGet 当前未报告已知漏洞；`xunit 2.9.3` 已弃用/Legacy。
-3. 未运行正式 license scanner、SBOM、容器漏洞扫描、签名或 provenance 验证。
-4. 阶段 1 建立可重复 dependency/secret 门禁；阶段 14 完成组织认可的许可证、
+3. 当前存在依赖和 Terraform CLI 版本漂移，必须通过受控升级和回归验证处理。
+4. 未运行正式 license scanner、SBOM、容器漏洞扫描、签名或 provenance 验证。
+5. 阶段 1 建立可重复 dependency/secret 门禁；阶段 14 完成组织认可的许可证、
    SBOM、SCA、镜像和 IaC 供应链总门禁。

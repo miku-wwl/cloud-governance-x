@@ -127,7 +127,8 @@ tmp/day11-closeout-report.md
 - Cost fallback 捕获范围；
 - 无数据 retention；
 - 日志可能包含外部错误详情；
-- 无 dependency/secret 自动门禁。
+- 无 dependency/secret 自动门禁；
+- 依赖和工具链版本漂移没有固定检查与升级流程。
 
 ### 3.4 Owner 规则
 
@@ -231,6 +232,9 @@ rg -n -i `
 
 ```powershell
 dotnet list FinOpsPlatform.slnx package --include-transitive
+dotnet list FinOpsPlatform.slnx package --vulnerable --include-transitive
+dotnet list FinOpsPlatform.slnx package --deprecated
+dotnet list FinOpsPlatform.slnx package --outdated
 ```
 
 若当前 SDK 支持 JSON：
@@ -307,7 +311,7 @@ postgres:18-alpine
 ```powershell
 dotnet --version
 dotnet tool list --local
-terraform version
+terraform -chdir=terraform/azure version
 az version
 docker version
 $PSVersionTable
@@ -399,7 +403,9 @@ git diff --check
 
 ## 8. ADR Backlog
 
-Day 11 只建立决策队列，不提前写完所有 ADR。
+Day 11 默认只建立决策队列，不提前写完所有 ADR。若阶段 1 开工前需要更明确
+输入，Agent 可以先为阶段 1 阻断项形成候选 ADR；候选 ADR 仍需项目 Owner
+确认后才能视为正式 `Accepted`。
 
 每项至少包含：
 
@@ -411,7 +417,7 @@ Day 11 只建立决策队列，不提前写完所有 ADR。
 | 备选方向 | 当前已知选项 |
 | 决策期限 | 必须在哪个 Day/阶段前完成 |
 | Owner | 负责角色 |
-| 状态 | Proposed / InReview / Accepted / Superseded |
+| 状态 | Proposed / CandidateDecision / InReview / Accepted / Superseded |
 | 相关风险 | Risk ID |
 
 初始 backlog 建议：
@@ -432,6 +438,11 @@ Day 11 只建立决策队列，不提前写完所有 ADR。
 | ADR-0012 | Terraform remote state 与环境隔离 | Release A/阶段 12 |
 | ADR-0013 | Service Bus topology、outbox/inbox | 阶段 10 |
 | ADR-0014 | 备份、PITR、RPO/RTO 与 DR | Release A/阶段 15 |
+| ADR-0018 | 依赖和工具链版本治理 | 阶段 1/14 |
+
+阶段 1 开工前，ADR-0001、ADR-0002 和依赖工具链治理 ADR 必须至少达到
+`CandidateDecision`，并明确可重复静态验证入口。是否提升为 `Accepted` 由
+项目 Owner 在阶段 0/阶段 1 gate 中确认。
 
 ## 9. 阶段 0 证据索引
 

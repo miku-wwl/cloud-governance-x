@@ -40,6 +40,7 @@
 | RISK-0024 | PostgreSQL 镜像未在 Compose 固定 digest | Security/Delivery | `postgres:18-alpine`，本机解析到一个 digest | tag 后续指向新镜像 | 本地环境不可完全复现，供应链变化未审查 | Medium | Medium | Medium | Platform SRE | Mitigate | 阶段 12、14 | 生产镜像 digest、签名和漏洞扫描门禁 | Open | N/A |
 | RISK-0025 | 单 PostgreSQL 实例是数据与审计单点 | Reliability | Compose 单容器单卷 | PostgreSQL 停止或磁盘损坏 | API/ETL 不可用，Failed 状态也可能无法保存 | Medium | Critical | Critical | Platform SRE | Mitigate | Release A、阶段 12、15 | HA、故障转移、备份恢复和应用降级演练 | Open | N/A |
 | RISK-0026 | API 错误契约与限流未生产化 | Security/Reliability | Minimal API 集中，失败可为通用 500；GAP-016 | 参数错误、Provider 错误或高频调用 | 客户端误判、内部信息暴露、资源耗尽 | High | Medium | High | Application Owner | Mitigate | 阶段 8 | 稳定 Problem Details、错误码、分页和限流测试 | Open | N/A |
+| RISK-0027 | 依赖和工具链版本漂移未受控 | Delivery/Security | 2026-06-18 复核发现部分 NuGet 包和 Terraform CLI 有可用更新 | 长期不升级、临时手工升级或 CI 与本机版本不一致 | 漏掉安全/兼容修复，或升级时引入未经验证的行为变化 | High | Medium | High | Application Owner / Platform SRE | Mitigate | 阶段 1、14 | 固定 dependency outdated/deprecated/vulnerable 检查、升级 ADR、回归测试和 SBOM/SCA 门禁 | Open | N/A |
 
 ## 3. 当前最高风险
 
