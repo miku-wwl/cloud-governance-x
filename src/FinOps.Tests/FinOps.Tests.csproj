@@ -19,9 +19,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- 验证应用行为以及基础设施层的映射和持久化逻辑。 -->
+    <!-- 验证应用行为、基础设施实现和架构边界。 -->
+    <ProjectReference Include="..\FinOps.Api\FinOps.Api.csproj" />
     <ProjectReference Include="..\FinOps.Application\FinOps.Application.csproj" />
     <ProjectReference Include="..\FinOps.Infrastructure\FinOps.Infrastructure.csproj" />
+    <ProjectReference Include="..\FinOps.Worker\FinOps.Worker.csproj" />
   </ItemGroup>
 
 </Project>

@@ -140,6 +140,7 @@ Invoke-StaticStep "Git tracked garbage files" {
 Invoke-StaticStep "Secret pattern scan" {
     $secretNamePattern = "(?i)(?:password|client[_-]?secret|access[_-]?key|private[_-]?key|connectionstring|connection[_-]?string|bearer[_-]?token|refresh[_-]?token|id[_-]?token|api[_-]?token|github[_-]?token|pat)"
     $assignmentPattern = "$secretNamePattern\s*[:=]\s*['""]?([^'"",;\s]+)"
+    $privateKeyPattern = "-----BEGIN .*PRIVATE " + "KEY-----"
     $allowedValues = @(
         "",
         "false",
@@ -171,7 +172,7 @@ Invoke-StaticStep "Secret pattern scan" {
         foreach ($line in [IO.File]::ReadLines($fullPath)) {
             $lineNumber++
 
-            if ($line -match "-----BEGIN .*PRIVATE KEY-----") {
+            if ($line -match $privateKeyPattern) {
                 $findings.Add("${file}:${lineNumber}: private key block marker")
                 continue
             }

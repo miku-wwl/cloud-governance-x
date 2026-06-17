@@ -103,6 +103,12 @@ dotnet test --no-build
 该脚本会检查格式、解析配置文件、Terraform 静态验证、依赖可见性、secret
 模式、垃圾文件、build 和 test。Day 19 的 GitHub Actions 会复用同一入口。
 
+架构边界由 `src/FinOps.Tests/Architecture/` 下的测试执行，规则来源于
+[`ADR-0001`](docs/adr/ADR-0001-module-boundaries-and-architecture-tests.md)：
+Domain 不反向依赖 Application/Infrastructure/宿主或云 SDK，Application 不依赖
+Infrastructure/宿主/云 SDK，Azure 和 PostgreSQL 实现包只允许出现在
+Infrastructure。
+
 启动 API：
 
 ```powershell
