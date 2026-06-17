@@ -1,5 +1,4 @@
 using FinOps.Api.Endpoints;
-using FinOps.Application.Cloud;
 using FinOps.Infrastructure;
 using FinOps.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -7,11 +6,8 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddApplicationUseCases();
 builder.Services.AddInfrastructure(builder.Configuration);
-builder.Services.AddScoped<ICloudResourceSyncService, CloudResourceSyncService>();
-builder.Services.AddScoped<ICloudCostSyncService, CloudCostSyncService>();
-builder.Services.AddScoped<ICloudCostQueryService, CloudCostQueryService>();
-builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddProblemDetails();
 
 builder.Services
