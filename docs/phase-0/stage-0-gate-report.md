@@ -3,16 +3,23 @@
 ## 1. 当前结论
 
 - 执行日期：2026 年 6 月 14 日
+- 签发日期：2026 年 6 月 18 日
+- Reviewer：Weilai Wang
 - 基线分支：`main`
 - Day 10 Commit：`d3d760e`
-- 阶段状态：`Validation`
+- 阶段状态：`Complete`
 - 自动/机械门禁：通过，存在已登记工具缺口
-- 最终人工门禁：等待项目 Owner review
-- 是否允许开始 Day 12：**暂不允许**
+- 最终人工门禁：Owner review 通过
+- 是否允许开始 Day 12 / Phase 1：**允许**
 
 本报告不使用“基本通过”。当前没有产品测试失败、未知 Azure 资源、测试数据库、
-端口、Terraform 运行产物或疑似真实 secret 阻断；保持 `Validation` 的唯一 gate
-原因是 Day 11 风险、分类、供应链与 ADR 材料尚未由人工 reviewer 明确批准。
+端口、Terraform 运行产物或疑似真实 secret 阻断。Reviewer 已确认 Phase 0 的
+能力事实、运行证据、当前架构、风险登记、数据分类、依赖供应链和 ADR backlog，
+并明确理解 Phase 0 完成不代表系统可投入生产。
+
+允许带入 Phase 1 的已登记风险包括 RISK-0003、RISK-0013、RISK-0022、
+RISK-0023、RISK-0027，以及所有仍为 Open 的生产化风险。Phase 1 必须优先
+处理 ADR-0001、ADR-0002、ADR-0018 和统一静态门禁。
 
 ## 2. 证据索引
 
@@ -23,13 +30,13 @@
 | EVD-0003 | 六个 Azure E2E | Passed | `baseline-verification-summary.md` | Day 9 E2E logs | `6ce8e25` |
 | EVD-0004 | 严格真实成本 | Passed | `baseline-verification-summary.md` | Day 9 strict cost log | `6ce8e25` |
 | EVD-0005 | Day 9 清理 | Passed | `baseline-verification-summary.md` | Day 9 cleanup output | `3c5dbd4` |
-| EVD-0006 | 当前架构与 trust boundary | PassedMechanical / ReviewPending | `current-architecture.md` | `tmp/phase-0-evidence/day10/` | `d3d760e` |
-| EVD-0007 | 风险登记 | PassedMechanical / ReviewPending | `risk-register.md` | Day 11 review notes | `d3d760e` 后工作树 |
-| EVD-0008 | 数据分类 | PassedMechanical / ReviewPending | `data-classification.md` | Day 11 review notes | `d3d760e` 后工作树 |
+| EVD-0006 | 当前架构与 trust boundary | PassedByOwner | `current-architecture.md` | `tmp/phase-0-evidence/day10/` | `d3d760e` |
+| EVD-0007 | 风险登记 | PassedByOwner | `risk-register.md` | Owner review 2026-06-18 | `d3d760e` 后工作树 |
+| EVD-0008 | 数据分类 | PassedByOwner | `data-classification.md` | Owner review 2026-06-18 | `d3d760e` 后工作树 |
 | EVD-0009 | 依赖许可证 | PassedWithGaps | `dependency-license-inventory.md` | Day 11 package JSON/lock | `d3d760e` 后工作树 |
 | EVD-0010 | secret 检查 | GapRegistered | 本报告 §4 | Day 11 grep output | `d3d760e` 后工作树 |
 | EVD-0011 | Azure/DB/端口/仓库遗留 | Passed | 本报告 §5 | Day 11 audit output | `d3d760e` 后工作树 |
-| EVD-0012 | ADR backlog | PassedMechanical / ReviewPending | `adr-backlog.md` | Day 11 review notes | `d3d760e` 后工作树 |
+| EVD-0012 | ADR backlog | PassedByOwner | `adr-backlog.md` | Owner review 2026-06-18 | `d3d760e` 后工作树 |
 
 Day 11 NuGet JSON SHA-256：
 `ADE91A0176CF52CCAF75DE841D317F84377D6B03B6E8F658C624AC74284AF239`。
@@ -64,8 +71,9 @@ Terraform lock SHA-256：
 | `dotnet list package --outdated` | EF Core Design、Hosting、Test SDK、xUnit runner、coverlet 有更新 | 新增 RISK-0027 |
 | `terraform -chdir=terraform/azure version` | 本机 CLI `1.14.0`，提示 `1.15.6` 可用；Provider lock 仍为 azurerm 4.77.0、random 3.9.0 | 新增 RISK-0027；不自动升级 |
 
-阶段结论仍为 `Validation`。复核没有发现新的产品测试失败或疑似真实 secret，
-但进一步确认阶段 1 必须建立固定的依赖和工具链门禁。
+阶段结论在 2026-06-18 Owner review 后更新为 `Complete`。复核没有发现新的
+产品测试失败或疑似真实 secret，但进一步确认阶段 1 必须建立固定的依赖和
+工具链门禁。
 
 ## 4. Secret 检查结论
 
@@ -112,33 +120,30 @@ PostgreSQL Compose 容器和 named volume 是正常本地开发依赖，不属�
 | Day 9 清理 | Passed | Azure/DB/端口/state 均清理 |
 | Day 10 图与代码一致 | PassedMechanical | 9 图渲染、代码反查和用户要求继续 Day 11 |
 | trust boundary 控制与缺口 | PassedMechanical | 当前架构 §12 |
-| 风险 Owner/严重度/目标阶段 | PassedMechanical / ReviewPending | 27 条风险 |
-| 数据分类覆盖 | PassedMechanical / ReviewPending | 成本、资源、身份、凭据、日志、state、导出 |
+| 风险 Owner/严重度/目标阶段 | PassedByOwner | 27 条风险；Open 风险允许带入 Phase 1 |
+| 数据分类覆盖 | PassedByOwner | 成本、资源、身份、凭据、日志、state、导出 |
 | 依赖和供应链登记 | PassedWithGaps | 直接依赖完成；正式 scanner 延后 |
 | secret 检查真实结论 | GapRegistered | 无疑似 secret；无 gitleaks/历史自动扫描 |
-| ADR 覆盖阶段 1～4 | PassedMechanical / ReviewPending | ADR-0001/0002/0018 已形成候选决策；ADR-0003～0009 保持队列 |
+| ADR 覆盖阶段 1～4 | PassedByOwner | ADR-0001/0002/0018 作为 Phase 1 起点；ADR-0003～0009 保持队列 |
 | Git 无运行产物 | Passed | state/plan/tmp 未跟踪 |
 | 无未知 Azure 测试资源 | Passed | owner 标签查询 `[]` |
 | 无测试 DB/端口 | Passed | 无 `finops_day*`，测试端口无监听 |
-| Day 11 人工 review | Pending | 需要项目 Owner 明确结论 |
+| Day 11 人工 review | Passed | Reviewer Weilai Wang，2026-06-18，最终状态 Complete |
 
 `PassedByProgression` 表示用户通过“提交并开始下一 Day”的明确动作接受前一 Day
 继续施工，不等于独立安全审计签字。
 
 ## 7. 阶段结论与下一步边界
 
-当前有效结论是 `Validation`，不是 `Complete` 或 `Blocked`。没有外部阻断，
-但 Day 11 人工 review 是阶段 0 的强制门禁。
+当前有效结论是 `Complete`。Reviewer Weilai Wang 于 2026-06-18 明确签发：
 
-人工 reviewer 应重点确认：
+- 最终状态：`Complete`
+- 是否允许进入 Phase 1：`Yes`
+- 阻断项：无
+- 允许带入 Phase 1 的已登记风险：RISK-0003、RISK-0013、RISK-0022、
+  RISK-0023、RISK-0027，以及所有仍为 Open 的生产化风险
+- 必须在 Phase 1 优先处理：ADR-0001、ADR-0002、ADR-0018，以及统一静态门禁
 
-1. Critical 风险的 Owner 与目标阶段是否合理；
-2. 本地开发口令能否继续作为公开示例；
-3. 数据分类、retention 待决项是否完整；
-4. xUnit Legacy、依赖漂移、容器 digest 和 scanner 缺口是否可带入阶段 1；
-5. ADR-0001/0002/0018 的候选决策是否可接受为阶段 1 起点；
-6. 是否明确接受“阶段 0 完成不等于可生产部署”。
-
-只有 reviewer 明确批准后，阶段状态才能改为 `Complete` 并允许开始 Day 12。
-若 reviewer 不批准，应保持 `Validation` 并把具体异议加入风险或 ADR，不删除
-失败证据。
+Phase 0 完成表示当前能力、风险、证据和阶段 1 输入已经完成治理闭环；它不表示
+系统可投入生产，也不关闭仍为 Open 的生产化风险。Phase 1 可以开始 Day 12，
+但必须优先处理上述 ADR 和统一静态门禁。

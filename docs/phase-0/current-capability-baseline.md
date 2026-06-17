@@ -5,11 +5,11 @@
 - 基线日期：2026 年 6 月 14 日
 - 运行复验 Commit：`6ce8e25`
 - 基线范围：Day 1～7 工程与 Day 8～11 阶段 0 审计、验证、架构及治理材料
-- 当前阶段：阶段 0，Day 11 `Validation`
+- 当前阶段：阶段 0，Day 11 `Complete`
 - Day 8 状态：`ReadyForReview`
 - Day 9 状态：`ReadyForReview`
 - Day 10 状态：`ReadyForReview`
-- Day 11 状态：`Validation`
+- Day 11 状态：`Complete`
 
 本文是“当前仓库有什么”的事实源，不描述愿景，也不把后续计划写成现状。
 Day 9 已在同一提交上重新执行本地、PostgreSQL、Terraform 和真实 Azure
@@ -20,7 +20,8 @@ Day 9 已在同一提交上重新执行本地、PostgreSQL、Terraform 和真实
 2026 年 6 月 18 日执行过一次文档与依赖事实复核：未重新跑真实 Azure E2E，
 未改变 Day 9 基线结论；新增的事实是当前 NuGet 源未报告已知漏洞，但部分
 NuGet 包和 Terraform CLI 已有可用更新，已登记为 RISK-0027。阶段状态仍为
-`Validation`，等待阶段 0 人工 gate。
+`Complete`；Reviewer Weilai Wang 已于 2026 年 6 月 18 日签发阶段 0 gate，
+允许进入 Phase 1。
 
 ## 2. 状态词典
 
@@ -139,7 +140,11 @@ NuGet 包和 Terraform CLI 已有可用更新，已登记为 RISK-0027。阶段�
 ## 6. 阶段 0 Gate
 
 Day 11 永久治理材料和机械门禁已经形成，当前没有产品测试失败、未知 Azure
-资源、测试数据库、端口或 Terraform 运行产物阻断。阶段状态保持 `Validation`，
-等待人工 review 风险 Owner、数据分类、许可证未知项、ADR 和 secret scanner
-缺口。只有 `stage-0-gate-report.md` 经人工明确批准后，阶段 0 才能标记
-`Complete` 并进入 Day 12；阶段完成仍不代表系统可部署到生产。
+资源、测试数据库、端口或 Terraform 运行产物阻断。Reviewer Weilai Wang 已于
+2026 年 6 月 18 日签发 `stage-0-gate-report.md`，最终状态为 `Complete`，允许
+进入 Phase 1 / Day 12。
+
+允许带入 Phase 1 的已登记风险包括 RISK-0003、RISK-0013、RISK-0022、
+RISK-0023、RISK-0027，以及所有仍为 Open 的生产化风险。Phase 1 必须优先处理
+ADR-0001、ADR-0002、ADR-0018 和统一静态门禁。阶段完成仍不代表系统可部署到
+生产。
