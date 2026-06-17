@@ -7,6 +7,12 @@
     <Nullable>enable</Nullable>
     <!-- 自动生成常用的 System 和 Microsoft 命名空间引用。 -->
     <ImplicitUsings>enable</ImplicitUsings>
+    <!-- 启用 SDK 内置 .NET 分析器，作为所有项目的统一静态分析基线。 -->
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <!-- 使用当前 SDK 提供的最新分析规则集；规则严重级别由 SDK 和 .editorconfig 共同决定。 -->
+    <AnalysisLevel>latest</AnalysisLevel>
+    <!-- 让 .editorconfig 中提升为 warning 的代码样式诊断参与构建。 -->
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <!-- 将编译警告视为错误，避免问题长期积累。 -->
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>

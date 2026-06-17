@@ -1,6 +1,6 @@
+using System.Text.Json;
 using FinOps.Application.Cloud;
 using FinOps.Application.Etl;
-using System.Text.Json;
 
 namespace FinOps.Tests.Application;
 

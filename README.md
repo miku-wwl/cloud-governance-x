@@ -89,6 +89,7 @@ docker compose ps
 ```powershell
 dotnet tool restore
 dotnet restore
+dotnet format --verify-no-changes
 dotnet build --no-restore
 dotnet test --no-build
 ```

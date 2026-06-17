@@ -103,9 +103,27 @@ MSBuild 会自动把该文件导入当前目录下的所有项目：
 - `TargetFramework`：所有项目统一编译为 .NET 10。
 - `Nullable`：启用可空引用类型检查。
 - `ImplicitUsings`：自动导入常用命名空间。
+- `EnableNETAnalyzers`：启用 SDK 内置 .NET 分析器。
+- `AnalysisLevel`：使用当前 SDK 的最新分析规则集。
+- `EnforceCodeStyleInBuild`：让 `.editorconfig` 中提升为 warning 的代码样式
+  诊断进入构建。
 - `TreatWarningsAsErrors`：任何编译警告都会导致构建失败。
 
 集中配置可以避免六个项目分别设置后逐渐产生版本或编译规则偏差。
+
+### `.editorconfig`
+
+该文件是 Day 12 引入的全仓格式和代码样式基线：
+
+- 所有文本文件默认使用空格缩进、去除行尾空白并保留文件末尾换行；
+- C# 使用 4 空格缩进，XML、JSON、YAML、Markdown 和 Terraform 使用
+  2 空格缩进；
+- C# 构建会检查格式诊断 `IDE0055`；
+- EF Core migration 文件标记为 generated code，避免设计时生成物被普通
+  业务代码规则误伤。
+
+因为 `Directory.Build.props` 同时启用了 `EnforceCodeStyleInBuild` 和
+`TreatWarningsAsErrors`，违反这些 warning 级规则会使 `dotnet build` 失败。
 
 ## 应用 JSON 配置
 

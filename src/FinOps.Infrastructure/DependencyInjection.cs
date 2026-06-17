@@ -1,8 +1,8 @@
 using Azure.Core;
 using Azure.Identity;
 using Azure.ResourceManager;
-using FinOps.Application.Cloud.Azure;
 using FinOps.Application.Cloud;
+using FinOps.Application.Cloud.Azure;
 using FinOps.Application.Etl;
 using FinOps.Infrastructure.Azure;
 using FinOps.Infrastructure.Persistence;
