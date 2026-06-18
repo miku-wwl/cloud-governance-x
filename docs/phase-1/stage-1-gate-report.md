@@ -2,7 +2,7 @@
 
 Date: 2026-06-18
 Scope: Day 12～19
-Status: RemediationReadyForCI
+Status: Passed
 
 ## Implemented controls
 
@@ -49,6 +49,21 @@ subscriptions before honoring forced sample mode. The remediation now returns
 forced sample data before constructing any Azure request path, and a regression
 test uses a credential that fails if it is touched.
 
+The first remediation run then exposed a second Linux-only process-boundary
+defect: `Start-Process dotnet run` stopped its wrapper process while leaving the
+actual API child process alive, so the migration script waited indefinitely.
+The gate now runs the built API and Worker DLLs directly.
+
+Pull request `#2` proved the complete merge contract:
+
+- before the required checks completed, GitHub reported the PR as `BLOCKED`;
+- workflow run `27750735956` passed `Static verification` and
+  `Database migration` on commit `ecf9bba`;
+- the same run passed all 39 tests, formatting, build, actionlint, dependency,
+  Terraform, migration, concurrency, failure-exit, and restricted-role checks;
+- after both required checks succeeded, GitHub changed the PR state to `CLEAN`;
+- PR `#2` merged as commit `a7d09f5`.
+
 ## Local remediation evidence
 
 After the cancelled workflow:
@@ -58,7 +73,9 @@ After the cancelled workflow:
 - an invalid runner-label probe made actionlint fail as expected;
 - build completed with 0 warnings and 0 errors;
 - the forced-sample offline regression tests passed;
-- `Test-DatabaseMigration.ps1 -NoBuild` passed in 28 seconds, including the
+- all 39 tests passed;
+- `Test-DatabaseMigration.ps1 -NoBuild` passed in 22 seconds after the direct
+  host-process fix, including the
   restricted-role Costs Worker scenario that timed out in GitHub Actions;
 - Terraform fmt/init/validate passed without changing Git status;
 - all migration test databases, roles, processes, and temporary logs were
@@ -69,16 +86,18 @@ architecture, route, DI, migration, and test failures returning non-zero
 results. Those local files are intentionally excluded by `.gitignore`; this
 report is the committed stage summary.
 
-## Closure actions
+## Closure confirmation
 
-Phase 1 remains open until all of the following are complete:
+Phase 1 closed on 2026-06-18:
 
-1. commit and push the forced-sample remediation;
-2. obtain one run on that exact commit where both `Static verification` and
-   `Database migration` succeed;
-3. configure `main` branch protection to require both checks before merge;
-4. confirm the protected-branch settings through the GitHub API and change this
-   report to `Passed`.
+- `main` branch protection requires `Static verification` and
+  `Database migration`;
+- required checks use strict/up-to-date mode;
+- administrators cannot bypass the protection;
+- force pushes and branch deletion are disabled;
+- the protected PR was blocked while checks were pending and became mergeable
+  only after both checks passed;
+- the GitHub-hosted and local gates left no tracked repository artifacts.
 
 ## Remaining risk
 
