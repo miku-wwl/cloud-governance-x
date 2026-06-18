@@ -143,6 +143,12 @@ function Get-MarkdownProseLines {
     }
 }
 
+function Remove-MarkdownInlineCode {
+    param([Parameter(Mandatory)][AllowEmptyString()][string]$Line)
+
+    return [regex]::Replace($Line, '(`+).*?\1', "")
+}
+
 function Test-IsAllowedSecretValue {
     param([AllowEmptyString()][string]$Value)
 
@@ -434,6 +440,12 @@ Invoke-StaticStep "Markdown local links" {
         throw "Markdown link scanner treated fenced code as reference-style links."
     }
 
+    $inlineCodeFixture = Remove-MarkdownInlineCode `
+        -Line 'PowerShell `[void][scriptblock]::Create(` and C# `[Fact][Trait]`.'
+    if ([regex]::Matches($inlineCodeFixture, $referenceUsagePattern).Count -ne 0) {
+        throw "Markdown link scanner treated inline code as reference-style links."
+    }
+
     $brokenReferenceFixture = @(
         Get-MarkdownProseLines -Lines @("[guide][missing-definition]") |
             ForEach-Object { [regex]::Matches($_, $referenceUsagePattern) }
@@ -490,12 +502,15 @@ Invoke-StaticStep "Markdown local links" {
                 continue
             }
 
+            $lineForLinks = Remove-MarkdownInlineCode -Line $line
             $targets = [System.Collections.Generic.List[string]]::new()
-            foreach ($inlineMatch in [regex]::Matches($line, $linkPattern)) {
+            foreach ($inlineMatch in [regex]::Matches($lineForLinks, $linkPattern)) {
                 $targets.Add($inlineMatch.Groups[1].Value.Trim())
             }
 
-            foreach ($referenceMatch in [regex]::Matches($line, $referenceUsagePattern)) {
+            foreach ($referenceMatch in [regex]::Matches(
+                $lineForLinks,
+                $referenceUsagePattern)) {
                 $referenceId = $referenceMatch.Groups[2].Value.Trim()
                 if ([string]::IsNullOrWhiteSpace($referenceId)) {
                     $referenceId = $referenceMatch.Groups[1].Value.Trim()
