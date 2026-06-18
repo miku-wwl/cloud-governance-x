@@ -84,7 +84,7 @@ provenance、漏洞扫描、基础镜像支持周期和重建策略。
 | Docker Engine/Desktop | Engine 29.4.3、Desktop 4.74.0 | 本地容器运行 | Moby Engine 为 Apache-2.0，[官方 LICENSE](https://github.com/moby/moby/blob/master/LICENSE)；Desktop 受 [Docker Subscription Service Agreement](https://docs.docker.com/subscription/desktop-license/) 约束 | 组织使用资格待确认；无容器扫描 |
 | Docker Compose | 5.1.4 | 本地 PostgreSQL 编排 | 随 Docker 工具链审查 | 无生产用途 |
 | PowerShell | 7.6.2 | E2E 与施工脚本 | MIT，[官方 LICENSE](https://github.com/PowerShell/PowerShell/blob/master/LICENSE.txt)；第三方 notices 待阶段 14 汇总 | 无脚本签名策略 |
-| Git | 当前开发机安装 | 源码版本控制 | 待组织工具清单统一管理 | 无 branch protection 证据 |
+| Git | 当前开发机安装 | 源码版本控制 | 待组织工具清单统一管理 | 2026-06-18 阶段报告记录 branch protection；外部设置不能由 ZIP 单独验证 |
 
 ## 8. 供应链结论
 

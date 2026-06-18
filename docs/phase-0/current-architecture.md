@@ -42,8 +42,9 @@ Terraform 创建的 Service Bus Queue 当前也没有生产者或消费者。
 ```mermaid
 flowchart LR
     Caller["本地调用者"]
-    Api["FinOps.Api<br/>HTTP、health、启动 migration"]
-    Worker["FinOps.Worker<br/>一次性 Job、启动 migration、退出码"]
+    Api["FinOps.Api<br/>HTTP、health、模块化 endpoints"]
+    Worker["FinOps.Worker<br/>一次性 Job、registry、退出码"]
+    Migrator["FinOps.Migrator<br/>显式 schema migration"]
     App["FinOps.Application<br/>用例与 ports"]
     Domain["FinOps.Domain<br/>Resource、Cost、ETL 不变量"]
     Infra["FinOps.Infrastructure<br/>Azure、HTTP、EF Core、Npgsql、DI"]
@@ -52,10 +53,12 @@ flowchart LR
 
     Caller -->|"HTTP，无用户认证"| Api
     Caller -->|"dotnet 进程启动"| Worker
+    Caller -->|"发布前显式运行"| Migrator
     Api -->|"项目引用与用例调用"| App
     Worker -->|"项目引用与用例调用"| App
     Api -->|"组合基础设施实现"| Infra
     Worker -->|"组合基础设施实现"| Infra
+    Migrator -->|"只组合数据库迁移依赖"| Infra
     Infra -->|"实现 Application ports"| App
     App -->|"项目引用"| Domain
     Infra -->|"项目引用"| Domain
@@ -65,7 +68,8 @@ flowchart LR
 
 编译依赖以 `.csproj` 为准：Application 只引用 Domain；Infrastructure 引用
 Application 与 Domain；API、Worker 作为 composition root 同时引用 Application
-与 Infrastructure。Azure SDK 只存在于 Infrastructure。
+与 Infrastructure；Migrator 只引用 Infrastructure。Azure SDK 只存在于
+Infrastructure，只有 Migrator 可以调用 EF Core schema API。
 
 ## 4. 当前本地部署
 
@@ -334,22 +338,25 @@ sequenceDiagram
 
 | 事实 | 当前影响 |
 | --- | --- |
-| API 与 Worker 都在启动时执行 migration | 多进程同时启动可能竞争；部署与 schema 变更耦合 |
+| migration 必须由独立 Migrator 显式执行 | 业务宿主不持有 DDL 职责；发布遗漏 Migrator 时 schema 不会自动升级 |
 | 单 PostgreSQL 实例和单 named volume | 数据库不可用时查询、同步和失败审计一起受影响 |
 | ETL 由匿名 API 或手工 Worker 触发 | 无可靠调度、租约、幂等触发键和并发治理 |
 | Azure CLI 是 runtime 与 Terraform 的身份来源 | 开发者会话、订阅选择和权限直接影响系统行为 |
 | Resource Graph 结果全量放入内存 | 资源规模扩大后有内存和执行时长风险 |
 | Cost fallback 默认开启 | 外部故障可能被样例成功路径掩盖 |
 | `etl_job_runs` 使用独立 DbContext | 业务写入失败后通常仍可记 Failed；数据库整体故障时不能保证 |
-| API 路由集中在 `Program.cs` | 当前简单直观，扩大后会增加授权和版本治理复杂度 |
+| API 路由已拆为 endpoint modules | `Program.cs` 仅负责组合；仍缺版本、授权、分页和 OpenAPI 治理 |
 | Terraform 使用本地 state | 无团队锁、集中审计和灾难恢复 |
 
 ## 14. 图节点到代码映射
 
 | 图节点 | 当前文件 |
 | --- | --- |
-| API routes、health、migration | [`src/FinOps.Api/Program.cs`](../../src/FinOps.Api/Program.cs) |
-| Worker dispatch、migration、退出码 | [`src/FinOps.Worker/Worker.cs`](../../src/FinOps.Worker/Worker.cs) |
+| API composition root | [`src/FinOps.Api/Program.cs`](../../src/FinOps.Api/Program.cs) |
+| API routes 与 health | [`src/FinOps.Api/Endpoints`](../../src/FinOps.Api/Endpoints) |
+| Worker lifecycle 与退出码 | [`src/FinOps.Worker/Worker.cs`](../../src/FinOps.Worker/Worker.cs) |
+| Worker Job registry/dispatch | [`src/FinOps.Worker/Jobs`](../../src/FinOps.Worker/Jobs) |
+| 独立 migration | [`src/FinOps.Migrator/MigrationRunner.cs`](../../src/FinOps.Migrator/MigrationRunner.cs) |
 | Infrastructure 注册与凭据 | [`src/FinOps.Infrastructure/DependencyInjection.cs`](../../src/FinOps.Infrastructure/DependencyInjection.cs) |
 | Subscription reader | [`AzureSubscriptionReader.cs`](../../src/FinOps.Infrastructure/Azure/AzureSubscriptionReader.cs) |
 | Resource Graph provider | [`AzureResourceInventoryProvider.cs`](../../src/FinOps.Infrastructure/Azure/AzureResourceInventoryProvider.cs) |
@@ -386,7 +393,7 @@ sequenceDiagram
 ## 16. Day 11 输入
 
 Day 11 应基于本文登记至少以下风险：匿名管理入口、开发者身份、明文开发口令、
-单数据库、启动 migration、默认 sample fallback、本地 Terraform state、缺少
+单数据库、显式 migration 发布顺序、默认 sample fallback、本地 Terraform state、缺少
 tenant、缺少 ETL 并发控制、资源全量内存处理，以及日志/state/原始 JSON 的
 数据分类和保留策略。
 

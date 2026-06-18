@@ -16,7 +16,7 @@ Day 11 的正式风险登记册，因此本日不虚构 Owner、概率和风险�
 | --- | --- | --- | --- | --- | --- | --- |
 | GAP-001 | 管理 API 和查询 API 匿名 | `FinOps.Api/Program.cs` 无认证授权 | 任意调用者可读取成本、枚举订阅或触发云采集与写库 | 仅绑定本机并保持非公开 | 阶段 2、8 | Identity、RBAC、API policy |
 | GAP-002 | 无业务 tenant 隔离 | 核心表无 `tenant_id` | 无法证明组织间数据和操作隔离 | 仅单人单环境学习 | 阶段 2～3 | tenancy ADR、可信 TenantContext |
-| GAP-003 | 宿主自动执行 migration | Day 18 已由独立 `FinOps.Migrator` 替代；API/Worker 无 migration API，Migrator 使用 advisory lock，无 DDL runtime role 验证通过 | 自动 migration 和同库 Migrator 并发风险已关闭；仍缺发布审批、生产身份和回滚编排 | Migrator 必须先于业务宿主运行 | 阶段 12 | CI/CD migration gate、部署顺序 |
+| GAP-003 | migration 发布编排不足 | Day 18 已由独立 `FinOps.Migrator` 替代；API/Worker 无 migration API，IL 门禁覆盖直接调用和方法组别名；Migrator 使用 advisory lock | 自动 migration 和同库 Migrator 并发风险已关闭；仍缺发布审批、生产身份和回滚编排 | Migrator 必须先于业务宿主运行 | 阶段 12 | CI/CD migration gate、部署顺序 |
 | GAP-004 | 成本 sample fallback 默认开启 | 两个 appsettings 中为 `true` | Provider 故障或空数据可能表现为成功数据 | 只允许明确标记的本地演示 | 阶段 5～6 | 环境隔离、数据 provenance |
 | GAP-005 | Azure CLI 用户身份 | `DefaultAzureCredential` + 本地 `az login` | 无 workload identity、轮换和最小权限证明 | 仅开发机使用 | 阶段 2、5 | Managed/Workload Identity、RBAC |
 | GAP-006 | 无调度、租约和恢复协议 | Worker 一次执行后退出 | 并发执行、崩溃接管、重试和断点恢复不可控 | 只手工单实例触发 | 阶段 4 | Job 模型、queue、lease、checkpoint |
@@ -33,8 +33,8 @@ Day 11 的正式风险登记册，因此本日不虚构 Owner、概率和风险�
 
 | ID | 差距 | 当前证据 | 影响 | 目标阶段 |
 | --- | --- | --- | --- | --- |
-| GAP-015 | 测试层次不足 | 37 个测试加独立数据库 migration/权限回归 | 仍无认证、tenant、Provider 故障注入、负载和生产规模回归 | 阶段 2～4、14 |
-| GAP-016 | API 契约未生产化 | Minimal API 集中在 `Program.cs` | 无版本、分页、稳定错误码、限流和 OpenAPI 治理 | 阶段 8 |
+| GAP-015 | 测试层次不足 | 当前 44 个执行测试加独立数据库 migration/权限回归 | 仍无认证、tenant、Provider 故障注入、负载和生产规模回归 | 阶段 2～4、14 |
+| GAP-016 | API 契约未生产化 | Minimal API 已拆分为按领域组织的 endpoint modules | 无版本、分页、稳定错误码、限流和 OpenAPI 治理 | 阶段 8 |
 | GAP-017 | Provider 可靠性策略不统一 | 外部调用无统一 retry/backoff/错误分类 | 限流、暂时故障和永久错误无法稳定区分 | 阶段 4～7 |
 | GAP-018 | 资源同步无 checkpoint | Resource Graph 仅单次内消费 SkipToken | 大规模扫描中断后需要从头开始 | 阶段 4～5 |
 | GAP-019 | 成本查询无账单 lineage | 仅保存聚合行及 raw_json | 无法证明账期版本、重算来源和可追溯修订 | 阶段 3、6 |

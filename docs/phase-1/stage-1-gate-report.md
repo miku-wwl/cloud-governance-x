@@ -5,6 +5,18 @@ Scope: Day 12～19
 Status: EngineeringGatePassed
 Independent acceptance: Pending
 
+This report preserves evidence for the commits and workflow runs named below.
+Historical counts such as 37 and 39 are intentionally not rewritten when the
+test suite grows. The current working baseline has 44 executable tests; a new
+commit still requires its own two CI results and current branch-protection
+evidence before independent acceptance.
+
+On 2026-06-19, the repository protection API was rechecked: `main` still
+requires `Static verification` and `Database migration`, strict mode and
+administrator enforcement are enabled, and force pushes and branch deletion
+are disabled. This confirms the current repository setting, but it does not
+replace the required CI run for the next commit.
+
 ## Implemented controls
 
 - shared analyzer, formatting, and compilation baseline;

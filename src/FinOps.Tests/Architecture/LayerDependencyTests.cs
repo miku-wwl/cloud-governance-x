@@ -1,8 +1,13 @@
 using System.Reflection;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
+using System.Reflection.PortableExecutable;
 using System.Xml.Linq;
 using FinOps.Application.Cloud;
 using FinOps.Domain.Costs;
 using FinOps.Infrastructure;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 
 namespace FinOps.Tests.Architecture;
 
@@ -128,34 +133,167 @@ public sealed class LayerDependencyTests
     [Fact]
     public void Only_the_migrator_may_invoke_database_schema_apis()
     {
-        var repositoryRoot = FindRepositoryRoot();
-        var srcDirectory = Path.Combine(repositoryRoot, "src");
-        var migratorDirectory = Path.Combine(srcDirectory, "FinOps.Migrator");
-        var testsDirectory = Path.Combine(srcDirectory, "FinOps.Tests");
-        const string forbiddenSchemaCallPattern =
-            @"(?<![A-Za-z0-9_])(?:Migrate|MigrateAsync|EnsureCreated|EnsureCreatedAsync)\s*\(";
+        Assembly[] assemblies =
+        [
+            typeof(CloudCostDaily).Assembly,
+            typeof(CloudCostSyncService).Assembly,
+            typeof(DependencyInjection).Assembly,
+            Assembly.Load(new AssemblyName("FinOps.Api")),
+            Assembly.Load(new AssemblyName("FinOps.Worker"))
+        ];
 
-        var violations = Directory
-            .EnumerateFiles(srcDirectory, "*.cs", SearchOption.AllDirectories)
-            .Where(path => !IsWithinDirectory(path, migratorDirectory))
-            .Where(path => !IsWithinDirectory(path, testsDirectory))
-            .Where(path => System.Text.RegularExpressions.Regex.IsMatch(
-                File.ReadAllText(path),
-                forbiddenSchemaCallPattern))
-            .Select(path => Path.GetRelativePath(repositoryRoot, path))
-            .OrderBy(path => path)
+        var violations = assemblies
+            .SelectMany(FindDatabaseSchemaApiReferences)
+            .OrderBy(violation => violation)
             .ToArray();
 
         Assert.Empty(violations);
     }
 
-    private static bool IsWithinDirectory(string path, string directory)
+    [Fact]
+    public void Database_schema_api_scanner_detects_method_group_aliases()
     {
-        var relativePath = Path.GetRelativePath(directory, path);
-        return relativePath != ".." &&
-            !relativePath.StartsWith(
-                $"..{Path.DirectorySeparatorChar}",
-                StringComparison.Ordinal);
+        Func<DatabaseFacade, Func<CancellationToken, Task>> fixture =
+            CreateMigrationDelegate;
+        GC.KeepAlive(fixture);
+
+        var violations = FindDatabaseSchemaApiReferences(
+            typeof(LayerDependencyTests).Assembly);
+
+        Assert.Contains(
+            violations,
+            violation => violation.EndsWith(
+                "Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.MigrateAsync",
+                StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Database_schema_api_scanner_detects_reflection_method_names()
+    {
+        GC.KeepAlive(FindMigrationMethodByReflection());
+
+        var violations = FindDatabaseSchemaApiReferences(
+            typeof(LayerDependencyTests).Assembly);
+
+        Assert.Contains(
+            violations,
+            violation => violation.EndsWith(
+                "reflection string MigrateAsync",
+                StringComparison.Ordinal));
+    }
+
+    private static Func<CancellationToken, Task> CreateMigrationDelegate(
+        DatabaseFacade database) =>
+        database.MigrateAsync;
+
+    private static MethodInfo? FindMigrationMethodByReflection() =>
+        typeof(RelationalDatabaseFacadeExtensions)
+            .GetMethods()
+            .FirstOrDefault(method => method.Name == "MigrateAsync");
+
+    private static string[] FindDatabaseSchemaApiReferences(Assembly assembly)
+    {
+        var assemblyPath = assembly.Location;
+        using var stream = File.OpenRead(assemblyPath);
+        using var peReader = new PEReader(stream);
+        var metadata = peReader.GetMetadataReader();
+        var violations = new List<string>();
+
+        foreach (var handle in metadata.MemberReferences)
+        {
+            var member = metadata.GetMemberReference(handle);
+            var methodName = metadata.GetString(member.Name);
+            if (!IsDatabaseSchemaMethod(methodName))
+            {
+                continue;
+            }
+
+            var declaringType = GetDeclaringTypeName(metadata, member.Parent);
+            if (
+                declaringType.StartsWith(
+                    "Microsoft.EntityFrameworkCore.",
+                    StringComparison.Ordinal) ||
+                declaringType.StartsWith(
+                    "Microsoft.EntityFrameworkCore.Relational",
+                    StringComparison.Ordinal)
+            )
+            {
+                violations.Add(
+                    $"{assembly.GetName().Name}: {declaringType}.{methodName}");
+            }
+        }
+
+        foreach (var handle in metadata.MethodDefinitions)
+        {
+            var method = metadata.GetMethodDefinition(handle);
+            if (method.RelativeVirtualAddress == 0)
+            {
+                continue;
+            }
+
+            var body = peReader.GetMethodBody(method.RelativeVirtualAddress);
+            var il = body.GetILBytes();
+            if (il is null)
+            {
+                continue;
+            }
+
+            for (var index = 0; index <= il.Length - sizeof(int) - 1; index++)
+            {
+                const byte loadStringOpcode = 0x72;
+                if (il[index] != loadStringOpcode)
+                {
+                    continue;
+                }
+
+                var token = BitConverter.ToInt32(il, index + 1);
+                if ((token & unchecked((int)0xFF000000)) != 0x70000000)
+                {
+                    continue;
+                }
+
+                var value = metadata.GetUserString(
+                    MetadataTokens.UserStringHandle(token));
+                if (IsDatabaseSchemaMethod(value))
+                {
+                    violations.Add(
+                        $"{assembly.GetName().Name}: reflection string {value}");
+                }
+            }
+        }
+
+        return [.. violations.Distinct(StringComparer.Ordinal)];
+    }
+
+    private static bool IsDatabaseSchemaMethod(string methodName) =>
+        methodName is "Migrate" or "MigrateAsync" or
+            "EnsureCreated" or "EnsureCreatedAsync";
+
+    private static string GetDeclaringTypeName(
+        MetadataReader metadata,
+        EntityHandle handle)
+    {
+        if (handle.Kind == HandleKind.TypeReference)
+        {
+            var type = metadata.GetTypeReference((TypeReferenceHandle)handle);
+            var typeNamespace = metadata.GetString(type.Namespace);
+            var typeName = metadata.GetString(type.Name);
+            return string.IsNullOrWhiteSpace(typeNamespace)
+                ? typeName
+                : $"{typeNamespace}.{typeName}";
+        }
+
+        if (handle.Kind == HandleKind.TypeDefinition)
+        {
+            var type = metadata.GetTypeDefinition((TypeDefinitionHandle)handle);
+            var typeNamespace = metadata.GetString(type.Namespace);
+            var typeName = metadata.GetString(type.Name);
+            return string.IsNullOrWhiteSpace(typeNamespace)
+                ? typeName
+                : $"{typeNamespace}.{typeName}";
+        }
+
+        return handle.Kind.ToString();
     }
 
     private static bool IsInfrastructureOnlyPackage(string packageName) =>

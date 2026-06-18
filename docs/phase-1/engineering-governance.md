@@ -18,7 +18,9 @@ Repository branch protection requires both checks before merging a pull request
 into `main`. It uses strict/up-to-date mode, applies to administrators, and
 disallows force pushes and branch deletion. Branch protection remains an
 external repository-owner setting; the workflow does not create or preserve it
-automatically.
+automatically. The stage report records evidence captured on 2026-06-18; an
+independent review of a later commit must obtain current external evidence
+instead of treating that historical snapshot as proof for the new SHA.
 
 ## Verification entry points
 
