@@ -14,6 +14,7 @@ $repositoryRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $terraformDirectory = Join-Path $repositoryRoot "terraform/azure"
 $planPath = Join-Path $terraformDirectory "day4.tfplan"
 $workerProject = Join-Path $repositoryRoot "src/FinOps.Worker"
+$workerAssembly = Join-Path $workerProject "bin/Debug/net10.0/FinOps.Worker.dll"
 $applyAttempted = $false
 $destroyVerified = $false
 $resourceGroupName = $null
@@ -69,10 +70,13 @@ function Invoke-Worker {
 
     try {
         $env:PostgreSql__Database = $Database
-        & dotnet run `
-            --no-build `
-            --no-launch-profile `
-            --project $workerProject
+        Push-Location $workerProject
+        try {
+            & dotnet $workerAssembly
+        }
+        finally {
+            Pop-Location
+        }
 
         if ($LASTEXITCODE -ne 0) {
             throw "FinOps.Worker exited with code $LASTEXITCODE."
@@ -104,6 +108,10 @@ try {
     & dotnet build (Join-Path $repositoryRoot "FinOpsPlatform.slnx")
     if ($LASTEXITCODE -ne 0) {
         throw "The solution build failed."
+    }
+
+    if (-not (Test-Path -LiteralPath $workerAssembly -PathType Leaf)) {
+        throw "The Worker assembly does not exist: $workerAssembly"
     }
 
     & (Join-Path $repositoryRoot "scripts/Invoke-DatabaseMigration.ps1") `
