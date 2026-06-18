@@ -1,7 +1,7 @@
 # Phase 1 Stage Gate Report
 
-Date: 2026-06-18  
-Scope: Day 12～19  
+Date: 2026-06-18
+Scope: Day 12～19
 Status: ReadyForCI
 
 ## Implemented controls

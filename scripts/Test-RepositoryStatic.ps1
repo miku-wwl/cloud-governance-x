@@ -194,7 +194,7 @@ function Get-SecretFindingsForLine {
 }
 
 $repositoryFiles = Get-RepositoryCandidateFiles
-$initialGitStatus = Get-GitWorkingTreeStatus
+$initialGitStatus = @(Get-GitWorkingTreeStatus)
 
 Invoke-StaticStep "Git diff whitespace" {
     Invoke-External -FilePath "git" -Arguments @("diff", "--check")
@@ -482,7 +482,7 @@ Invoke-StaticStep "Terraform validate" {
 }
 
 Invoke-StaticStep "Verification leaves Git working tree unchanged" {
-    $finalGitStatus = Get-GitWorkingTreeStatus
+    $finalGitStatus = @(Get-GitWorkingTreeStatus)
     $statusChanges = Compare-Object `
         -ReferenceObject $initialGitStatus `
         -DifferenceObject $finalGitStatus

@@ -47,7 +47,8 @@ if (-not $expectedHash) {
     throw "No trusted actionlint hash is registered for $assetName."
 }
 
-$toolDirectory = Join-Path $env:TEMP "cloud-governance-x/actionlint/$version/$platform-$architectureName"
+$tempDirectory = [IO.Path]::GetTempPath()
+$toolDirectory = Join-Path $tempDirectory "cloud-governance-x/actionlint/$version/$platform-$architectureName"
 $archivePath = Join-Path $toolDirectory $assetName
 $executableName = if ($IsWindows) { "actionlint.exe" } else { "actionlint" }
 $executablePath = Join-Path $toolDirectory $executableName

@@ -169,7 +169,10 @@ public sealed class LayerDependencyTests
                     .Select(reference => reference.Attribute("Include")?.Value)
                     .OfType<string>()
                     .Where(include => !string.IsNullOrWhiteSpace(include))
-                    .Select(Path.GetFileNameWithoutExtension)
+                    .Select(include => Path.GetFileNameWithoutExtension(
+                        include
+                            .Replace('\\', Path.DirectorySeparatorChar)
+                            .Replace('/', Path.DirectorySeparatorChar)))
                     .OfType<string>()
                     .OrderBy(projectName => projectName)
                     .ToArray());
