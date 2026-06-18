@@ -14,9 +14,11 @@ The workflow `.github/workflows/ci.yml` publishes two check names:
 - `Static verification`
 - `Database migration`
 
-Repository branch protection should require both checks before merging a pull
-request into `main`. Branch protection is an explicit repository-owner setting
-and is not changed automatically by the workflow.
+Repository branch protection requires both checks before merging a pull request
+into `main`. It uses strict/up-to-date mode, applies to administrators, and
+disallows force pushes and branch deletion. Branch protection remains an
+external repository-owner setting; the workflow does not create or preserve it
+automatically.
 
 ## Verification entry points
 
@@ -68,7 +70,6 @@ Every pull request must:
 
 The following remain outside the Day 19 gate:
 
-- required branch-protection configuration;
 - signed commits;
 - Dependabot or Renovate;
 - SBOM, container, license-policy, provenance, and historical secret scanning;

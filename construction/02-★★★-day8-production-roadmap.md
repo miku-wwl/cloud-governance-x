@@ -268,6 +268,14 @@ Release A、B、C 和生产上线前执行跨阶段 review：
 | Day 18 | 新增独立 Migration Host 或 migration command；移除 API 和 Worker 启动时自动 migration | 空库升级、已有库升级、重复执行、失败退出码验证；API/Worker 使用受限数据库权限启动 | 学习生产 migration 的职责隔离；重点审查并发迁移与回滚策略 |
 | Day 19 | 建立初版 CI、PR 模板、ADR 模板、责任边界和阶段 1 总门禁 | 干净环境 CI 全绿；架构违规、格式违规、测试失败会阻断；阶段证据完整 | 学习 CI 作为合并契约；本日只做阶段 review 和必要修复 |
 
+### 阶段 1 独立签收门禁
+
+Day 19 工程门禁通过后，仍必须按照
+[`04-★★★-phase-1-independent-review-guide.md`](04-★★★-phase-1-independent-review-guide.md)
+对固定的 `main` commit 执行独立全面 review。只有 Review Ledger 中无未关闭的
+Critical/High，Medium 已修复或由 Owner 书面接受，且 Owner 完成 Independent
+Acceptance，才允许进入 Day 20。
+
 ## 9. Day 20～30：阶段 2 身份、多租户、RBAC 与审计
 
 | Day | 本日工程闭环 | 必须验收的证据 | 学习与人工 review 重点 |

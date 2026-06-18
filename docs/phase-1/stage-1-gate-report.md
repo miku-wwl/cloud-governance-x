@@ -2,7 +2,8 @@
 
 Date: 2026-06-18
 Scope: Day 12～19
-Status: Passed
+Status: EngineeringGatePassed
+Independent acceptance: Pending
 
 ## Implemented controls
 
@@ -17,7 +18,7 @@ Status: Passed
 
 ## Required evidence
 
-Phase 1 is complete only when:
+The Phase 1 engineering gate is complete only when:
 
 - `Static verification` passes on a clean GitHub-hosted runner;
 - `Database migration` passes on a clean GitHub-hosted runner;
@@ -88,7 +89,7 @@ report is the committed stage summary.
 
 ## Closure confirmation
 
-Phase 1 closed on 2026-06-18:
+The Phase 1 engineering gate closed on 2026-06-18:
 
 - `main` branch protection requires `Static verification` and
   `Database migration`;
@@ -98,6 +99,12 @@ Phase 1 closed on 2026-06-18:
 - the protected PR was blocked while checks were pending and became mergeable
   only after both checks passed;
 - the GitHub-hosted and local gates left no tracked repository artifacts.
+
+Final Owner acceptance is intentionally separate. Before Day 20 starts, the
+fixed `main` commit must complete the independent review defined in
+`construction/04-★★★-phase-1-independent-review-guide.md`. The review must
+produce a complete ledger, resolve all Critical/High findings, disposition
+Medium findings, and record the Owner decision.
 
 ## Remaining risk
 
