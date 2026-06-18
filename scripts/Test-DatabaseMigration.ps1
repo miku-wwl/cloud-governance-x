@@ -9,6 +9,8 @@ $solution = Join-Path $repositoryRoot "FinOpsPlatform.slnx"
 $migratorProject = Join-Path $repositoryRoot "src/FinOps.Migrator"
 $apiProject = Join-Path $repositoryRoot "src/FinOps.Api"
 $workerProject = Join-Path $repositoryRoot "src/FinOps.Worker"
+$apiAssembly = Join-Path $apiProject "bin/Debug/net10.0/FinOps.Api.dll"
+$workerAssembly = Join-Path $workerProject "bin/Debug/net10.0/FinOps.Worker.dll"
 $suffix = "$PID$([DateTimeOffset]::UtcNow.ToUnixTimeSeconds())"
 $database = "finops_migration_$suffix"
 $runtimeRole = "finops_runtime_$suffix"
@@ -155,6 +157,13 @@ try {
         }
     }
 
+    if (-not (Test-Path -LiteralPath $apiAssembly -PathType Leaf)) {
+        throw "The API assembly does not exist: $apiAssembly"
+    }
+    if (-not (Test-Path -LiteralPath $workerAssembly -PathType Leaf)) {
+        throw "The Worker assembly does not exist: $workerAssembly"
+    }
+
     $env:PostgreSql__Host = "localhost"
     $env:PostgreSql__Port = "5432"
     $env:PostgreSql__Username = "finops"
@@ -270,13 +279,7 @@ try {
 
     $startProcessArguments = @{
         FilePath = "dotnet"
-        ArgumentList = @(
-            "run",
-            "--no-launch-profile",
-            "--no-build",
-            "--project",
-            $apiProject
-        )
+        ArgumentList = @($apiAssembly)
         WorkingDirectory = $repositoryRoot
         RedirectStandardOutput = $apiStandardOutput
         RedirectStandardError = $apiStandardError
@@ -298,10 +301,7 @@ try {
 
     $env:AzureCost__ForceSampleData = "true"
     $env:Etl__Job = "Costs"
-    & dotnet run `
-        --no-launch-profile `
-        --no-build `
-        --project $workerProject
+    & dotnet $workerAssembly
     if ($LASTEXITCODE -ne 0) {
         throw "Worker Costs failed with restricted runtime role."
     }

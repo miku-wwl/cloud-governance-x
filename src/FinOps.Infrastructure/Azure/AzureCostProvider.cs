@@ -31,6 +31,11 @@ internal sealed class AzureCostProvider(
             throw new ArgumentException("The cost query end date must not precede its start date.");
         }
 
+        if (options.Value.ForceSampleData)
+        {
+            return CreateSampleCosts("sample-subscription", from, to, "forced");
+        }
+
         var subscriptions = new List<string>();
         await foreach (var subscription in armClient
             .GetSubscriptions()
@@ -45,12 +50,6 @@ internal sealed class AzureCostProvider(
         var costs = new List<CloudCostDailyDto>();
         foreach (var subscriptionId in subscriptions)
         {
-            if (options.Value.ForceSampleData)
-            {
-                costs.AddRange(CreateSampleCosts(subscriptionId, from, to, "forced"));
-                continue;
-            }
-
             var subscriptionCosts = await GetSubscriptionCostsAsync(
                 subscriptionId,
                 from,
