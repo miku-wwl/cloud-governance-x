@@ -224,6 +224,8 @@ Authorization:
 - [x] Phase 1 accepted
 - [x] Day 20 may start after Owner sign-off
 
-Owner decision: ____________________  
-Owner: ____________________________  
-Date: _____________________________
+Owner decision: ACCEPT — Phase 1 complete; Phase 2 / Day 20 authorized
+
+Owner: Project Owner (`miku-wwl`)
+
+Date: 2026-06-19
