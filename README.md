@@ -7,9 +7,10 @@ React 前端、AWS 接入和生产平台能力仍属于后续计划。
 当前业务能力完成于 Day 1～7：工程骨架、Azure Terraform、Azure SDK 认证、
 Azure Resource Graph 资源清单同步、正式 ETL 执行追踪和 Azure Cost
 Management 成本 ETL 与查询 API。Day 8～11 已完成 Phase 0 基线与风险治理，
-Day 12～19 已实现 Phase 1 的本地工程门禁、架构边界、宿主模块拆分、独立
-Migration Host 和初版 CI。阶段 1 仍需在修复提交上取得两个 GitHub-hosted
-job 全绿，并为 `main` 启用 required checks 后才能正式关闭。当前包含
+Day 12～19 已完成 Phase 1 的本地工程门禁、架构边界、宿主模块拆分、独立
+Migration Host 和初版 CI。`main` 已要求 `Static verification` 与
+`Database migration` 两个 required checks，且已通过受保护 PR 验证阻断与
+放行行为。当前包含
 Web API、后台 Worker、Clean Architecture 基础分层、PostgreSQL 本地环境、
 健康检查、可重复验证的 Azure 资源生命周期，以及通过
 `DefaultAzureCredential` 读取 Azure 订阅、资源清单和成本数据并写入
