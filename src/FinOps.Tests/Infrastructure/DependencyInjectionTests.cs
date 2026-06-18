@@ -73,6 +73,9 @@ public sealed class DependencyInjectionTests
         services
             .AddHealthChecks()
             .AddPostgreSqlHealthCheck(configuration);
+        services.Configure<EtlWorkerOptions>(
+            configuration.GetSection(EtlWorkerOptions.SectionName));
+        services.AddWorkerJobs();
 
         using var provider = services.BuildServiceProvider(new ServiceProviderOptions
         {
@@ -87,6 +90,7 @@ public sealed class DependencyInjectionTests
         scope.ServiceProvider.GetRequiredService<ICloudCostQueryService>();
         scope.ServiceProvider.GetRequiredService<IAzureSubscriptionReader>();
         scope.ServiceProvider.GetRequiredService<IDbContextFactory<FinOpsDbContext>>();
+        scope.ServiceProvider.GetRequiredService<IWorkerExecution>();
     }
 
     [Fact]

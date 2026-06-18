@@ -37,16 +37,6 @@ public sealed class LayerDependencyTests
         "Npgsql"
     ];
 
-    private static readonly string[] InfrastructureOnlyPackages =
-    [
-        "Azure.Identity",
-        "Azure.ResourceManager",
-        "Azure.ResourceManager.ResourceGraph",
-        "Npgsql",
-        "Npgsql.EntityFrameworkCore.PostgreSQL",
-        "Microsoft.EntityFrameworkCore.Design"
-    ];
-
     public static TheoryData<Assembly, string[]> CoreAssemblyRules => new()
     {
         { typeof(CloudCostDaily).Assembly, DomainForbiddenReferences },
@@ -109,7 +99,7 @@ public sealed class LayerDependencyTests
             }
 
             var forbiddenPackages = packageNames
-                .Where(packageName => InfrastructureOnlyPackages.Contains(packageName))
+                .Where(IsInfrastructureOnlyPackage)
                 .ToArray();
 
             violations.AddRange(forbiddenPackages.Select(packageName =>
@@ -120,7 +110,7 @@ public sealed class LayerDependencyTests
     }
 
     [Fact]
-    public void Host_projects_are_composition_roots_only()
+    public void Host_projects_reference_application_and_infrastructure()
     {
         var apiReferences = Assembly
             .Load(new AssemblyName("FinOps.Api"))
@@ -144,25 +134,30 @@ public sealed class LayerDependencyTests
             Path.Combine(repositoryRoot, "src", "FinOps.Api"),
             Path.Combine(repositoryRoot, "src", "FinOps.Worker")
         };
-        var forbiddenMigrationCalls = new[]
-        {
-            ".Migrate(",
-            ".MigrateAsync("
-        };
+        const string forbiddenSchemaCallPattern =
+            @"\.\s*(?:Migrate|MigrateAsync|EnsureCreated|EnsureCreatedAsync)\s*\(";
 
         var violations = runtimeHostDirectories
             .SelectMany(directory => Directory.EnumerateFiles(
                 directory,
                 "*.cs",
                 SearchOption.AllDirectories))
-            .Where(path => forbiddenMigrationCalls.Any(call =>
-                File.ReadAllText(path).Contains(call, StringComparison.Ordinal)))
+            .Where(path => System.Text.RegularExpressions.Regex.IsMatch(
+                File.ReadAllText(path),
+                forbiddenSchemaCallPattern))
             .Select(path => Path.GetRelativePath(repositoryRoot, path))
             .OrderBy(path => path)
             .ToArray();
 
         Assert.Empty(violations);
     }
+
+    private static bool IsInfrastructureOnlyPackage(string packageName) =>
+        packageName.StartsWith("Azure.", StringComparison.Ordinal) ||
+        packageName.Equals("Npgsql", StringComparison.Ordinal) ||
+        packageName.StartsWith("Npgsql.", StringComparison.Ordinal) ||
+        packageName.Equals("Microsoft.EntityFrameworkCore", StringComparison.Ordinal) ||
+        packageName.StartsWith("Microsoft.EntityFrameworkCore.", StringComparison.Ordinal);
 
     private static IReadOnlyDictionary<string, string[]> LoadProjectReferences()
     {

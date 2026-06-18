@@ -14,7 +14,7 @@ public sealed class PostgreSqlHealthCheckOptionsTests
             Port = 5544,
             Database = "governance",
             Username = "application",
-            Password = "secret",
+            Password = "finops_dev_password",
             TimeoutSeconds = 7
         };
 
@@ -24,7 +24,7 @@ public sealed class PostgreSqlHealthCheckOptionsTests
         Assert.Equal(5544, result.Port);
         Assert.Equal("governance", result.Database);
         Assert.Equal("application", result.Username);
-        Assert.Equal("secret", result.Password);
+        Assert.Equal("finops_dev_password", result.Password);
         Assert.Equal(7, result.Timeout);
         Assert.Equal(7, result.CommandTimeout);
         Assert.False(result.Pooling);

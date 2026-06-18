@@ -41,12 +41,12 @@ NuGet 包和 Terraform CLI 已有可用更新，已登记为 RISK-0027。阶段�
 | 能力 | 当前状态 | 当前实现与证据 | 当前限制 | 生产结论 | 后续阶段 |
 | --- | --- | --- | --- | --- | --- |
 | .NET 解决方案 | `VerifiedBaseline` | `FinOpsPlatform.slnx` 组织 7 个项目；`global.json` 固定 SDK 10.0.300 | 尚无 CI 环境复验 | 受限 | 阶段 1 |
-| 分层依赖 | `VerifiedBaseline` | Api/Worker 组合 Infrastructure，Application 只引用 Domain，Domain 无项目依赖 | 依赖规则尚无架构测试 | 受限 | 阶段 1 |
-| 编译质量门槛 | `VerifiedBaseline` | `Directory.Build.props` 启用 nullable、implicit usings、warnings as errors | 无格式化、静态分析和依赖漏洞统一门禁 | 受限 | 阶段 1 |
+| 分层依赖 | `VerifiedBaseline` | Api/Worker 组合 Infrastructure，Migrator 只引用 Infrastructure，Application 只引用 Domain；Day 14 架构测试检查项目、程序集和基础设施包边界 | 规则聚焦当前项目边界，不替代人工架构审查 | 受限 | 阶段 1 |
+| 编译质量门槛 | `VerifiedBaseline` | `Directory.Build.props`、`.editorconfig` 和 `Test-RepositoryStatic.ps1` 统一 analyzer、warnings as errors、格式、依赖漏洞、配置解析、build/test 与 Terraform 静态检查 | Day 19 前尚未接入远端 CI | 受限 | 阶段 1 |
 | 本地 PostgreSQL | `ImplementedLimited` | `compose.yaml` 提供 PostgreSQL 18、healthcheck 和持久卷 | 开发密码、单实例、无备份/PITR | 禁止直接生产 | Release A、阶段 15 |
 | 配置覆盖 | `VerifiedBaseline` | JSON 默认值可由双下划线环境变量覆盖；`.env` 被忽略 | 无集中 secret provider 和环境配置验证 | 受限 | 阶段 1、2 |
 | liveness/readiness | `ImplementedLimited` | `/health/live` 检查进程；`/health` 连接 PostgreSQL 并执行查询 | 无 Provider、队列和依赖降级状态 | 受限 | Release A、阶段 11 |
-| EF Core migration | `ImplementedLimited` | Day 18 新增 `FinOps.Migrator` 和 PostgreSQL advisory lock；API/Worker 不再调用 migration API；空库、重复执行、并发拒绝、失败退出码和无 DDL runtime role 已验证 | 尚无 CI/CD migration approval、回滚和生产身份配置 | 受限 | 阶段 12 |
+| EF Core migration | `ImplementedLimited` | Day 18 新增 `FinOps.Migrator`、PostgreSQL advisory lock 和 `Test-DatabaseMigration.ps1`；API/Worker 不再调用 migration API；脚本可重复验证空库、重复执行、并发拒绝、失败退出码和无 DDL runtime role | 尚无 CI/CD migration approval、回滚和生产身份配置 | 受限 | 阶段 12 |
 
 ### 3.2 Azure 与 Terraform
 
@@ -97,9 +97,9 @@ NuGet 包和 Terraform CLI 已有可用更新，已登记为 RISK-0027。阶段�
 
 | 能力 | 当前状态 | 当前实现与证据 | 当前限制 | 生产结论 | 后续阶段 |
 | --- | --- | --- | --- | --- | --- |
-| 自动化测试 | `VerifiedBaseline` | 10 个测试文件、19 个 `[Fact]`，覆盖映射、领域行为和应用服务 | 主要为单元测试，无数据库集成、架构、安全和并发测试 | 受限 | 阶段 1～4 |
-| E2E 脚本 | `VerifiedBaseline` | Day 9 串行执行 6 个脚本全部通过，并额外完成严格真实成本复验 | 仍是本地开发身份和单订阅规模 | 受限 | 阶段 1～15 |
-| CI、staging、SLO、备份 | `Planned` | 施工计划中存在，仓库无实现 | 无自动发布门禁和恢复证据 | 禁止生产 | Release A、阶段 11～15 |
+| 自动化测试 | `VerifiedBaseline` | 37 个测试覆盖映射、领域、应用服务、API route、DI、架构边界和 Worker Job 行为 | 数据库 migration 仍由独立 PowerShell 集成脚本验证；尚无认证、安全和负载测试 | 受限 | 阶段 1～4 |
+| E2E 脚本 | `VerifiedBaseline` | Day 9 串行执行 6 个 Azure/Terraform 脚本；Day 18 增加不访问 Azure 的数据库 migration/权限回归脚本 | Azure E2E 仍是本地开发身份和单订阅规模 | 受限 | 阶段 1～15 |
+| CI、staging、SLO、备份 | `Planned` | 本地统一静态门禁已存在；远端 CI、staging、SLO 和备份仍在施工计划中 | 无自动发布门禁和恢复证据 | 禁止生产 | Release A、阶段 11～15 |
 | 用户、RBAC、tenant、audit | `Planned` | 当前没有身份中间件、业务 tenant schema 或审计模型 | 无法保护管理操作和证明组织隔离 | 禁止生产 | 阶段 2～3 |
 | Policy、Monitor、finding、waiver | `Planned` | 只有 compliance DTO/interface，无 Provider 和持久化实现 | 不能声称合规治理能力 | 未实现 | 阶段 7、9 |
 | React 前端、AWS、多云统一 | `Planned` | 当前仓库没有前端项目或 AWS SDK/Provider | “多云”仅是目标 | 未实现 | 阶段 8、13 |

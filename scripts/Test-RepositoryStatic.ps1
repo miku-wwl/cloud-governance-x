@@ -90,13 +90,111 @@ function Get-RepositoryCandidateFiles {
     return @($files | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
 }
 
+function Get-GitWorkingTreeStatus {
+    $status = & git -C $repositoryRoot status --porcelain=v1 --untracked-files=all
+    if ($LASTEXITCODE -ne 0) {
+        throw "git status failed."
+    }
+
+    return @($status | Sort-Object)
+}
+
 function Resolve-RepositoryPath {
     param([Parameter(Mandatory)][string]$RelativePath)
 
     return Join-Path $repositoryRoot ($RelativePath -replace "/", [IO.Path]::DirectorySeparatorChar)
 }
 
+function Test-IsAllowedSecretValue {
+    param([AllowEmptyString()][string]$Value)
+
+    $normalized = $Value.Trim().Trim('"', "'", ",", ";").ToLowerInvariant()
+    $allowedValues = @(
+        "",
+        "false",
+        "true",
+        "null",
+        "localhost",
+        "finops_dev_password",
+        "example",
+        "sample",
+        "changeme",
+        "default",
+        "placeholder",
+        "<placeholder>"
+    )
+
+    if ($allowedValues -contains $normalized) {
+        return $true
+    }
+
+    return (
+        $normalized -match "^(?:x+|\*+|<[^>]+>|\$\{[^}]+\}|%\w+%|\{\{.+\}\})$"
+    )
+}
+
+function Test-IsPlaceholderToken {
+    param([Parameter(Mandatory)][string]$Value)
+
+    $body = $Value -replace "^(?i)(?:github_pat|gh[pousr]|azdpat|sk)[_-]", ""
+    return $body -match "^(.)\1{15,}$"
+}
+
+function Get-SecretFindingsForLine {
+    param(
+        [Parameter(Mandatory)][AllowEmptyString()][string]$Line,
+        [Parameter(Mandatory)][string]$Location,
+        [switch]$IgnoreBareExpressions
+    )
+
+    $findings = [System.Collections.Generic.List[string]]::new()
+    $privateKeyPattern = "-----BEGIN .*PRIVATE " + "KEY-----"
+    if ($Line -match $privateKeyPattern) {
+        $findings.Add("${Location}: private key block marker")
+        return $findings
+    }
+
+    $tokenPatterns = @(
+        "(?i)\bgh[pousr][_-][a-z0-9]{20,}\b",
+        "(?i)\bgithub_pat_[a-z0-9_]{20,}\b",
+        "(?i)\b(?:azdpat|sk)[_-][a-z0-9_-]{16,}\b"
+    )
+    foreach ($pattern in $tokenPatterns) {
+        foreach ($match in [regex]::Matches($Line, $pattern)) {
+            if (-not (Test-IsPlaceholderToken -Value $match.Value)) {
+                $findings.Add("${Location}: token-like value")
+            }
+        }
+    }
+
+    $secretNamePattern = "(?:password|client[_-]?secret|access[_-]?key|private[_-]?key|connection[_-]?string|bearer[_-]?token|refresh[_-]?token|id[_-]?token|api[_-]?token|github[_-]?token|pat)"
+    $assignmentPattern = "(?i)(?<![a-z0-9])['""]?$secretNamePattern['""]?(?![a-z0-9])\s*[:=]\s*(?:""([^""]*)""|'([^']*)'|([^,;\s#]+))"
+
+    foreach ($match in [regex]::Matches($Line, $assignmentPattern)) {
+        if ($IgnoreBareExpressions -and $match.Groups[3].Success) {
+            continue
+        }
+
+        $value = @(
+            $match.Groups[1].Value,
+            $match.Groups[2].Value,
+            $match.Groups[3].Value
+        ) | Where-Object { $_ -ne "" } | Select-Object -First 1
+
+        if ($null -eq $value) {
+            $value = ""
+        }
+
+        if (-not (Test-IsAllowedSecretValue -Value $value)) {
+            $findings.Add("${Location}: suspicious secret assignment")
+        }
+    }
+
+    return $findings
+}
+
 $repositoryFiles = Get-RepositoryCandidateFiles
+$initialGitStatus = Get-GitWorkingTreeStatus
 
 Invoke-StaticStep "Git diff whitespace" {
     Invoke-External -FilePath "git" -Arguments @("diff", "--check")
@@ -138,25 +236,33 @@ Invoke-StaticStep "Git candidate garbage files" {
 }
 
 Invoke-StaticStep "Secret pattern scan" {
-    $secretNamePattern = "(?i)(?:password|client[_-]?secret|access[_-]?key|private[_-]?key|connectionstring|connection[_-]?string|bearer[_-]?token|refresh[_-]?token|id[_-]?token|api[_-]?token|github[_-]?token|pat)"
-    $assignmentPattern = "$secretNamePattern\s*[:=]\s*['""]?([^'"",;\s]+)"
-    $privateKeyPattern = "-----BEGIN .*PRIVATE " + "KEY-----"
-    $allowedValues = @(
-        "",
-        "false",
-        "true",
-        "null",
-        "localhost",
-        "finops_dev_password",
-        "example",
-        "sample",
-        "changeme",
-        "default",
-        "placeholder",
-        "<placeholder>"
+    $positiveFixtures = @(
+        '"Pass' + 'word": "' + "Not" + "APlaceholder42!" + '"',
+        "github_pat_" + "Ab3Cd4Ef5Gh6Ij7Kl8Mn9Op0Qr"
     )
-    $findings = [System.Collections.Generic.List[string]]::new()
+    foreach ($fixture in $positiveFixtures) {
+        $fixtureFindings = @(Get-SecretFindingsForLine `
+            -Line $fixture `
+            -Location "positive-fixture")
+        if ($fixtureFindings.Count -eq 0) {
+            throw "Secret scanner did not reject a positive regression fixture."
+        }
+    }
 
+    $negativeFixtures = @(
+        '"Password": "finops_dev_password"',
+        "github_pat_" + ("x" * 24)
+    )
+    foreach ($fixture in $negativeFixtures) {
+        $fixtureFindings = @(Get-SecretFindingsForLine `
+            -Line $fixture `
+            -Location "negative-fixture")
+        if ($fixtureFindings.Count -gt 0) {
+            throw "Secret scanner rejected an allowed placeholder fixture."
+        }
+    }
+
+    $findings = [System.Collections.Generic.List[string]]::new()
     foreach ($file in $repositoryFiles) {
         $fullPath = Resolve-RepositoryPath $file
         if (-not (Test-Path -LiteralPath $fullPath -PathType Leaf)) {
@@ -171,28 +277,21 @@ Invoke-StaticStep "Secret pattern scan" {
         $lineNumber = 0
         foreach ($line in [IO.File]::ReadLines($fullPath)) {
             $lineNumber++
-
-            if ($line -match $privateKeyPattern) {
-                $findings.Add("${file}:${lineNumber}: private key block marker")
-                continue
-            }
-
-            if ($line -match "(?i)(ghp|github_pat|azdpat|sk)-[a-z0-9_]{16,}") {
-                $findings.Add("${file}:${lineNumber}: token-like value")
-                continue
-            }
-
-            $match = [regex]::Match($line, $assignmentPattern)
-            if ($match.Success) {
-                $value = $match.Groups[2].Value.Trim()
-                $normalized = $value.Trim('"', "'", ",", ";").ToLowerInvariant()
-                if (
-                    $allowedValues -notcontains $normalized -and
-                    -not $normalized.Contains("example") -and
-                    -not $normalized.Contains("finops_dev_password")
-                ) {
-                    $findings.Add("${file}:${lineNumber}: suspicious secret assignment")
-                }
+            $ignoreBareExpressions = $extension -in @(
+                ".cs",
+                ".csx",
+                ".ps1",
+                ".tf",
+                ".csproj",
+                ".props",
+                ".targets"
+            )
+            $lineFindings = Get-SecretFindingsForLine `
+                -Line $line `
+                -Location "${file}:${lineNumber}" `
+                -IgnoreBareExpressions:$ignoreBareExpressions
+            foreach ($finding in @($lineFindings)) {
+                $findings.Add($finding)
             }
         }
     }
@@ -220,7 +319,7 @@ Invoke-StaticStep "XML parse" {
     }
 }
 
-Invoke-StaticStep "YAML parse" {
+Invoke-StaticStep "YAML indentation and Compose parse" {
     $yamlFiles = @($repositoryFiles | Where-Object { $_ -match "\.(yml|yaml)$" })
     foreach ($file in $yamlFiles) {
         $fullPath = Resolve-RepositoryPath $file
@@ -360,6 +459,19 @@ if (-not $SkipTerraformInit) {
 
 Invoke-StaticStep "Terraform validate" {
     Invoke-External -FilePath "terraform" -Arguments @("-chdir=terraform/azure", "validate")
+}
+
+Invoke-StaticStep "Verification leaves Git working tree unchanged" {
+    $finalGitStatus = Get-GitWorkingTreeStatus
+    $statusChanges = Compare-Object `
+        -ReferenceObject $initialGitStatus `
+        -DifferenceObject $finalGitStatus
+
+    if ($statusChanges) {
+        $details = $statusChanges |
+            ForEach-Object { "$($_.SideIndicator) $($_.InputObject)" }
+        throw "Verification changed the Git working tree: $($details -join '; ')"
+    }
 }
 
 Write-Host ""

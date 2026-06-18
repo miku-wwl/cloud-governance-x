@@ -4,9 +4,11 @@ Cloud Governance X 的目标是建设生产级多云 FinOps 与资源治理平�
 基于 .NET 10、Terraform 和 PostgreSQL，已经完成 Azure 资源与成本数据底座；
 React 前端、AWS 接入和生产平台能力仍属于后续计划。
 
-当前版本已完成 Day 1～7：工程骨架、Azure Terraform、Azure SDK 认证、
+当前业务能力完成于 Day 1～7：工程骨架、Azure Terraform、Azure SDK 认证、
 Azure Resource Graph 资源清单同步、正式 ETL 执行追踪和 Azure Cost
-Management 成本 ETL 与查询 API，包含
+Management 成本 ETL 与查询 API。Day 8～11 已完成 Phase 0 基线与风险治理，
+Day 12～18 已完成 Phase 1 的本地工程门禁、架构边界、宿主模块拆分和独立
+Migration Host。当前包含
 Web API、后台 Worker、Clean Architecture 基础分层、PostgreSQL 本地环境、
 健康检查、可重复验证的 Azure 资源生命周期，以及通过
 `DefaultAzureCredential` 读取 Azure 订阅、资源清单和成本数据并写入
@@ -118,6 +120,12 @@ Infrastructure。
 
 Migrator 会记录目标、pending/applied migration 和耗时，并使用 PostgreSQL
 advisory lock 阻止两个 FinOps Migrator 同时修改同一数据库。
+
+独立复验空库、重复执行、并发拒绝、失败退出码和无 DDL runtime role：
+
+```powershell
+./scripts/Test-DatabaseMigration.ps1
+```
 
 然后启动 API：
 

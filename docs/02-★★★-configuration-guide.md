@@ -170,6 +170,16 @@ API 不再自动应用 EF Core migration。首次启动或 schema 更新后必�
 拥有 DDL 权限。Migrator 会为目标数据库获取 PostgreSQL advisory lock；如果
 同一数据库已有另一个 FinOps Migrator 在运行，本次执行会明确失败。
 
+不访问 Azure 的数据库 migration 回归入口为：
+
+```powershell
+./scripts/Test-DatabaseMigration.ps1
+```
+
+该脚本使用隔离的临时数据库和角色验证空库升级、重复执行、同库并发拒绝、
+连接失败退出码，以及 API/Worker 在无 schema `CREATE` 权限下运行，最后清理
+测试数据库、角色、进程和日志。
+
 ### Worker 的 `appsettings.json`
 
 日志、PostgreSQL、Azure 和 AzureCost 配置与 API 含义相同。
