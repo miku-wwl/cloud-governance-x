@@ -26,7 +26,7 @@
 | RISK-0010 | 无统一 telemetry、告警和 SLO | Operations | 只有日志与 health；GAP-011 | Provider 变慢、ETL 卡住或数据过期 | 故障发现晚、无法量化可靠性 | High | High | Critical | Platform SRE | Mitigate | 阶段 11 | trace/metric/log 联动、告警与 SLO 演练 | Open | N/A |
 | RISK-0011 | 无备份、PITR 和恢复演练 | Reliability/Data | Compose 单卷；GAP-013 | 数据损坏、误删或数据库故障 | 无法恢复生产数据 | Medium | Critical | Critical | Platform SRE | Avoid | Release A、阶段 15 | PITR 恢复演练达到批准的 RPO/RTO | Open | N/A |
 | RISK-0012 | 无 staging 和制品晋级链 | Delivery | 当前只有 local；GAP-012 | 直接向生产发布 | 环境差异、回滚与验收不可证明 | High | High | Critical | Platform SRE | Mitigate | Release A、阶段 12 | 同一制品 development→staging 晋级与回滚 | Open | N/A |
-| RISK-0013 | 无 CI/CD 自动门禁 | Delivery | 仓库无 pipeline；GAP-012/022 | 变更合并依赖人工命令 | 缺陷、secret 或架构违规进入主干 | High | High | Critical | Application Owner | Mitigate | 阶段 1、12 | 干净 runner 上失败检查阻断 PR | Open | N/A |
+| RISK-0013 | 无 CI/CD 自动门禁 | Delivery | Day 19 新增 GitHub Actions 静态与数据库门禁、PR 模板和 CODEOWNERS；GAP-012/022 | branch protection 未启用或后续部署绕过 CI | 缺陷、secret 或架构违规进入主干 | Low | High | Medium | Application Owner | Mitigate | 阶段 1、12 | `Static verification` 与 `Database migration` 在干净 runner 通过；启用 required checks | Mitigated | Day 19 GitHub Actions 运行证据 |
 | RISK-0014 | Terraform 使用本地 state | Operations/Security | 无 backend；GAP-009 | 团队或环境变更 | 无锁、审计、恢复和环境隔离 | High | High | Critical | Cloud Provider Owner | Avoid | 阶段 12 | 加密 remote state、locking、身份和恢复测试 | Open | N/A |
 | RISK-0015 | Azure E2E 产生真实费用 | Cost | Day 9 创建 Storage/Service Bus 等资源 | 重复测试或资源规格扩大 | 超预算或不可预期费用 | Medium | Medium | Medium | FinOps Product Owner | Mitigate | 持续治理 | 预算、资源 TTL、费用告警与测试配额 | Open | N/A |
 | RISK-0016 | E2E 异常遗留 Azure 资源 | Cost/Operations | 脚本依赖 finally/destroy；Day 9 清理通过 | 进程中断、权限变化或 destroy 失败 | 持续费用和资源污染 | Medium | High | High | Cloud Provider Owner | Mitigate | 阶段 1、12 | 独立遗留扫描、TTL 清理与失败演练 | Open | N/A |
@@ -35,12 +35,12 @@
 | RISK-0019 | Provider 超时、重试和错误分类不统一 | Reliability | Cost 固定 timeout；无统一策略；GAP-017 | 限流、暂时故障或部分失败 | 雪崩重试、漏数或错误降级 | High | High | Critical | Cloud Provider Owner | Mitigate | 阶段 4～7 | 限流/超时/永久错误故障注入测试 | Open | N/A |
 | RISK-0020 | 无数据 retention 与删除策略 | Data/Compliance | 三表和证据无保留期；GAP-021 | 数据长期增长、租户删除或合规请求 | 过度保留、无法证明删除 | High | High | Critical | Data Owner | Mitigate | 阶段 3 | retention policy、删除作业和审计证据 | Open | N/A |
 | RISK-0021 | 错误、日志和 raw JSON 可能泄漏敏感元数据 | Security/Data | 保存 Provider 原始 JSON 和错误摘要 | SDK/HTTP 错误含 scope、资源或组织信息 | 内部/机密数据进入日志和导出 | Medium | High | High | Security Owner | Mitigate | 阶段 3、8、11 | 日志脱敏、payload allowlist 与泄漏测试 | Open | N/A |
-| RISK-0022 | 无自动 secret、依赖、容器和 IaC 门禁 | Security/Delivery | gitleaks 未安装；仅本轮人工模式检查；GAP-022 | 新依赖、镜像或凭据进入仓库 | 供应链风险和 secret 泄漏未被及时阻断 | High | High | Critical | Security Owner | Mitigate | 阶段 1、14 | CI scanner、历史扫描、SBOM、镜像/IaC 门禁 | Open | N/A |
+| RISK-0022 | 无自动 secret、依赖、容器和 IaC 门禁 | Security/Delivery | Day 19 CI 已运行候选文件 secret 模式、NuGet vulnerability、actionlint 和 Terraform 静态检查；GAP-022 | 历史 secret、恶意依赖、容器或制品风险未被现有模式覆盖 | 供应链风险和 secret 泄漏未被及时阻断 | Medium | High | High | Security Owner | Mitigate | 阶段 14 | 历史 scanner、SBOM、license、container、IaC 和 provenance 门禁 | Mitigated | Day 19 CI 静态门禁证据 |
 | RISK-0023 | xUnit v2 元包已标记 Legacy | Delivery | NuGet deprecated 查询命中 `xunit 2.9.3` | SDK/runner 演进或后续升级 | 测试栈维护成本和兼容风险 | Medium | Medium | Medium | Application Owner | Mitigate | 阶段 1 | xUnit v3 迁移，全部测试与 CI 通过 | Open | N/A |
 | RISK-0024 | PostgreSQL 镜像未在 Compose 固定 digest | Security/Delivery | `postgres:18-alpine`，本机解析到一个 digest | tag 后续指向新镜像 | 本地环境不可完全复现，供应链变化未审查 | Medium | Medium | Medium | Platform SRE | Mitigate | 阶段 12、14 | 生产镜像 digest、签名和漏洞扫描门禁 | Open | N/A |
 | RISK-0025 | 单 PostgreSQL 实例是数据与审计单点 | Reliability | Compose 单容器单卷 | PostgreSQL 停止或磁盘损坏 | API/ETL 不可用，Failed 状态也可能无法保存 | Medium | Critical | Critical | Platform SRE | Mitigate | Release A、阶段 12、15 | HA、故障转移、备份恢复和应用降级演练 | Open | N/A |
 | RISK-0026 | API 错误契约与限流未生产化 | Security/Reliability | Minimal API 集中，失败可为通用 500；GAP-016 | 参数错误、Provider 错误或高频调用 | 客户端误判、内部信息暴露、资源耗尽 | High | Medium | High | Application Owner | Mitigate | 阶段 8 | 稳定 Problem Details、错误码、分页和限流测试 | Open | N/A |
-| RISK-0027 | 依赖和工具链版本漂移未受控 | Delivery/Security | 2026-06-18 复核发现部分 NuGet 包和 Terraform CLI 有可用更新 | 长期不升级、临时手工升级或 CI 与本机版本不一致 | 漏掉安全/兼容修复，或升级时引入未经验证的行为变化 | High | Medium | High | Application Owner / Platform SRE | Mitigate | 阶段 1、14 | 固定 dependency outdated/deprecated/vulnerable 检查、升级 ADR、回归测试和 SBOM/SCA 门禁 | Open | N/A |
+| RISK-0027 | 依赖和工具链版本漂移未受控 | Delivery/Security | Day 19 CI 固定 .NET/Terraform/actionlint 和外部 Action SHA，并报告 NuGet vulnerable/deprecated/outdated | 报告未自动创建升级 PR，部分依赖仍有可用更新 | 漏掉安全/兼容修复，或升级时引入未经验证的行为变化 | Medium | Medium | Medium | Application Owner / Platform SRE | Mitigate | 阶段 14 | 聚焦升级 PR、回归测试、Dependabot/Renovate 和 SBOM/SCA | Mitigated | ADR-0018 与 Day 19 CI 证据 |
 
 ## 3. 当前最高风险
 

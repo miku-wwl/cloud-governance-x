@@ -1,0 +1,14 @@
+# Initial Phase 1 ownership. CODEOWNERS requests review but branch protection
+# must separately require the checks and approvals documented in
+# docs/phase-1/engineering-governance.md.
+* @miku-wwl
+
+/.github/ @miku-wwl
+/construction/ @miku-wwl
+/docs/adr/ @miku-wwl
+/scripts/ @miku-wwl
+/src/FinOps.Domain/ @miku-wwl
+/src/FinOps.Application/ @miku-wwl
+/src/FinOps.Infrastructure/ @miku-wwl
+/src/FinOps.Migrator/ @miku-wwl
+/terraform/ @miku-wwl

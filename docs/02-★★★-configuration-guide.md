@@ -43,8 +43,25 @@ API 和 Worker 原来的 `appsettings.Development.json` 已经删除，因为其
 ```
 
 该脚本由 Day 13 引入，用于把 JSON、YAML、XML、PowerShell、Markdown、
-Terraform、格式、依赖、secret、垃圾文件、build 和 test 检查串成一个可重复
-入口。任何阻断性子检查失败时，脚本返回非零退出码。
+GitHub Actions workflow、Terraform、格式、依赖、secret、垃圾文件、build 和
+test 检查串成一个可重复入口。任何阻断性子检查失败时，脚本返回非零退出码。
+
+### GitHub Actions
+
+`.github/workflows/ci.yml` 是 Day 19 初版 CI：
+
+- `Static verification` 在 Ubuntu runner 上安装 `global.json` 指定的 .NET SDK
+  和 Terraform 1.14.0，然后运行仓库统一静态门禁；
+- `Database migration` 在独立 Ubuntu runner 上启动本地 Compose PostgreSQL，
+  运行不访问 Azure 的 migration/权限回归；
+- workflow 只授予 `contents: read`；
+- checkout、setup-dotnet 和 setup-terraform 固定到经过审查的 release commit
+  SHA，版本写在行尾注释中；
+- Azure/Terraform 外部资源 E2E 不会在 Phase 1 CI 自动运行。
+
+Workflow YAML 由固定版本和 SHA-256 的 actionlint 检查。PR 模板、
+CODEOWNERS、ADR 模板、required check 名称和责任边界见 `.github/`、
+`docs/adr/ADR-template.md` 与 `docs/phase-1/engineering-governance.md`。
 
 ### `global.json`
 

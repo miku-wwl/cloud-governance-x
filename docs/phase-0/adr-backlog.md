@@ -11,7 +11,7 @@
 
 | ADR ID | 标题 | 触发原因 | 备选方向 | 决策期限 | Owner | 状态 | 相关风险 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [ADR-0001](../adr/ADR-0001-module-boundaries-and-architecture-tests.md) | 模块边界与架构测试规则 | 当前依赖仅靠人工检查 | 反射架构测试；专用架构测试库；编译边界 | 阶段 1 | Platform Architect | CandidateDecision | RISK-0013 |
+| [ADR-0001](../adr/ADR-0001-module-boundaries-and-architecture-tests.md) | 模块边界与架构测试规则 | 当前依赖仅靠人工检查 | 反射架构测试；专用架构测试库；编译边界 | 阶段 1 | Platform Architect | Accepted | RISK-0013 |
 | [ADR-0002](../adr/ADR-0002-migration-host-and-release-flow.md) | 独立 Migration Host 与发布流程 | API/Worker 自动 migration | 独立 Host；CI migration Job；显式 CLI command | 阶段 1 | Platform SRE | Accepted | RISK-0003 |
 | ADR-0003 | Organization/Tenant/CloudAccount 模型 | Azure tenant 不等于业务 tenant | 单库共享 schema；schema-per-tenant；database-per-tenant | 阶段 2 | Platform Architect | Proposed | RISK-0002 |
 | ADR-0004 | Entra ID、service identity 与本地身份 | 当前依赖 Azure CLI 用户 | Managed Identity；Workload Identity；受控服务主体 | 阶段 2 | Security Owner | Proposed | RISK-0001、RISK-0018 |
@@ -28,13 +28,11 @@
 | ADR-0015 | 成本事实、修订、币种与 lineage | 当前聚合语义不足 | Actual/Amortized 分表；统一事实模型；Provider 原生模型 | 阶段 3、6 | FinOps Product Owner | Proposed | RISK-0008 |
 | ADR-0016 | 数据 retention、删除和合法保留 | 分类已建立但期限未定 | 分类默认期限；按租户策略；法规/地区策略 | 阶段 3 | Data Owner | Proposed | RISK-0020 |
 | ADR-0017 | API 契约、版本、分页和错误模型 | 当前 Minimal API 契约有限 | URI/version header；cursor/offset；统一 Problem Details | 阶段 8 | Application Owner | Proposed | RISK-0026 |
-| [ADR-0018](../adr/ADR-0018-dependency-and-toolchain-governance.md) | 依赖和工具链版本治理 | NuGet 与 Terraform CLI 已出现版本漂移 | 固定升级节奏；Renovate/Dependabot；人工批量升级；CI 门禁 | 阶段 1、14 | Application Owner / Platform SRE | CandidateDecision | RISK-0027 |
+| [ADR-0018](../adr/ADR-0018-dependency-and-toolchain-governance.md) | 依赖和工具链版本治理 | NuGet 与 Terraform CLI 已出现版本漂移 | 固定升级节奏；Renovate/Dependabot；人工批量升级；CI 门禁 | 阶段 1、14 | Application Owner / Platform SRE | Accepted | RISK-0027 |
 
 ## 3. 阶段 1 最小决策输入
 
-ADR-0002 已于 2026-06-18 由项目 Owner 接受。ADR-0001 和 ADR-0018 仍是可执行
-候选决策；项目 Owner 仍需在相关阶段 1 改动合并前确认它们是否接受为正式
-`Accepted`。
+ADR-0001、ADR-0002 和 ADR-0018 均已于 2026-06-18 由项目 Owner 接受。
 
 阶段 1 的可重复入口确定为 `scripts/Test-RepositoryStatic.ps1`，由 Day 13
 实现并在 Day 19 CI 中调用。该入口至少覆盖：

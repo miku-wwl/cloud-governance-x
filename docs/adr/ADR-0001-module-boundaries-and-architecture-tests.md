@@ -2,7 +2,7 @@
 
 ## Status
 
-CandidateDecision - owner approval required before stage 1 implementation.
+Accepted - approved by the project Owner on 2026-06-18.
 
 ## Context
 

@@ -336,6 +336,13 @@ Invoke-StaticStep "YAML indentation and Compose parse" {
     }
 }
 
+Invoke-StaticStep "GitHub Actions workflow validation" {
+    & (Join-Path $repositoryRoot "scripts/Test-GitHubActions.ps1")
+    if ($LASTEXITCODE -ne 0) {
+        throw "GitHub Actions workflow validation failed."
+    }
+}
+
 Invoke-StaticStep "PowerShell parse" {
     foreach ($file in ($repositoryFiles | Where-Object { $_ -like "*.ps1" })) {
         $fullPath = Resolve-RepositoryPath $file
@@ -399,6 +406,19 @@ Invoke-StaticStep "Markdown local links" {
 
 Invoke-StaticStep "dotnet tool restore" {
     Invoke-External -FilePath "dotnet" -Arguments @("tool", "restore")
+}
+
+Invoke-StaticStep ".NET SDK version" {
+    $sdkVersion = (& dotnet --version).Trim()
+    if ($LASTEXITCODE -ne 0) {
+        throw "dotnet --version failed."
+    }
+
+    if (-not $sdkVersion.StartsWith("10.0.", [StringComparison]::Ordinal)) {
+        throw "Expected a .NET 10 SDK selected by global.json, found $sdkVersion."
+    }
+
+    Write-Host "Selected .NET SDK: $sdkVersion"
 }
 
 Invoke-StaticStep "dotnet restore" {

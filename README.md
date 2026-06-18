@@ -104,7 +104,17 @@ dotnet test --no-build
 ```
 
 该脚本会检查格式、解析配置文件、Terraform 静态验证、依赖可见性、secret
-模式、垃圾文件、build 和 test。Day 19 的 GitHub Actions 会复用同一入口。
+模式、GitHub Actions workflow、垃圾文件、build 和 test。Day 19 的 GitHub
+Actions 会复用同一入口。
+
+初版 CI 位于 `.github/workflows/ci.yml`，在 pull request、`main` push 和手工
+触发时并行执行：
+
+- `Static verification`：统一静态门禁；
+- `Database migration`：空库、幂等、并发、失败退出码和受限数据库身份回归。
+
+PR 约束、责任边界和建议的 required checks 见
+[`docs/phase-1/engineering-governance.md`](docs/phase-1/engineering-governance.md)。
 
 架构边界由 `src/FinOps.Tests/Architecture/` 下的测试执行，规则来源于
 [`ADR-0001`](docs/adr/ADR-0001-module-boundaries-and-architecture-tests.md)：
