@@ -173,6 +173,14 @@ Worker 的数据库连接超时时间更长，因为一次性 ETL 任务可能�
 - `Etl.Job`：选择执行 `Resources` 或 `Costs`；其他值会让进程失败退出。
 - `Etl.CostDays`：成本任务需要读取的最近天数。
 
+Day 17 起，Worker 通过 `IWorkerJobHandler` 注册表选择 Job：
+
+- `Resources` 由 `ResourceSyncJobHandler` 处理；
+- `Costs` 由 `CostSyncJobHandler` 处理；
+- Job 名称匹配不区分大小写；
+- 未知或重复 Job 名称会失败；
+- 宿主取消属于正常停止，普通执行异常会设置非零退出码。
+
 ### API 和 Worker 的 `launchSettings.json`
 
 这些文件只影响 IDE 启动和 `dotnet run`，发布应用时不会使用：

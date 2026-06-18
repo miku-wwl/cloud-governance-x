@@ -6,6 +6,7 @@ builder.Services.AddApplicationUseCases();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.Configure<EtlWorkerOptions>(
     builder.Configuration.GetSection(EtlWorkerOptions.SectionName));
+builder.Services.AddWorkerJobs();
 builder.Services.AddHostedService<Worker>();
 
 var host = builder.Build();

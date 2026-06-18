@@ -5,6 +5,8 @@ using FinOps.Application.Cloud.Azure;
 using FinOps.Application.Etl;
 using FinOps.Infrastructure;
 using FinOps.Infrastructure.Persistence;
+using FinOps.Worker;
+using FinOps.Worker.Jobs;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -85,6 +87,25 @@ public sealed class DependencyInjectionTests
         scope.ServiceProvider.GetRequiredService<ICloudCostQueryService>();
         scope.ServiceProvider.GetRequiredService<IAzureSubscriptionReader>();
         scope.ServiceProvider.GetRequiredService<IDbContextFactory<FinOpsDbContext>>();
+    }
+
+    [Fact]
+    public void Worker_jobs_are_registered_once_with_scoped_handlers()
+    {
+        var services = new ServiceCollection();
+
+        services.AddWorkerJobs();
+        services.AddWorkerJobs();
+
+        var handlers = services
+            .Where(service => service.ServiceType == typeof(IWorkerJobHandler))
+            .ToArray();
+
+        Assert.Equal(2, handlers.Length);
+        Assert.All(handlers, handler => Assert.Equal(ServiceLifetime.Scoped, handler.Lifetime));
+        AssertService<IWorkerJobDispatcher>(services, ServiceLifetime.Scoped);
+        Assert.Single(services, service => service.ServiceType == typeof(IWorkerExecution));
+        Assert.Single(services, service => service.ServiceType == typeof(IProcessExitCode));
     }
 
     private static IConfiguration CreateConfiguration()
