@@ -11,6 +11,8 @@ $repositoryRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $solution = Join-Path $repositoryRoot "FinOpsPlatform.slnx"
 $apiProject = Join-Path $repositoryRoot "src/FinOps.Api"
 $workerProject = Join-Path $repositoryRoot "src/FinOps.Worker"
+$apiAssembly = Join-Path $apiProject "bin/Debug/net10.0/FinOps.Api.dll"
+$workerAssembly = Join-Path $workerProject "bin/Debug/net10.0/FinOps.Worker.dll"
 $stdoutPath = Join-Path $env:TEMP "finops-day7-api.log"
 $stderrPath = Join-Path $env:TEMP "finops-day7-api.err.log"
 $apiProcess = $null
@@ -54,10 +56,13 @@ function Invoke-CostWorker {
         $env:Etl__Job = "Costs"
         $env:Etl__CostDays = "7"
 
-        & dotnet run `
-            --no-build `
-            --no-launch-profile `
-            --project $workerProject
+        Push-Location $workerProject
+        try {
+            & dotnet $workerAssembly
+        }
+        finally {
+            Pop-Location
+        }
 
         if ($LASTEXITCODE -ne 0) {
             throw "The Cost Worker exited with code $LASTEXITCODE."
@@ -76,21 +81,19 @@ function Start-Day7Api {
     try {
         $env:PostgreSql__Database = $Database
 
-        return Start-Process dotnet `
-            -ArgumentList @(
-                "run",
-                "--no-build",
-                "--no-launch-profile",
-                "--project",
-                $apiProject,
-                "--urls",
-                "http://localhost:$Port"
-            ) `
-            -WorkingDirectory $repositoryRoot `
-            -WindowStyle Hidden `
-            -RedirectStandardOutput $stdoutPath `
-            -RedirectStandardError $stderrPath `
-            -PassThru
+        $startProcessArguments = @{
+            FilePath = "dotnet"
+            ArgumentList = @($apiAssembly, "--urls", "http://localhost:$Port")
+            WorkingDirectory = $apiProject
+            RedirectStandardOutput = $stdoutPath
+            RedirectStandardError = $stderrPath
+            PassThru = $true
+        }
+        if ($IsWindows) {
+            $startProcessArguments["WindowStyle"] = "Hidden"
+        }
+
+        return Start-Process @startProcessArguments
     }
     finally {
         $env:PostgreSql__Database = $previousDatabase
@@ -160,6 +163,12 @@ try {
     & dotnet build $solution
     if ($LASTEXITCODE -ne 0) {
         throw "The solution build failed."
+    }
+
+    foreach ($assembly in @($apiAssembly, $workerAssembly)) {
+        if (-not (Test-Path -LiteralPath $assembly -PathType Leaf)) {
+            throw "The required assembly does not exist: $assembly"
+        }
     }
 
     & (Join-Path $repositoryRoot "scripts/Invoke-DatabaseMigration.ps1") `

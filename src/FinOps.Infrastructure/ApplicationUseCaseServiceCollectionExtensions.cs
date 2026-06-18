@@ -9,9 +9,9 @@ public static class ApplicationUseCaseServiceCollectionExtensions
     public static IServiceCollection AddApplicationUseCases(this IServiceCollection services)
     {
         services.TryAddSingleton(TimeProvider.System);
-        services.AddScoped<ICloudResourceSyncService, CloudResourceSyncService>();
-        services.AddScoped<ICloudCostSyncService, CloudCostSyncService>();
-        services.AddScoped<ICloudCostQueryService, CloudCostQueryService>();
+        services.TryAddScoped<ICloudResourceSyncService, CloudResourceSyncService>();
+        services.TryAddScoped<ICloudCostSyncService, CloudCostSyncService>();
+        services.TryAddScoped<ICloudCostQueryService, CloudCostQueryService>();
 
         return services;
     }

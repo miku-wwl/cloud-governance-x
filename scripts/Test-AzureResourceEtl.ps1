@@ -11,6 +11,9 @@ param(
 $ErrorActionPreference = "Stop"
 $repositoryRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $apiProject = Join-Path $repositoryRoot "src/FinOps.Api"
+$workerProject = Join-Path $repositoryRoot "src/FinOps.Worker"
+$apiAssembly = Join-Path $apiProject "bin/Debug/net10.0/FinOps.Api.dll"
+$workerAssembly = Join-Path $workerProject "bin/Debug/net10.0/FinOps.Worker.dll"
 $solution = Join-Path $repositoryRoot "FinOpsPlatform.slnx"
 $successLog = Join-Path $env:TEMP "finops-day5-success.log"
 $failureLog = Join-Path $env:TEMP "finops-day5-failure.log"
@@ -69,21 +72,19 @@ function Start-Day5Api {
             $null
         }
 
-        $process = Start-Process dotnet `
-            -ArgumentList @(
-                "run",
-                "--no-build",
-                "--no-launch-profile",
-                "--project",
-                $apiProject,
-                "--urls",
-                "http://localhost:$ApiPort"
-            ) `
-            -WorkingDirectory $repositoryRoot `
-            -WindowStyle Hidden `
-            -RedirectStandardOutput $StandardOutputPath `
-            -RedirectStandardError $StandardErrorPath `
-            -PassThru
+        $startProcessArguments = @{
+            FilePath = "dotnet"
+            ArgumentList = @($apiAssembly, "--urls", "http://localhost:$ApiPort")
+            WorkingDirectory = $apiProject
+            RedirectStandardOutput = $StandardOutputPath
+            RedirectStandardError = $StandardErrorPath
+            PassThru = $true
+        }
+        if ($IsWindows) {
+            $startProcessArguments["WindowStyle"] = "Hidden"
+        }
+
+        $process = Start-Process @startProcessArguments
         $apiProcesses.Add($process)
         return $process
     }
@@ -163,6 +164,12 @@ try {
         throw "The solution build failed."
     }
 
+    foreach ($assembly in @($apiAssembly, $workerAssembly)) {
+        if (-not (Test-Path -LiteralPath $assembly -PathType Leaf)) {
+            throw "The required assembly does not exist: $assembly"
+        }
+    }
+
     & (Join-Path $repositoryRoot "scripts/Invoke-DatabaseMigration.ps1") `
         -Database $Database `
         -NoBuild
@@ -170,10 +177,13 @@ try {
     $previousDatabase = $env:PostgreSql__Database
     try {
         $env:PostgreSql__Database = $Database
-        & dotnet run `
-            --no-build `
-            --no-launch-profile `
-            --project (Join-Path $repositoryRoot "src/FinOps.Worker")
+        Push-Location $workerProject
+        try {
+            & dotnet $workerAssembly
+        }
+        finally {
+            Pop-Location
+        }
 
         if ($LASTEXITCODE -ne 0) {
             throw "The Worker ETL run failed with exit code $LASTEXITCODE."

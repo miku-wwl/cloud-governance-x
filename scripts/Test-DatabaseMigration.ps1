@@ -9,10 +9,12 @@ $solution = Join-Path $repositoryRoot "FinOpsPlatform.slnx"
 $migratorProject = Join-Path $repositoryRoot "src/FinOps.Migrator"
 $apiProject = Join-Path $repositoryRoot "src/FinOps.Api"
 $workerProject = Join-Path $repositoryRoot "src/FinOps.Worker"
+$migratorAssembly = Join-Path $migratorProject "bin/Debug/net10.0/FinOps.Migrator.dll"
 $apiAssembly = Join-Path $apiProject "bin/Debug/net10.0/FinOps.Api.dll"
 $workerAssembly = Join-Path $workerProject "bin/Debug/net10.0/FinOps.Worker.dll"
 $suffix = "$PID$([DateTimeOffset]::UtcNow.ToUnixTimeSeconds())"
 $database = "finops_migration_$suffix"
+$secondDatabase = "finops_migration_alt_$suffix"
 $runtimeRole = "finops_runtime_$suffix"
 $runtimeCredential = "finops_runtime_test_$suffix"
 $apiPort = 5099
@@ -160,6 +162,9 @@ try {
     if (-not (Test-Path -LiteralPath $apiAssembly -PathType Leaf)) {
         throw "The API assembly does not exist: $apiAssembly"
     }
+    if (-not (Test-Path -LiteralPath $migratorAssembly -PathType Leaf)) {
+        throw "The Migrator assembly does not exist: $migratorAssembly"
+    }
     if (-not (Test-Path -LiteralPath $workerAssembly -PathType Leaf)) {
         throw "The Worker assembly does not exist: $workerAssembly"
     }
@@ -175,10 +180,16 @@ try {
         -Sql "DROP DATABASE IF EXISTS $database WITH (FORCE);" | Out-Null
     Invoke-PostgreSql `
         -TargetDatabase "postgres" `
+        -Sql "DROP DATABASE IF EXISTS $secondDatabase WITH (FORCE);" | Out-Null
+    Invoke-PostgreSql `
+        -TargetDatabase "postgres" `
         -Sql "DROP ROLE IF EXISTS $runtimeRole;" | Out-Null
     Invoke-PostgreSql `
         -TargetDatabase "postgres" `
         -Sql "CREATE DATABASE $database OWNER finops;" | Out-Null
+    Invoke-PostgreSql `
+        -TargetDatabase "postgres" `
+        -Sql "CREATE DATABASE $secondDatabase OWNER finops;" | Out-Null
 
     Write-Host "==> Empty database migration"
     $firstRunOutput = Invoke-Migrator -TargetDatabase $database
@@ -236,6 +247,12 @@ try {
         -ExpectFailure
     if ($concurrentOutput -notmatch "Another FinOps database migration is already running") {
         throw "The concurrent Migrator did not report the lock conflict."
+    }
+
+    Write-Host "==> Different database migration isolation"
+    $differentDatabaseOutput = Invoke-Migrator -TargetDatabase $secondDatabase
+    if ($differentDatabaseOutput -notmatch "Applied 3 migration\(s\)") {
+        throw "A migration lock in one database incorrectly blocked another database."
     }
 
     Stop-Job $lockJob -ErrorAction SilentlyContinue
@@ -314,9 +331,23 @@ try {
         throw "Worker Costs did not write any rows."
     }
 
+    Write-Host "==> Unknown Worker job exit code"
+    $env:Etl__Job = "Unknown"
+    $unknownJobOutput = & dotnet $workerAssembly 2>&1
+    $unknownJobExitCode = $LASTEXITCODE
+    $unknownJobOutput | ForEach-Object { Write-Host $_ }
+    if ($unknownJobExitCode -ne 1) {
+        throw "Expected unknown Worker job exit code 1, got $unknownJobExitCode."
+    }
+    if (($unknownJobOutput -join [Environment]::NewLine) -notmatch "Unsupported ETL job") {
+        throw "The unknown Worker job did not report the supported-job contract."
+    }
+
     Write-Host "Database migration verification passed." -ForegroundColor Green
 }
 finally {
+    $cleanupError = $null
+
     if ($apiProcess -and -not $apiProcess.HasExited) {
         Stop-Process -Id $apiProcess.Id -Force -ErrorAction SilentlyContinue
         $apiProcess.WaitForExit()
@@ -339,10 +370,14 @@ finally {
             -Sql "DROP DATABASE IF EXISTS $database WITH (FORCE);" | Out-Null
         Invoke-PostgreSql `
             -TargetDatabase "postgres" `
+            -Sql "DROP DATABASE IF EXISTS $secondDatabase WITH (FORCE);" | Out-Null
+        Invoke-PostgreSql `
+            -TargetDatabase "postgres" `
             -Sql "DROP ROLE IF EXISTS $runtimeRole;" | Out-Null
     }
     catch {
-        Write-Warning "Database migration test cleanup failed: $($_.Exception.Message)"
+        $cleanupError = $_.Exception
+        Write-Warning "Database migration test cleanup failed: $($cleanupError.Message)"
     }
 
     $env:PostgreSql__Host = $previousEnvironment.Host
@@ -357,4 +392,8 @@ finally {
     Remove-Item -LiteralPath $apiStandardOutput, $apiStandardError `
         -Force `
         -ErrorAction SilentlyContinue
+
+    if ($cleanupError) {
+        throw "Database migration verification cleanup failed."
+    }
 }

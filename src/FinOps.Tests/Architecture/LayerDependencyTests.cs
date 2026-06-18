@@ -126,22 +126,19 @@ public sealed class LayerDependencyTests
     }
 
     [Fact]
-    public void Api_and_worker_do_not_run_database_migrations()
+    public void Only_the_migrator_may_invoke_database_schema_apis()
     {
         var repositoryRoot = FindRepositoryRoot();
-        var runtimeHostDirectories = new[]
-        {
-            Path.Combine(repositoryRoot, "src", "FinOps.Api"),
-            Path.Combine(repositoryRoot, "src", "FinOps.Worker")
-        };
+        var srcDirectory = Path.Combine(repositoryRoot, "src");
+        var migratorDirectory = Path.Combine(srcDirectory, "FinOps.Migrator");
+        var testsDirectory = Path.Combine(srcDirectory, "FinOps.Tests");
         const string forbiddenSchemaCallPattern =
-            @"\.\s*(?:Migrate|MigrateAsync|EnsureCreated|EnsureCreatedAsync)\s*\(";
+            @"(?<![A-Za-z0-9_])(?:Migrate|MigrateAsync|EnsureCreated|EnsureCreatedAsync)\s*\(";
 
-        var violations = runtimeHostDirectories
-            .SelectMany(directory => Directory.EnumerateFiles(
-                directory,
-                "*.cs",
-                SearchOption.AllDirectories))
+        var violations = Directory
+            .EnumerateFiles(srcDirectory, "*.cs", SearchOption.AllDirectories)
+            .Where(path => !IsWithinDirectory(path, migratorDirectory))
+            .Where(path => !IsWithinDirectory(path, testsDirectory))
             .Where(path => System.Text.RegularExpressions.Regex.IsMatch(
                 File.ReadAllText(path),
                 forbiddenSchemaCallPattern))
@@ -150,6 +147,15 @@ public sealed class LayerDependencyTests
             .ToArray();
 
         Assert.Empty(violations);
+    }
+
+    private static bool IsWithinDirectory(string path, string directory)
+    {
+        var relativePath = Path.GetRelativePath(directory, path);
+        return relativePath != ".." &&
+            !relativePath.StartsWith(
+                $"..{Path.DirectorySeparatorChar}",
+                StringComparison.Ordinal);
     }
 
     private static bool IsInfrastructureOnlyPackage(string packageName) =>

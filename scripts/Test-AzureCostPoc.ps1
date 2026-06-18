@@ -9,6 +9,7 @@ param(
 $ErrorActionPreference = "Stop"
 $repositoryRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $apiProject = Join-Path $repositoryRoot "src/FinOps.Api"
+$apiAssembly = Join-Path $apiProject "bin/Debug/net10.0/FinOps.Api.dll"
 $solution = Join-Path $repositoryRoot "FinOpsPlatform.slnx"
 $stdoutPath = Join-Path $env:TEMP "finops-day6-api.log"
 $stderrPath = Join-Path $env:TEMP "finops-day6-api.err.log"
@@ -53,21 +54,19 @@ function Start-Day6Api {
         $env:PostgreSql__Database = $Database
         $env:AzureCost__ForceSampleData = $ForceSampleData.ToString().ToLowerInvariant()
 
-        return Start-Process dotnet `
-            -ArgumentList @(
-                "run",
-                "--no-build",
-                "--no-launch-profile",
-                "--project",
-                $apiProject,
-                "--urls",
-                "http://localhost:$Port"
-            ) `
-            -WorkingDirectory $repositoryRoot `
-            -WindowStyle Hidden `
-            -RedirectStandardOutput $stdoutPath `
-            -RedirectStandardError $stderrPath `
-            -PassThru
+        $startProcessArguments = @{
+            FilePath = "dotnet"
+            ArgumentList = @($apiAssembly, "--urls", "http://localhost:$Port")
+            WorkingDirectory = $apiProject
+            RedirectStandardOutput = $stdoutPath
+            RedirectStandardError = $stderrPath
+            PassThru = $true
+        }
+        if ($IsWindows) {
+            $startProcessArguments["WindowStyle"] = "Hidden"
+        }
+
+        return Start-Process @startProcessArguments
     }
     finally {
         $env:PostgreSql__Database = $previousDatabase
@@ -133,6 +132,10 @@ try {
     & dotnet build $solution
     if ($LASTEXITCODE -ne 0) {
         throw "The solution build failed."
+    }
+
+    if (-not (Test-Path -LiteralPath $apiAssembly -PathType Leaf)) {
+        throw "The API assembly does not exist: $apiAssembly"
     }
 
     & (Join-Path $repositoryRoot "scripts/Invoke-DatabaseMigration.ps1") `

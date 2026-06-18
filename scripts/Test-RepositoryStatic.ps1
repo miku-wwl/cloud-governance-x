@@ -319,7 +319,7 @@ Invoke-StaticStep "XML parse" {
     }
 }
 
-Invoke-StaticStep "YAML indentation and Compose parse" {
+Invoke-StaticStep "YAML validation" {
     $yamlFiles = @($repositoryFiles | Where-Object { $_ -match "\.(yml|yaml)$" })
     foreach ($file in $yamlFiles) {
         $fullPath = Resolve-RepositoryPath $file
@@ -332,7 +332,18 @@ Invoke-StaticStep "YAML indentation and Compose parse" {
 
         if ([IO.Path]::GetFileName($file) -eq "compose.yaml") {
             Invoke-External -FilePath "docker" -Arguments @("compose", "-f", $fullPath, "config", "--quiet")
+            continue
         }
+
+        $normalizedPath = $file.Replace('\', '/')
+        if ($normalizedPath.StartsWith(".github/workflows/", [StringComparison]::Ordinal)) {
+            continue
+        }
+
+        throw (
+            "$file is YAML outside the validated Compose and GitHub Actions scopes. " +
+            "Add an explicit parser before committing this YAML file."
+        )
     }
 }
 
@@ -365,17 +376,52 @@ Invoke-StaticStep "PowerShell parse" {
 
 Invoke-StaticStep "Markdown local links" {
     $linkPattern = "\[[^\]]+\]\(([^)]+)\)"
+    $referenceDefinitionPattern = "^\s*\[([^\]]+)\]:\s*(\S+)"
+    $referenceUsagePattern = "!?\[([^\]]+)\]\[([^\]]*)\]"
     $missingLinks = [System.Collections.Generic.List[string]]::new()
 
     foreach ($file in ($repositoryFiles | Where-Object { $_ -like "*.md" })) {
         $fullPath = Resolve-RepositoryPath $file
         $directory = Split-Path -Parent $fullPath
+        $lines = [IO.File]::ReadAllLines($fullPath)
+        $definitions = [System.Collections.Generic.Dictionary[string, string]]::new(
+            [StringComparer]::OrdinalIgnoreCase)
+
+        foreach ($line in $lines) {
+            $definitionMatch = [regex]::Match($line, $referenceDefinitionPattern)
+            if ($definitionMatch.Success) {
+                $definitions[$definitionMatch.Groups[1].Value.Trim()] =
+                    $definitionMatch.Groups[2].Value.Trim()
+            }
+        }
+
         $lineNumber = 0
 
-        foreach ($line in [IO.File]::ReadLines($fullPath)) {
+        foreach ($line in $lines) {
             $lineNumber++
-            foreach ($match in [regex]::Matches($line, $linkPattern)) {
-                $target = $match.Groups[1].Value.Trim()
+            $targets = [System.Collections.Generic.List[string]]::new()
+            foreach ($inlineMatch in [regex]::Matches($line, $linkPattern)) {
+                $targets.Add($inlineMatch.Groups[1].Value.Trim())
+            }
+
+            foreach ($referenceMatch in [regex]::Matches($line, $referenceUsagePattern)) {
+                $referenceId = $referenceMatch.Groups[2].Value.Trim()
+                if ([string]::IsNullOrWhiteSpace($referenceId)) {
+                    $referenceId = $referenceMatch.Groups[1].Value.Trim()
+                }
+
+                $target = $null
+                if (-not $definitions.TryGetValue($referenceId, [ref]$target)) {
+                    $missingLinks.Add(
+                        "${file}:${lineNumber}: missing reference definition [$referenceId]"
+                    )
+                    continue
+                }
+
+                $targets.Add($target)
+            }
+
+            foreach ($target in $targets) {
                 if (
                     [string]::IsNullOrWhiteSpace($target) -or
                     $target.StartsWith("#") -or

@@ -21,6 +21,7 @@ public sealed class DependencyInjectionTests
         var services = new ServiceCollection();
 
         services.AddApplicationUseCases();
+        services.AddApplicationUseCases();
 
         AssertService<ICloudResourceSyncService, CloudResourceSyncService>(
             services,
@@ -44,6 +45,7 @@ public sealed class DependencyInjectionTests
         var configuration = CreateConfiguration();
 
         services.AddApplicationUseCases();
+        services.AddInfrastructure(configuration);
         services.AddInfrastructure(configuration);
 
         AssertService<IAzureSubscriptionReader>(services, ServiceLifetime.Singleton);
