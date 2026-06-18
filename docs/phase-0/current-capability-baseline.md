@@ -42,7 +42,7 @@ NuGet 包和 Terraform CLI 已有可用更新，已登记为 RISK-0027。阶段�
 | --- | --- | --- | --- | --- | --- |
 | .NET 解决方案 | `VerifiedBaseline` | `FinOpsPlatform.slnx` 组织 7 个项目；`global.json` 固定 SDK 10.0.300；Day 19 CI 使用同一配置 | CI 只覆盖当前 Ubuntu hosted runner | 受限 | 阶段 1 |
 | 分层依赖 | `VerifiedBaseline` | Api/Worker 组合 Infrastructure，Migrator 只引用 Infrastructure，Application 只引用 Domain；Day 14 架构测试检查项目、程序集和基础设施包边界 | 规则聚焦当前项目边界，不替代人工架构审查 | 受限 | 阶段 1 |
-| 编译质量门槛 | `VerifiedBaseline` | `Directory.Build.props`、`.editorconfig` 和 `Test-RepositoryStatic.ps1` 统一 analyzer、warnings as errors、格式、actionlint、依赖漏洞、配置解析、build/test 与 Terraform 静态检查；Day 19 CI 复用该入口 | branch protection 仍需仓库 Owner 显式启用 | 受限 | 阶段 1、14 |
+| 编译质量门槛 | `VerifiedBaseline` | `Directory.Build.props`、`.editorconfig` 和 `Test-RepositoryStatic.ps1` 统一 analyzer、warnings as errors、格式、actionlint、依赖漏洞、配置解析、build/test 与 Terraform 静态检查；Day 19 CI 复用该入口 | branch protection 是外部设置；阶段报告记录了 2026-06-18 的启用证据，每个待签收 SHA 仍需对应 CI 证据 | 受限 | 阶段 1、14 |
 | 本地 PostgreSQL | `ImplementedLimited` | `compose.yaml` 提供 PostgreSQL 18、healthcheck 和持久卷 | 开发密码、单实例、无备份/PITR | 禁止直接生产 | Release A、阶段 15 |
 | 配置覆盖 | `VerifiedBaseline` | JSON 默认值可由双下划线环境变量覆盖；`.env` 被忽略 | 无集中 secret provider 和环境配置验证 | 受限 | 阶段 1、2 |
 | liveness/readiness | `ImplementedLimited` | `/health/live` 检查进程；`/health` 连接 PostgreSQL 并执行查询 | 无 Provider、队列和依赖降级状态 | 受限 | Release A、阶段 11 |
@@ -97,9 +97,9 @@ NuGet 包和 Terraform CLI 已有可用更新，已登记为 RISK-0027。阶段�
 
 | 能力 | 当前状态 | 当前实现与证据 | 当前限制 | 生产结论 | 后续阶段 |
 | --- | --- | --- | --- | --- | --- |
-| 自动化测试 | `VerifiedBaseline` | 37 个测试覆盖映射、领域、应用服务、API route、DI、架构边界和 Worker Job 行为 | 数据库 migration 仍由独立 PowerShell 集成脚本验证；尚无认证、安全和负载测试 | 受限 | 阶段 1～4 |
+| 自动化测试 | `VerifiedBaseline` | 当前 44 个执行测试覆盖映射、领域、应用服务、API route、DI、架构边界、migration API 的 IL 所有权和 Worker Job 行为 | 数据库 migration 仍由独立 PowerShell 集成脚本验证；尚无认证、安全和负载测试 | 受限 | 阶段 1～4 |
 | E2E 脚本 | `VerifiedBaseline` | Day 9 串行执行 6 个 Azure/Terraform 脚本；Day 18 增加不访问 Azure 的数据库 migration/权限回归脚本 | Azure E2E 仍是本地开发身份和单订阅规模 | 受限 | 阶段 1～15 |
-| CI、staging、SLO、备份 | `ImplementedLimited` | Day 19 初版 GitHub Actions 执行静态和数据库 migration 门禁；staging、SLO 和备份仍在施工计划中 | 未启用 required branch checks，无 artifact promotion、部署或恢复证据 | 禁止生产 | Release A、阶段 11～15 |
+| CI、staging、SLO、备份 | `ImplementedLimited` | Day 19 初版 GitHub Actions 执行静态和数据库 migration 门禁；2026-06-18 的保护规则证据记录在阶段报告；staging、SLO 和备份仍在施工计划中 | 外部保护规则和每个新 SHA 的通过状态必须重新取证；无 artifact promotion、部署或恢复证据 | 禁止生产 | Release A、阶段 11～15 |
 | 用户、RBAC、tenant、audit | `Planned` | 当前没有身份中间件、业务 tenant schema 或审计模型 | 无法保护管理操作和证明组织隔离 | 禁止生产 | 阶段 2～3 |
 | Policy、Monitor、finding、waiver | `Planned` | 只有 compliance DTO/interface，无 Provider 和持久化实现 | 不能声称合规治理能力 | 未实现 | 阶段 7、9 |
 | React 前端、AWS、多云统一 | `Planned` | 当前仓库没有前端项目或 AWS SDK/Provider | “多云”仅是目标 | 未实现 | 阶段 8、13 |
@@ -123,7 +123,8 @@ NuGet 包和 Terraform CLI 已有可用更新，已登记为 RISK-0027。阶段�
 
 - 工程和配置：`FinOpsPlatform.slnx`、`Directory.Build.props`、`global.json`、
   `compose.yaml`、`src/*/appsettings.json`
-- API 与 Worker：`src/FinOps.Api/Program.cs`、`src/FinOps.Worker/Worker.cs`
+- API、Worker 与 Migrator：`src/FinOps.Api/Endpoints/`、
+  `src/FinOps.Worker/Jobs/`、`src/FinOps.Migrator/`
 - Azure：`src/FinOps.Infrastructure/Azure/`
 - 数据模型与仓储：`src/FinOps.Domain/`、`src/FinOps.Infrastructure/Persistence/`
 - 自动化测试：`src/FinOps.Tests/`

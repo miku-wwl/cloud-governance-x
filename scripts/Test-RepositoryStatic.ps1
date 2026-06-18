@@ -105,6 +105,44 @@ function Resolve-RepositoryPath {
     return Join-Path $repositoryRoot ($RelativePath -replace "/", [IO.Path]::DirectorySeparatorChar)
 }
 
+function Get-MarkdownProseLines {
+    param([Parameter(Mandatory)][AllowEmptyString()][string[]]$Lines)
+
+    $insideFence = $false
+    $fenceCharacter = $null
+    $fenceLength = 0
+
+    foreach ($line in $Lines) {
+        $fenceMatch = [regex]::Match($line, '^\s{0,3}(`{3,}|~{3,})')
+        if ($fenceMatch.Success) {
+            $marker = $fenceMatch.Groups[1].Value
+            $markerCharacter = $marker[0]
+
+            if (-not $insideFence) {
+                $insideFence = $true
+                $fenceCharacter = $markerCharacter
+                $fenceLength = $marker.Length
+                continue
+            }
+
+            if (
+                $markerCharacter -eq $fenceCharacter -and
+                $marker.Length -ge $fenceLength
+            ) {
+                $insideFence = $false
+                $fenceCharacter = $null
+                $fenceLength = 0
+            }
+
+            continue
+        }
+
+        if (-not $insideFence) {
+            $line
+        }
+    }
+}
+
 function Test-IsAllowedSecretValue {
     param([AllowEmptyString()][string]$Value)
 
@@ -380,14 +418,39 @@ Invoke-StaticStep "Markdown local links" {
     $referenceUsagePattern = "!?\[([^\]]+)\]\[([^\]]*)\]"
     $missingLinks = [System.Collections.Generic.List[string]]::new()
 
+    $codeFenceFixture = @(
+        '```powershell',
+        '[void][scriptblock]::Create(',
+        '```',
+        '~~~~csharp',
+        '[Fact][Trait]',
+        '~~~~'
+    )
+    $codeFixtureMatches = @(
+        Get-MarkdownProseLines -Lines $codeFenceFixture |
+            ForEach-Object { [regex]::Matches($_, $referenceUsagePattern) }
+    )
+    if ($codeFixtureMatches.Count -ne 0) {
+        throw "Markdown link scanner treated fenced code as reference-style links."
+    }
+
+    $brokenReferenceFixture = @(
+        Get-MarkdownProseLines -Lines @("[guide][missing-definition]") |
+            ForEach-Object { [regex]::Matches($_, $referenceUsagePattern) }
+    )
+    if ($brokenReferenceFixture.Count -ne 1) {
+        throw "Markdown link scanner did not detect a broken reference-style link fixture."
+    }
+
     foreach ($file in ($repositoryFiles | Where-Object { $_ -like "*.md" })) {
         $fullPath = Resolve-RepositoryPath $file
         $directory = Split-Path -Parent $fullPath
         $lines = [IO.File]::ReadAllLines($fullPath)
+        $proseLines = @(Get-MarkdownProseLines -Lines $lines)
         $definitions = [System.Collections.Generic.Dictionary[string, string]]::new(
             [StringComparer]::OrdinalIgnoreCase)
 
-        foreach ($line in $lines) {
+        foreach ($line in $proseLines) {
             $definitionMatch = [regex]::Match($line, $referenceDefinitionPattern)
             if ($definitionMatch.Success) {
                 $definitions[$definitionMatch.Groups[1].Value.Trim()] =
@@ -397,8 +460,36 @@ Invoke-StaticStep "Markdown local links" {
 
         $lineNumber = 0
 
+        $insideFence = $false
+        $fenceCharacter = $null
+        $fenceLength = 0
         foreach ($line in $lines) {
             $lineNumber++
+            $fenceMatch = [regex]::Match($line, '^\s{0,3}(`{3,}|~{3,})')
+            if ($fenceMatch.Success) {
+                $marker = $fenceMatch.Groups[1].Value
+                $markerCharacter = $marker[0]
+                if (-not $insideFence) {
+                    $insideFence = $true
+                    $fenceCharacter = $markerCharacter
+                    $fenceLength = $marker.Length
+                }
+                elseif (
+                    $markerCharacter -eq $fenceCharacter -and
+                    $marker.Length -ge $fenceLength
+                ) {
+                    $insideFence = $false
+                    $fenceCharacter = $null
+                    $fenceLength = 0
+                }
+
+                continue
+            }
+
+            if ($insideFence) {
+                continue
+            }
+
             $targets = [System.Collections.Generic.List[string]]::new()
             foreach ($inlineMatch in [regex]::Matches($line, $linkPattern)) {
                 $targets.Add($inlineMatch.Groups[1].Value.Trim())

@@ -20,6 +20,7 @@ $runtimeCredential = "finops_runtime_test_$suffix"
 $apiPort = 5099
 $apiProcess = $null
 $lockJob = $null
+$verificationError = $null
 $tempDirectory = [IO.Path]::GetTempPath()
 $apiStandardOutput = Join-Path $tempDirectory "finops-migration-api-$suffix.stdout.log"
 $apiStandardError = Join-Path $tempDirectory "finops-migration-api-$suffix.stderr.log"
@@ -343,7 +344,31 @@ try {
         throw "The unknown Worker job did not report the supported-job contract."
     }
 
+    Write-Host "==> Worker handler failure exit code"
+    $env:Etl__Job = "Costs"
+    $env:PostgreSql__Port = "1"
+    $env:PostgreSql__TimeoutSeconds = "1"
+    $handlerFailureOutput = & dotnet $workerAssembly 2>&1
+    $handlerFailureExitCode = $LASTEXITCODE
+    $handlerFailureOutput | ForEach-Object { Write-Host $_ }
+    if ($handlerFailureExitCode -ne 1) {
+        throw "Expected Worker handler failure exit code 1, got $handlerFailureExitCode."
+    }
+    if (
+        ($handlerFailureOutput -join [Environment]::NewLine) -notmatch
+        "Azure ETL job Costs failed"
+    ) {
+        throw "The Worker handler failure did not report the job failure contract."
+    }
+
+    $env:PostgreSql__Port = "5432"
+    $env:PostgreSql__TimeoutSeconds = "3"
+
     Write-Host "Database migration verification passed." -ForegroundColor Green
+}
+catch {
+    $verificationError = $_.Exception
+    throw
 }
 finally {
     $cleanupError = $null
@@ -393,7 +418,13 @@ finally {
         -Force `
         -ErrorAction SilentlyContinue
 
-    if ($cleanupError) {
+    if ($cleanupError -and $verificationError) {
+        Write-Warning (
+            "Cleanup also failed after the primary verification failure: " +
+            $cleanupError.Message
+        )
+    }
+    elseif ($cleanupError) {
         throw "Database migration verification cleanup failed."
     }
 }

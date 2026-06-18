@@ -16,7 +16,7 @@
 
 | 数据 | 等级 | Owner | 来源 | 当前存储 | 传输 | 当前日志行为 | Git 风险 | 访问主体 | Retention | 备份要求 | 导出要求 | 删除要求 | 目标生产控制 | 当前差距 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 源码与公共文档 | Public | Application Owner | 开发者 | Git/GitHub | SSH/HTTPS | N/A | 可能误提交敏感值 | 仓库读者 | 永久历史 | Git 远端 | PR review 与 Day 19 CI | 按 Git 策略 | required checks、签名与历史扫描 | 初版 CI 已建立，branch protection 未启用 |
+| 源码与公共文档 | Public | Application Owner | 开发者 | Git/GitHub | SSH/HTTPS | N/A | 可能误提交敏感值 | 仓库读者 | 永久历史 | Git 远端 | PR review 与 Day 19 CI | 按 Git 策略 | required checks、签名与历史扫描 | 初版 CI 已建立；2026-06-18 有 branch protection 证据，但外部设置与新 SHA 状态需持续取证 |
 | 非敏感配置结构 | Internal | Platform Architect | appsettings/compose/Terraform | Git | Git、文件系统 | 键名可能出现 | 值被误填为真实配置 | 开发者 | 跟随代码 | Git 远端 | 禁止包含环境 secret | 删除真实值并轮换 | schema 校验、环境分层 | 仅开发默认值 |
 | Azure subscription/tenant ID | Confidential | Cloud Provider Owner | Azure ARM/CLI | 内存、日志/证据可能出现 | HTTPS | 当前脚本可能输出 ID | 不得进入永久公共报告 | 应用身份、开发者 | 待定 | 按运行证据策略 | 必须脱敏或授权 | 账号 offboard 后清理 | tenant/account registry、日志脱敏 | 无正式 retention |
 | 资源名称、ID、区域、资源组和 tags | Confidential | Data Owner | Resource Graph | `cloud_resources` | HTTPS、Npgsql | ETL 数量为主，错误可能含 ID | 测试证据不得提交完整 payload | API/Worker、DB 用户 | 待定 | 生产需要 PITR | tenant scope、审计、水印 | inactive 后按策略删除 | 加密、RLS、lineage、retention | 无 tenant 和删除语义 |
