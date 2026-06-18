@@ -12,6 +12,17 @@ $workerProject = Join-Path $repositoryRoot "src/FinOps.Worker"
 $migratorAssembly = Join-Path $migratorProject "bin/Debug/net10.0/FinOps.Migrator.dll"
 $apiAssembly = Join-Path $apiProject "bin/Debug/net10.0/FinOps.Api.dll"
 $workerAssembly = Join-Path $workerProject "bin/Debug/net10.0/FinOps.Worker.dll"
+$migrationsDirectory = Join-Path $repositoryRoot "src/FinOps.Infrastructure/Persistence/Migrations"
+$migrationFiles = @(
+    Get-ChildItem -LiteralPath $migrationsDirectory -Filter "*.cs" |
+        Where-Object {
+            $_.Name -notlike "*.Designer.cs" -and
+            $_.Name -ne "FinOpsDbContextModelSnapshot.cs"
+        } |
+        Sort-Object Name
+)
+$expectedMigrationCount = $migrationFiles.Count
+$previousMigration = $migrationFiles[-2].BaseName
 $suffix = "$PID$([DateTimeOffset]::UtcNow.ToUnixTimeSeconds())"
 $database = "finops_migration_$suffix"
 $secondDatabase = "finops_migration_alt_$suffix"
@@ -75,6 +86,34 @@ function Invoke-PostgreSql {
     return $output
 }
 
+function Assert-PostgreSqlRejected {
+    param(
+        [Parameter(Mandatory)][string]$TargetDatabase,
+        [Parameter(Mandatory)][string]$Sql,
+        [Parameter(Mandatory)][string]$ExpectedError
+    )
+
+    $output = & docker exec finops-postgres psql `
+        -v ON_ERROR_STOP=1 `
+        -U finops `
+        -d $TargetDatabase `
+        -c $Sql 2>&1
+    $exitCode = $LASTEXITCODE
+    $output | ForEach-Object { Write-Host $_ }
+
+    if ($exitCode -eq 0) {
+        throw "Expected PostgreSQL to reject the statement."
+    }
+
+    $message = $output -join [Environment]::NewLine
+    if ($message -notmatch $ExpectedError) {
+        throw (
+            "PostgreSQL rejected the statement for an unexpected reason. " +
+            "Expected error matching '$ExpectedError'."
+        )
+    }
+}
+
 function Invoke-Migrator {
     param(
         [Parameter(Mandatory)][string]$TargetDatabase,
@@ -106,6 +145,23 @@ function Invoke-Migrator {
     }
 
     return ($output -join [Environment]::NewLine)
+}
+
+function Invoke-EfDatabaseUpdate {
+    param(
+        [Parameter(Mandatory)][string]$TargetDatabase,
+        [Parameter(Mandatory)][string]$TargetMigration
+    )
+
+    $env:PostgreSql__Database = $TargetDatabase
+    & dotnet tool run dotnet-ef database update $TargetMigration `
+        --project (Join-Path $repositoryRoot "src/FinOps.Infrastructure/FinOps.Infrastructure.csproj") `
+        --startup-project (Join-Path $repositoryRoot "src/FinOps.Infrastructure/FinOps.Infrastructure.csproj") `
+        --context FinOpsDbContext `
+        --no-build
+    if ($LASTEXITCODE -ne 0) {
+        throw "EF database update to '$TargetMigration' failed."
+    }
 }
 
 function Wait-ForApiReadiness {
@@ -163,6 +219,11 @@ try {
     if (-not (Test-Path -LiteralPath $apiAssembly -PathType Leaf)) {
         throw "The API assembly does not exist: $apiAssembly"
     }
+
+    & dotnet tool restore
+    if ($LASTEXITCODE -ne 0) {
+        throw "The repository-local .NET tools could not be restored."
+    }
     if (-not (Test-Path -LiteralPath $migratorAssembly -PathType Leaf)) {
         throw "The Migrator assembly does not exist: $migratorAssembly"
     }
@@ -194,8 +255,11 @@ try {
 
     Write-Host "==> Empty database migration"
     $firstRunOutput = Invoke-Migrator -TargetDatabase $database
-    if ($firstRunOutput -notmatch "Applied 3 migration\(s\)") {
-        throw "The empty database run did not report exactly 3 applied migrations."
+    if ($firstRunOutput -notmatch "Applied $expectedMigrationCount migration\(s\)") {
+        throw (
+            "The empty database run did not report exactly " +
+            "$expectedMigrationCount applied migrations."
+        )
     }
     if ($firstRunOutput.Contains("finops_dev_password", [StringComparison]::Ordinal)) {
         throw "Migrator output exposed the database credential."
@@ -205,8 +269,11 @@ try {
         -TargetDatabase $database `
         -Sql 'SELECT count(*) FROM "__EFMigrationsHistory";' `
         -Scalar)
-    if ($migrationCount -ne 3) {
-        throw "Expected 3 migration history rows, found $migrationCount."
+    if ($migrationCount -ne $expectedMigrationCount) {
+        throw (
+            "Expected $expectedMigrationCount migration history rows, " +
+            "found $migrationCount."
+        )
     }
 
     Write-Host "==> Idempotent migration rerun"
@@ -252,9 +319,139 @@ try {
 
     Write-Host "==> Different database migration isolation"
     $differentDatabaseOutput = Invoke-Migrator -TargetDatabase $secondDatabase
-    if ($differentDatabaseOutput -notmatch "Applied 3 migration\(s\)") {
+    if (
+        $differentDatabaseOutput -notmatch
+        "Applied $expectedMigrationCount migration\(s\)"
+    ) {
         throw "A migration lock in one database incorrectly blocked another database."
     }
+
+    Write-Host "==> Latest migration Down and reapply"
+    Invoke-EfDatabaseUpdate `
+        -TargetDatabase $secondDatabase `
+        -TargetMigration $previousMigration
+
+    $tenancyTableCount = [int](Invoke-PostgreSql `
+        -TargetDatabase $secondDatabase `
+        -Sql @"
+SELECT count(*)
+FROM (
+    VALUES
+        ('organizations'),
+        ('tenants'),
+        ('provider_connections'),
+        ('cloud_accounts'),
+        ('memberships')
+) AS expected(name)
+WHERE to_regclass('public.' || expected.name) IS NOT NULL;
+"@ `
+        -Scalar)
+    if ($tenancyTableCount -ne 0) {
+        throw "The latest migration Down path left tenancy tables behind."
+    }
+
+    $rolledBackMigrationCount = [int](Invoke-PostgreSql `
+        -TargetDatabase $secondDatabase `
+        -Sql 'SELECT count(*) FROM "__EFMigrationsHistory";' `
+        -Scalar)
+    if ($rolledBackMigrationCount -ne ($expectedMigrationCount - 1)) {
+        throw (
+            "Expected $($expectedMigrationCount - 1) history rows after rollback, " +
+            "found $rolledBackMigrationCount."
+        )
+    }
+
+    $reapplyOutput = Invoke-Migrator -TargetDatabase $secondDatabase
+    if ($reapplyOutput -notmatch "Applied 1 migration\(s\)") {
+        throw "The rolled-back tenancy migration was not reapplied."
+    }
+
+    Write-Host "==> Tenancy PostgreSQL constraint integration"
+    $organizationId = "10000000-0000-0000-0000-000000000001"
+    $tenantAId = "20000000-0000-0000-0000-000000000001"
+    $tenantBId = "20000000-0000-0000-0000-000000000002"
+    $connectionAId = "30000000-0000-0000-0000-000000000001"
+    $connectionBId = "30000000-0000-0000-0000-000000000002"
+    $accountAId = "40000000-0000-0000-0000-000000000001"
+    $membershipAId = "50000000-0000-0000-0000-000000000001"
+    $timestamp = "2026-06-19T00:00:00Z"
+
+    Invoke-PostgreSql `
+        -TargetDatabase $secondDatabase `
+        -Sql @"
+INSERT INTO organizations
+    (id, display_name, status, created_at, updated_at)
+VALUES
+    ('$organizationId', 'Integration Organization', 'Active', '$timestamp', '$timestamp');
+
+INSERT INTO tenants
+    (id, organization_id, slug, display_name, status, created_at, updated_at)
+VALUES
+    ('$tenantAId', '$organizationId', 'tenant-a', 'Tenant A', 'Active', '$timestamp', '$timestamp'),
+    ('$tenantBId', '$organizationId', 'tenant-b', 'Tenant B', 'Active', '$timestamp', '$timestamp');
+
+INSERT INTO provider_connections
+    (id, tenant_id, provider, display_name, credential_reference, status, created_at, updated_at)
+VALUES
+    ('$connectionAId', '$tenantAId', 'azure', 'Azure Primary', 'workload://tenant-a', 'Pending', '$timestamp', '$timestamp'),
+    ('$connectionBId', '$tenantBId', 'azure', 'Azure Primary', 'workload://tenant-b', 'Pending', '$timestamp', '$timestamp');
+
+INSERT INTO cloud_accounts
+    (id, tenant_id, provider_connection_id, provider, external_account_id, display_name, status, created_at, updated_at)
+VALUES
+    ('$accountAId', '$tenantAId', '$connectionAId', 'azure', 'subscription-a', 'Subscription A', 'Pending', '$timestamp', '$timestamp');
+
+INSERT INTO memberships
+    (id, tenant_id, issuer, subject, subject_type, display_name, status, created_at, updated_at)
+VALUES
+    ('$membershipAId', '$tenantAId', 'https://issuer.example', 'subject-a', 'Human', 'Subject A', 'Invited', '$timestamp', '$timestamp'),
+    ('50000000-0000-0000-0000-000000000003', '$tenantBId', 'https://issuer.example', 'subject-a', 'Human', 'Subject A in Tenant B', 'Invited', '$timestamp', '$timestamp');
+"@ | Out-Null
+
+    Assert-PostgreSqlRejected `
+        -TargetDatabase $secondDatabase `
+        -Sql @"
+INSERT INTO cloud_accounts
+    (id, tenant_id, provider_connection_id, provider, external_account_id, display_name, status, created_at, updated_at)
+VALUES
+    ('40000000-0000-0000-0000-000000000002', '$tenantAId', '$connectionBId', 'azure', 'subscription-b', 'Cross Tenant', 'Pending', '$timestamp', '$timestamp');
+"@ `
+        -ExpectedError "fk_cloud_accounts_provider_connection_scope"
+
+    Assert-PostgreSqlRejected `
+        -TargetDatabase $secondDatabase `
+        -Sql @"
+INSERT INTO cloud_accounts
+    (id, tenant_id, provider_connection_id, provider, external_account_id, display_name, status, created_at, updated_at)
+VALUES
+    ('40000000-0000-0000-0000-000000000003', '$tenantAId', '$connectionAId', 'aws', 'account-a', 'Provider Mismatch', 'Pending', '$timestamp', '$timestamp');
+"@ `
+        -ExpectedError "fk_cloud_accounts_provider_connection_scope"
+
+    Assert-PostgreSqlRejected `
+        -TargetDatabase $secondDatabase `
+        -Sql @"
+INSERT INTO memberships
+    (id, tenant_id, issuer, subject, subject_type, display_name, status, created_at, updated_at)
+VALUES
+    ('50000000-0000-0000-0000-000000000002', '$tenantAId', 'https://issuer.example', 'subject-a', 'Human', 'Duplicate Subject', 'Invited', '$timestamp', '$timestamp');
+"@ `
+        -ExpectedError "ux_memberships_tenant_issuer_subject"
+
+    Assert-PostgreSqlRejected `
+        -TargetDatabase $secondDatabase `
+        -Sql @"
+INSERT INTO cloud_accounts
+    (id, tenant_id, provider_connection_id, provider, external_account_id, display_name, status, created_at, updated_at)
+VALUES
+    ('40000000-0000-0000-0000-000000000004', '$tenantBId', '$connectionBId', 'azure', 'subscription-a', 'Duplicate Provider Account', 'Pending', '$timestamp', '$timestamp');
+"@ `
+        -ExpectedError "ux_cloud_accounts_provider_external"
+
+    Assert-PostgreSqlRejected `
+        -TargetDatabase $secondDatabase `
+        -Sql "DELETE FROM tenants WHERE id = '$tenantAId';" `
+        -ExpectedError "FK_memberships_tenants_tenant_id"
 
     Stop-Job $lockJob -ErrorAction SilentlyContinue
     Receive-Job $lockJob -ErrorAction SilentlyContinue | Write-Host
