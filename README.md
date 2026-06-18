@@ -10,7 +10,8 @@ Management 成本 ETL 与查询 API。Day 8～11 已完成 Phase 0 基线与风�
 Day 12～19 的 Phase 1 工程门禁、架构边界、宿主模块拆分、独立 Migration
 Host 和初版 CI 已完成；`main` 已要求 `Static verification` 与
 `Database migration` 两个 required checks，并通过受保护 PR 验证阻断与放行
-行为。进入 Day 20 前仍需完成阶段 1 独立全面 review 和 Owner 签收。当前包含
+行为。Phase 1 独立全面 review 已于 2026-06-19 给出 `ACCEPT`；Owner 签收后
+即可进入 Day 20。当前包含
 Web API、后台 Worker、Clean Architecture 基础分层、PostgreSQL 本地环境、
 健康检查、可重复验证的 Azure 资源生命周期，以及通过
 `DefaultAzureCredential` 读取 Azure 订阅、资源清单和成本数据并写入
