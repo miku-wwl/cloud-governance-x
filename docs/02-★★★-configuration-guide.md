@@ -72,7 +72,7 @@ Terraform、格式、依赖、secret、垃圾文件、build 和 test 检查串�
 
 ### `compose.yaml`
 
-该文件定义 API、Worker、数据库迁移和端到端测试共同使用的本地 PostgreSQL。
+该文件定义 API、Worker、Migrator 和端到端测试共同使用的本地 PostgreSQL。
 文件中的中文注释解释了镜像版本、变量默认值、端口映射、健康检查、重启策略
 和命名卷。
 
@@ -121,7 +121,7 @@ MSBuild 会自动把该文件导入当前目录下的所有项目：
   诊断进入构建。
 - `TreatWarningsAsErrors`：任何编译警告都会导致构建失败。
 
-集中配置可以避免六个项目分别设置后逐渐产生版本或编译规则偏差。
+集中配置可以避免七个项目分别设置后逐渐产生版本或编译规则偏差。
 
 ### `.editorconfig`
 
@@ -160,8 +160,15 @@ MSBuild 会自动把该文件导入当前目录下的所有项目：
 - `AllowedHosts`：ASP.NET Core 接受的 Host 请求头。`*` 适用于本地学习环境，
   生产环境应限制为真实域名。
 
-为了方便当前学习项目，API 启动时会自动应用尚未执行的 EF Core migration。
-生产项目通常应将数据库迁移作为独立、受控的发布步骤。
+API 不再自动应用 EF Core migration。首次启动或 schema 更新后必须先运行：
+
+```powershell
+./scripts/Invoke-DatabaseMigration.ps1 -Database finops
+```
+
+生产发布也必须把 Migrator 作为独立、受控的 release step；API 运行身份不应
+拥有 DDL 权限。Migrator 会为目标数据库获取 PostgreSQL advisory lock；如果
+同一数据库已有另一个 FinOps Migrator 在运行，本次执行会明确失败。
 
 ### Worker 的 `appsettings.json`
 
@@ -206,10 +213,13 @@ Day 17 起，Worker 通过 `IWorkerJobHandler` 注册表选择 Job：
 - `FinOps.Application`：只依赖 Domain，保存用例和接口契约。
 - `FinOps.Infrastructure`：使用 EF Core、PostgreSQL 和 Azure SDK 实现
   Application 中定义的接口。
+- `FinOps.Migrator`：独立 migration executable，只引用 Infrastructure，
+  显式应用 pending migration 后退出；使用 PostgreSQL advisory lock 避免两个
+  Migrator 同时修改同一数据库；失败时返回退出码 1。
 - `FinOps.Api`：HTTP 可执行宿主，负责组合 Application 和 Infrastructure。
   Day 15 起，HTTP endpoint registration 位于 `src/FinOps.Api/Endpoints/`，
-  按 Health、Cloud、Resources、Costs 和 ETL 拆分；`Program.cs` 只保留宿主
-  启动、服务装配、migration 和模块挂载。
+   按 Health、Cloud、Resources、Costs 和 ETL 拆分；`Program.cs` 只保留宿主
+  启动、服务装配和模块挂载。
 - Day 16 起，DI 注册按应用用例、PostgreSQL、Azure 和 Health 拆分。API 和
   Worker 共同调用 `AddApplicationUseCases()` 与 `AddInfrastructure(...)`，
   避免两个宿主各自复制生命周期规则。

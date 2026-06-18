@@ -162,6 +162,10 @@ try {
         throw "The solution build failed."
     }
 
+    & (Join-Path $repositoryRoot "scripts/Invoke-DatabaseMigration.ps1") `
+        -Database $Database `
+        -NoBuild
+
     Invoke-CostWorker
 
     $workerRunCount = [int](Invoke-PostgreSql `

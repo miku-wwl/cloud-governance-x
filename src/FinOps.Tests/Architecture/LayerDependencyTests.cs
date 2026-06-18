@@ -14,6 +14,7 @@ public sealed class LayerDependencyTests
         "FinOps.Infrastructure",
         "FinOps.Api",
         "FinOps.Worker",
+        "FinOps.Migrator",
         "Azure.",
         "Azure",
         "Microsoft.AspNetCore",
@@ -27,6 +28,7 @@ public sealed class LayerDependencyTests
         "FinOps.Infrastructure",
         "FinOps.Api",
         "FinOps.Worker",
+        "FinOps.Migrator",
         "Azure.",
         "Azure",
         "Microsoft.AspNetCore",
@@ -83,6 +85,9 @@ public sealed class LayerDependencyTests
             ["FinOps.Application", "FinOps.Domain"],
             projectReferences["FinOps.Infrastructure"]);
         Assert.Equal(
+            ["FinOps.Infrastructure"],
+            projectReferences["FinOps.Migrator"]);
+        Assert.Equal(
             ["FinOps.Application", "FinOps.Infrastructure"],
             projectReferences["FinOps.Api"]);
         Assert.Equal(
@@ -128,6 +133,35 @@ public sealed class LayerDependencyTests
         Assert.Contains(apiReferences, reference => reference.Name == "FinOps.Infrastructure");
         Assert.Contains(workerReferences, reference => reference.Name == "FinOps.Application");
         Assert.Contains(workerReferences, reference => reference.Name == "FinOps.Infrastructure");
+    }
+
+    [Fact]
+    public void Api_and_worker_do_not_run_database_migrations()
+    {
+        var repositoryRoot = FindRepositoryRoot();
+        var runtimeHostDirectories = new[]
+        {
+            Path.Combine(repositoryRoot, "src", "FinOps.Api"),
+            Path.Combine(repositoryRoot, "src", "FinOps.Worker")
+        };
+        var forbiddenMigrationCalls = new[]
+        {
+            ".Migrate(",
+            ".MigrateAsync("
+        };
+
+        var violations = runtimeHostDirectories
+            .SelectMany(directory => Directory.EnumerateFiles(
+                directory,
+                "*.cs",
+                SearchOption.AllDirectories))
+            .Where(path => forbiddenMigrationCalls.Any(call =>
+                File.ReadAllText(path).Contains(call, StringComparison.Ordinal)))
+            .Select(path => Path.GetRelativePath(repositoryRoot, path))
+            .OrderBy(path => path)
+            .ToArray();
+
+        Assert.Empty(violations);
     }
 
     private static IReadOnlyDictionary<string, string[]> LoadProjectReferences()

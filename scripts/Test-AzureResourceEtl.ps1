@@ -163,6 +163,10 @@ try {
         throw "The solution build failed."
     }
 
+    & (Join-Path $repositoryRoot "scripts/Invoke-DatabaseMigration.ps1") `
+        -Database $Database `
+        -NoBuild
+
     $previousDatabase = $env:PostgreSql__Database
     try {
         $env:PostgreSql__Database = $Database

@@ -81,8 +81,8 @@ function Invoke-CapturedExternal {
     }
 }
 
-function Get-TrackedRepositoryFiles {
-    $files = & git -C $repositoryRoot ls-files
+function Get-RepositoryCandidateFiles {
+    $files = & git -C $repositoryRoot ls-files --cached --others --exclude-standard
     if ($LASTEXITCODE -ne 0) {
         throw "git ls-files failed."
     }
@@ -96,13 +96,13 @@ function Resolve-RepositoryPath {
     return Join-Path $repositoryRoot ($RelativePath -replace "/", [IO.Path]::DirectorySeparatorChar)
 }
 
-$trackedFiles = Get-TrackedRepositoryFiles
+$repositoryFiles = Get-RepositoryCandidateFiles
 
 Invoke-StaticStep "Git diff whitespace" {
     Invoke-External -FilePath "git" -Arguments @("diff", "--check")
 }
 
-Invoke-StaticStep "Git tracked garbage files" {
+Invoke-StaticStep "Git candidate garbage files" {
     $blockedPatterns = @(
         "^tmp/",
         "(^|/)bin/",
@@ -118,7 +118,7 @@ Invoke-StaticStep "Git tracked garbage files" {
     )
 
     $blocked = [System.Collections.Generic.List[string]]::new()
-    foreach ($file in $trackedFiles) {
+    foreach ($file in $repositoryFiles) {
         if ($file -match "^\.env(\..*)?$" -and $file -ne ".env.example") {
             $blocked.Add($file)
             continue
@@ -133,7 +133,7 @@ Invoke-StaticStep "Git tracked garbage files" {
     }
 
     if ($blocked.Count -gt 0) {
-        throw "Tracked generated or sensitive files found: $($blocked -join ', ')"
+        throw "Candidate generated or sensitive files found: $($blocked -join ', ')"
     }
 }
 
@@ -157,7 +157,7 @@ Invoke-StaticStep "Secret pattern scan" {
     )
     $findings = [System.Collections.Generic.List[string]]::new()
 
-    foreach ($file in $trackedFiles) {
+    foreach ($file in $repositoryFiles) {
         $fullPath = Resolve-RepositoryPath $file
         if (-not (Test-Path -LiteralPath $fullPath -PathType Leaf)) {
             continue
@@ -203,14 +203,14 @@ Invoke-StaticStep "Secret pattern scan" {
 }
 
 Invoke-StaticStep "JSON parse" {
-    foreach ($file in ($trackedFiles | Where-Object { $_ -like "*.json" })) {
+    foreach ($file in ($repositoryFiles | Where-Object { $_ -like "*.json" })) {
         $fullPath = Resolve-RepositoryPath $file
         Get-Content -LiteralPath $fullPath -Raw | ConvertFrom-Json | Out-Null
     }
 }
 
 Invoke-StaticStep "XML parse" {
-    $xmlFiles = $trackedFiles | Where-Object {
+    $xmlFiles = $repositoryFiles | Where-Object {
         $_ -match "\.(xml|csproj|props|targets|slnx)$"
     }
 
@@ -221,7 +221,7 @@ Invoke-StaticStep "XML parse" {
 }
 
 Invoke-StaticStep "YAML parse" {
-    $yamlFiles = @($trackedFiles | Where-Object { $_ -match "\.(yml|yaml)$" })
+    $yamlFiles = @($repositoryFiles | Where-Object { $_ -match "\.(yml|yaml)$" })
     foreach ($file in $yamlFiles) {
         $fullPath = Resolve-RepositoryPath $file
         $lines = Get-Content -LiteralPath $fullPath
@@ -238,7 +238,7 @@ Invoke-StaticStep "YAML parse" {
 }
 
 Invoke-StaticStep "PowerShell parse" {
-    foreach ($file in ($trackedFiles | Where-Object { $_ -like "*.ps1" })) {
+    foreach ($file in ($repositoryFiles | Where-Object { $_ -like "*.ps1" })) {
         $fullPath = Resolve-RepositoryPath $file
         $tokens = $null
         $parseErrors = $null
@@ -261,7 +261,7 @@ Invoke-StaticStep "Markdown local links" {
     $linkPattern = "\[[^\]]+\]\(([^)]+)\)"
     $missingLinks = [System.Collections.Generic.List[string]]::new()
 
-    foreach ($file in ($trackedFiles | Where-Object { $_ -like "*.md" })) {
+    foreach ($file in ($repositoryFiles | Where-Object { $_ -like "*.md" })) {
         $fullPath = Resolve-RepositoryPath $file
         $directory = Split-Path -Parent $fullPath
         $lineNumber = 0

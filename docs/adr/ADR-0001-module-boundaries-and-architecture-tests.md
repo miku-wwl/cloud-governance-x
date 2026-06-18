@@ -6,11 +6,12 @@ CandidateDecision - owner approval required before stage 1 implementation.
 
 ## Context
 
-The current codebase is a modular monolith with six projects:
+The current codebase is a modular monolith with seven projects:
 
 - `FinOps.Domain`
 - `FinOps.Application`
 - `FinOps.Infrastructure`
+- `FinOps.Migrator`
 - `FinOps.Api`
 - `FinOps.Worker`
 - `FinOps.Tests`
@@ -46,7 +47,9 @@ The first architecture rules are:
    `FinOps.Infrastructure`.
 4. `FinOps.Api` and `FinOps.Worker` may compose Application and Infrastructure,
    but business use cases stay in Application.
-5. `FinOps.Tests` may reference production projects and test-only libraries.
+5. `FinOps.Migrator` may reference Infrastructure but must remain a dedicated
+   migration executable.
+6. `FinOps.Tests` may reference production projects and test-only libraries.
 
 Stage 1 will initially implement these tests without introducing a new external
 architecture-test package. If reflection tests become noisy or too limited,

@@ -42,11 +42,11 @@ dotnet tool run dotnet-ef migrations list `
   --startup-project src/FinOps.Infrastructure
 ```
 
-The API and Worker currently apply pending migrations during startup. The Worker
-does this before either resource or cost synchronization. This startup migration
-pattern is convenient for the local baseline, but it is explicitly listed as a
-production gap because production should use a separate, controlled migration
-step.
+The dedicated `FinOps.Migrator` applies pending migrations before API or Worker
+startup. API and Worker no longer modify the schema. Local and release workflows
+must run the migrator explicitly, and production can grant DDL permissions only
+to the migration identity. The migrator also acquires a PostgreSQL advisory lock
+for the target database and fails if another FinOps migrator already holds it.
 
 ## `etl_job_runs`
 

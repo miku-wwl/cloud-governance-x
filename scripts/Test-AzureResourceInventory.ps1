@@ -106,6 +106,10 @@ try {
         throw "The solution build failed."
     }
 
+    & (Join-Path $repositoryRoot "scripts/Invoke-DatabaseMigration.ps1") `
+        -Database $Database `
+        -NoBuild
+
     Invoke-Terraform @("init", "-input=false")
     Invoke-Terraform @("fmt", "-check")
     Invoke-Terraform @("validate")

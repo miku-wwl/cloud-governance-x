@@ -42,6 +42,7 @@ Azure SDK request or response types.
 Start the API after signing in with Azure CLI:
 
 ```powershell
+dotnet run --project src/FinOps.Migrator
 dotnet run --project src/FinOps.Api --urls http://localhost:5000
 ```
 
@@ -138,16 +139,16 @@ response types remain inside Infrastructure; Application receives normalized
 
 The Worker is a one-shot ETL host for Day 4:
 
-1. Apply pending EF Core migrations.
-2. Read Azure resources through `ICloudResourceInventoryProvider`.
-3. Upsert them into PostgreSQL through `ICloudResourceRepository`.
-4. Log retrieved, inserted, and updated counts.
-5. Exit.
+1. Read Azure resources through `ICloudResourceInventoryProvider`.
+2. Upsert them into PostgreSQL through `ICloudResourceRepository`.
+3. Log retrieved, inserted, and updated counts.
+4. Exit.
 
 Run a normal sync:
 
 ```powershell
 docker compose up -d
+dotnet run --project src/FinOps.Migrator
 dotnet run --project src/FinOps.Worker
 ```
 

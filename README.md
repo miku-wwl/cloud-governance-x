@@ -42,6 +42,7 @@ src/
 ├── FinOps.Application/      # 用例、端口与应用服务
 ├── FinOps.Domain/           # 核心领域模型
 ├── FinOps.Infrastructure/   # 数据库、云 SDK 与外部服务实现
+├── FinOps.Migrator/         # 独立执行数据库 migration
 ├── FinOps.Worker/           # ETL 与异步任务宿主
 └── FinOps.Tests/            # 自动化测试
 terraform/
@@ -58,7 +59,7 @@ docs/                        # 项目事实、架构与运行专题
 依赖方向：
 
 ```text
-Api/Worker -> Infrastructure -> Application -> Domain
+Api/Worker/Migrator -> Infrastructure -> Application -> Domain
 ```
 
 `Application` 和 `Domain` 不依赖基础设施或宿主项目。
@@ -109,7 +110,16 @@ Domain 不反向依赖 Application/Infrastructure/宿主或云 SDK，Application
 Infrastructure/宿主/云 SDK，Azure 和 PostgreSQL 实现包只允许出现在
 Infrastructure。
 
-启动 API：
+首次启动或数据库 schema 更新后，先显式执行 migration：
+
+```powershell
+./scripts/Invoke-DatabaseMigration.ps1 -Database finops
+```
+
+Migrator 会记录目标、pending/applied migration 和耗时，并使用 PostgreSQL
+advisory lock 阻止两个 FinOps Migrator 同时修改同一数据库。
+
+然后启动 API：
 
 ```powershell
 dotnet run --project src/FinOps.Api --urls http://localhost:5000
@@ -121,8 +131,9 @@ dotnet run --project src/FinOps.Api --urls http://localhost:5000
 dotnet run --project src/FinOps.Worker
 ```
 
-Worker 会应用 EF Core migration，默认同步资源、输出处理数量后退出。设置
-`Etl__Job=Costs` 时执行成本同步。
+Worker 默认同步资源、输出处理数量后退出。设置 `Etl__Job=Costs` 时执行成本
+同步。API 和 Worker 都不会修改数据库 schema；未先运行 Migrator 时，空库上的
+业务操作会失败。
 
 ## 健康检查
 

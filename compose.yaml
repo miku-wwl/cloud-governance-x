@@ -1,4 +1,4 @@
-# API、Worker、数据库迁移和测试共同使用的本地 PostgreSQL。
+# API、Worker、Migrator 和测试共同使用的本地 PostgreSQL。
 # 未提交的 .env 可以覆盖变量；没有设置变量时使用 `:-` 后面的默认值。
 services:
   postgres:

@@ -40,13 +40,13 @@ NuGet 包和 Terraform CLI 已有可用更新，已登记为 RISK-0027。阶段�
 
 | 能力 | 当前状态 | 当前实现与证据 | 当前限制 | 生产结论 | 后续阶段 |
 | --- | --- | --- | --- | --- | --- |
-| .NET 解决方案 | `VerifiedBaseline` | `FinOpsPlatform.slnx` 组织 6 个项目；`global.json` 固定 SDK 10.0.300 | 尚无 CI 环境复验 | 受限 | 阶段 1 |
+| .NET 解决方案 | `VerifiedBaseline` | `FinOpsPlatform.slnx` 组织 7 个项目；`global.json` 固定 SDK 10.0.300 | 尚无 CI 环境复验 | 受限 | 阶段 1 |
 | 分层依赖 | `VerifiedBaseline` | Api/Worker 组合 Infrastructure，Application 只引用 Domain，Domain 无项目依赖 | 依赖规则尚无架构测试 | 受限 | 阶段 1 |
 | 编译质量门槛 | `VerifiedBaseline` | `Directory.Build.props` 启用 nullable、implicit usings、warnings as errors | 无格式化、静态分析和依赖漏洞统一门禁 | 受限 | 阶段 1 |
 | 本地 PostgreSQL | `ImplementedLimited` | `compose.yaml` 提供 PostgreSQL 18、healthcheck 和持久卷 | 开发密码、单实例、无备份/PITR | 禁止直接生产 | Release A、阶段 15 |
 | 配置覆盖 | `VerifiedBaseline` | JSON 默认值可由双下划线环境变量覆盖；`.env` 被忽略 | 无集中 secret provider 和环境配置验证 | 受限 | 阶段 1、2 |
 | liveness/readiness | `ImplementedLimited` | `/health/live` 检查进程；`/health` 连接 PostgreSQL 并执行查询 | 无 Provider、队列和依赖降级状态 | 受限 | Release A、阶段 11 |
-| EF Core migration | `ProductionProhibited` | API 与 Worker 启动时均调用 `MigrateAsync`；已有 3 次 migration | 多实例竞争，运行身份需要 DDL 权限 | 禁止生产 | 阶段 1 |
+| EF Core migration | `ImplementedLimited` | Day 18 新增 `FinOps.Migrator` 和 PostgreSQL advisory lock；API/Worker 不再调用 migration API；空库、重复执行、并发拒绝、失败退出码和无 DDL runtime role 已验证 | 尚无 CI/CD migration approval、回滚和生产身份配置 | 受限 | 阶段 12 |
 
 ### 3.2 Azure 与 Terraform
 
@@ -111,7 +111,7 @@ NuGet 包和 Terraform CLI 已有可用更新，已登记为 RISK-0027。阶段�
 不能作为生产服务部署。以下行为在整改前明确禁止进入生产：
 
 1. 匿名暴露管理 API 和成本查询 API。
-2. 在 API 或 Worker 运行身份下自动执行 migration。
+2. Migrator 尚未接入 CI/CD 审批、生产身份和回滚流程。
 3. 启用成本 sample fallback 或强制样例。
 4. 使用 Azure CLI 用户身份作为部署身份。
 5. 使用本地 Terraform state 进行团队或生产变更。

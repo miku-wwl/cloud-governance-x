@@ -12,6 +12,8 @@
     <Project Path="src/FinOps.Domain/FinOps.Domain.csproj" />
     <!-- PostgreSQL、EF Core、Azure SDK 和外部服务适配器。 -->
     <Project Path="src/FinOps.Infrastructure/FinOps.Infrastructure.csproj" />
+    <!-- 独立执行 EF Core migration 的发布宿主。 -->
+    <Project Path="src/FinOps.Migrator/FinOps.Migrator.csproj" />
     <!-- xUnit 自动化测试。 -->
     <Project Path="src/FinOps.Tests/FinOps.Tests.csproj" />
     <!-- 一次性执行资源或成本 ETL 的命令宿主。 -->

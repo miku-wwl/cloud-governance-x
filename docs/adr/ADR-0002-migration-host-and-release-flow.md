@@ -2,12 +2,12 @@
 
 ## Status
 
-CandidateDecision - owner approval required before stage 1 implementation.
+Accepted - approved by the project Owner on 2026-06-18.
 
 ## Context
 
-The API and Worker currently call `MigrateAsync` during startup. This is useful
-for the local learning baseline, but it is not suitable for production:
+Before Day 18, the API and Worker called `MigrateAsync` during startup. This was
+useful for the local learning baseline, but it was not suitable for production:
 
 - multiple API or Worker instances can race on schema changes;
 - runtime identities need DDL permissions;
@@ -22,16 +22,17 @@ Relevant risks:
 
 ## Decision
 
-Stage 1 will remove automatic migrations from API and Worker startup and add a
+Stage 1 removes automatic migrations from API and Worker startup and adds a
 dedicated migration executable path.
 
-The preferred implementation is a small `FinOps.Migrator` console project that:
+The implementation is a small `FinOps.Migrator` console project that:
 
 1. references `FinOps.Infrastructure`;
 2. loads the same PostgreSQL configuration shape as API and Worker;
-3. applies EF Core migrations once, then exits;
-4. returns non-zero on migration failure;
-5. logs the database target, pending migration count, applied migration names,
+3. acquires a target-database PostgreSQL advisory lock;
+4. applies EF Core migrations once, then exits;
+5. returns `0` on success and `1` on migration failure;
+6. logs the database target, pending migration count, applied migration names,
    and elapsed time without logging connection strings or passwords.
 
 Local development may run the migrator manually or through a script before API
@@ -64,6 +65,8 @@ CI/CD can later orchestrate.
   be prepared repeatably.
 - Production-like deployments can use different database identities: migrator
   gets DDL permissions; API and Worker get only required runtime permissions.
+- Concurrent FinOps migrators for the same database fail before applying schema
+  changes; deployment concurrency controls remain the outer release guard.
 - Migration rollback remains a controlled release concern; EF `Down` methods
   are not automatically executed in production.
 
@@ -89,6 +92,8 @@ Stage 1 is not complete until:
 
 - An empty local database can be migrated by `FinOps.Migrator`.
 - Re-running `FinOps.Migrator` is idempotent.
+- Two concurrent FinOps migrators cannot both apply migrations to the same
+  database.
 - API and Worker start successfully after migration.
 - API and Worker do not call `Database.MigrateAsync`.
 - A migration failure returns a non-zero exit code.
