@@ -15,7 +15,9 @@ internal sealed class Worker(
         {
             await using var scope = scopeFactory.CreateAsyncScope();
             var execution = scope.ServiceProvider.GetRequiredService<IWorkerExecution>();
-            await execution.ExecuteAsync(options.Value.Job, stoppingToken);
+            await execution.ExecuteAsync(
+                new WorkerJobRequest(options.Value.Job, options.Value.TenantId),
+                stoppingToken);
         }
         catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
         {

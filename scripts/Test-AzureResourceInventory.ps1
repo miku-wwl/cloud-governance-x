@@ -67,9 +67,11 @@ function Invoke-PostgreSql {
 
 function Invoke-Worker {
     $previousDatabase = $env:PostgreSql__Database
+    $previousTenantId = $env:Etl__TenantId
 
     try {
         $env:PostgreSql__Database = $Database
+        $env:Etl__TenantId = "20000000-0000-0000-0000-000000000001"
         Push-Location $workerProject
         try {
             & dotnet $workerAssembly
@@ -84,6 +86,7 @@ function Invoke-Worker {
     }
     finally {
         $env:PostgreSql__Database = $previousDatabase
+        $env:Etl__TenantId = $previousTenantId
     }
 }
 

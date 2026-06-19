@@ -3,6 +3,7 @@ using Azure.ResourceManager;
 using FinOps.Application.Cloud;
 using FinOps.Application.Cloud.Azure;
 using FinOps.Application.Etl;
+using FinOps.Application.Tenancy;
 using FinOps.Infrastructure;
 using FinOps.Infrastructure.Persistence;
 using FinOps.Worker;
@@ -32,6 +33,9 @@ public sealed class DependencyInjectionTests
         AssertService<ICloudCostQueryService, CloudCostQueryService>(
             services,
             ServiceLifetime.Scoped);
+        AssertService<ITenantContext>(services, ServiceLifetime.Scoped);
+        AssertService<ITenantContextInitializer>(services, ServiceLifetime.Scoped);
+        AssertService<TenantContext>(services, ServiceLifetime.Scoped);
         Assert.Single(services, service => service.ServiceType == typeof(TimeProvider));
         Assert.Equal(
             ServiceLifetime.Singleton,
@@ -55,6 +59,7 @@ public sealed class DependencyInjectionTests
         AssertService<ICloudCostRepository>(services, ServiceLifetime.Scoped);
         AssertService<ICloudCostQueryRepository>(services, ServiceLifetime.Scoped);
         AssertService<IEtlJobRunRepository>(services, ServiceLifetime.Scoped);
+        AssertService<ITenantMembershipResolver>(services, ServiceLifetime.Scoped);
         AssertService<TokenCredential>(services, ServiceLifetime.Singleton);
         AssertService<ArmClient>(services, ServiceLifetime.Singleton);
         Assert.Contains(services, service =>
@@ -93,6 +98,14 @@ public sealed class DependencyInjectionTests
         scope.ServiceProvider.GetRequiredService<IAzureSubscriptionReader>();
         scope.ServiceProvider.GetRequiredService<IDbContextFactory<FinOpsDbContext>>();
         scope.ServiceProvider.GetRequiredService<IWorkerExecution>();
+
+        var tenantContext = scope.ServiceProvider.GetRequiredService<TenantContext>();
+        Assert.Same(
+            tenantContext,
+            scope.ServiceProvider.GetRequiredService<ITenantContext>());
+        Assert.Same(
+            tenantContext,
+            scope.ServiceProvider.GetRequiredService<ITenantContextInitializer>());
     }
 
     [Fact]

@@ -1,4 +1,5 @@
 using FinOps.Application.Cloud;
+using FinOps.Application.Tenancy;
 using FinOps.Worker;
 using FinOps.Worker.Jobs;
 using Microsoft.Extensions.DependencyInjection;
@@ -80,6 +81,64 @@ public sealed class WorkerJobTests
             ]));
 
         Assert.Contains("Multiple Worker job handlers", exception.Message);
+    }
+
+    [Fact]
+    public async Task Worker_execution_initializes_explicit_background_tenant()
+    {
+        var tenantId = Guid.NewGuid();
+        var tenantContext = new TenantContext();
+        var handler = new TenantCapturingJobHandler(tenantContext);
+        var execution = new WorkerExecution(
+            new WorkerJobDispatcher([handler]),
+            (ITenantContextInitializer)tenantContext,
+            new StubTenantResolver(isActiveTenant: true));
+
+        await execution.ExecuteAsync(
+            new WorkerJobRequest(handler.Name, tenantId),
+            CancellationToken.None);
+
+        Assert.Equal(tenantId, handler.CapturedTenantId);
+        Assert.Equal(
+            TenantContextSource.BackgroundJob,
+            tenantContext.RequireCurrent().Source);
+    }
+
+    [Fact]
+    public async Task Worker_execution_rejects_missing_tenant_before_dispatch()
+    {
+        var handler = new StubJobHandler("Resources");
+        var execution = new WorkerExecution(
+            new WorkerJobDispatcher([handler]),
+            (ITenantContextInitializer)new TenantContext(),
+            new StubTenantResolver(isActiveTenant: true));
+
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
+            execution.ExecuteAsync(
+                new WorkerJobRequest("Resources", Guid.Empty),
+                CancellationToken.None));
+
+        Assert.Equal(0, handler.ExecutionCount);
+    }
+
+    [Fact]
+    public async Task Worker_execution_rejects_unknown_or_inactive_tenant()
+    {
+        var handler = new StubJobHandler("Resources");
+        var tenantContext = new TenantContext();
+        var execution = new WorkerExecution(
+            new WorkerJobDispatcher([handler]),
+            (ITenantContextInitializer)tenantContext,
+            new StubTenantResolver(isActiveTenant: false));
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            execution.ExecuteAsync(
+                new WorkerJobRequest("Resources", Guid.NewGuid()),
+                CancellationToken.None));
+
+        Assert.Contains("does not exist or is not active", exception.Message);
+        Assert.Null(tenantContext.Current);
+        Assert.Equal(0, handler.ExecutionCount);
     }
 
     [Fact]
@@ -178,10 +237,12 @@ public sealed class WorkerJobTests
     }
 
     private sealed class StubWorkerExecution(
-        Func<string, CancellationToken, Task> execute) : IWorkerExecution
+        Func<WorkerJobRequest, CancellationToken, Task> execute) : IWorkerExecution
     {
-        public Task ExecuteAsync(string jobName, CancellationToken cancellationToken) =>
-            execute(jobName, cancellationToken);
+        public Task ExecuteAsync(
+            WorkerJobRequest request,
+            CancellationToken cancellationToken) =>
+            execute(request, cancellationToken);
     }
 
     private sealed class CancellableWorkerExecution : IWorkerExecution
@@ -190,12 +251,42 @@ public sealed class WorkerJobTests
             new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         public async Task ExecuteAsync(
-            string jobName,
+            WorkerJobRequest request,
             CancellationToken cancellationToken)
         {
             Started.TrySetResult();
             await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
         }
+    }
+
+    private sealed class TenantCapturingJobHandler(ITenantContext tenantContext) :
+        IWorkerJobHandler
+    {
+        public string Name => "Resources";
+
+        public Guid? CapturedTenantId { get; private set; }
+
+        public Task ExecuteAsync(CancellationToken cancellationToken)
+        {
+            CapturedTenantId = tenantContext.RequireCurrent().TenantId;
+            return Task.CompletedTask;
+        }
+    }
+
+    private sealed class StubTenantResolver(bool isActiveTenant) :
+        ITenantMembershipResolver
+    {
+        public Task<bool> IsActiveTenantAsync(
+            Guid tenantId,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult(isActiveTenant);
+
+        public Task<bool> HasActiveMembershipAsync(
+            Guid tenantId,
+            string issuer,
+            string subject,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult(false);
     }
 
     private sealed class StubProcessExitCode : IProcessExitCode
