@@ -3,6 +3,7 @@ using System;
 using FinOps.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FinOps.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(FinOpsDbContext))]
-    partial class FinOpsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260618144857_AddTenancyFoundation")]
+    partial class AddTenancyFoundation
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
