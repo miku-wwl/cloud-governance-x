@@ -15,7 +15,7 @@ Day 11 的正式风险登记册，因此本日不虚构 Owner、概率和风险�
 | ID | 差距 | 当前证据 | 为什么阻止生产 | 临时边界 | 目标阶段 | 主要依赖 |
 | --- | --- | --- | --- | --- | --- | --- |
 | GAP-001 | 管理 API 和查询 API 匿名 | `FinOps.Api/Program.cs` 无认证授权 | 任意调用者可读取成本、枚举订阅或触发云采集与写库 | 仅绑定本机并保持非公开 | 阶段 2、8 | Identity、RBAC、API policy |
-| GAP-002 | 无业务 tenant 隔离 | Day 20～22 已建立模型、schema 和可信 TenantContext；Day 23 已为资源、成本、ETL 增加 tenant-aware Repository、唯一键、CloudAccount 归属外键和 PostgreSQL A/B 隔离测试 | 新写入已隔离，但历史 NULL tenant 数据尚未 backfill，OIDC/RBAC/RLS 尚未完成 | 仅受控测试 Tenant；历史数据暂不可见 | 阶段 2～3 | Day 24 backfill、OIDC/RBAC、RLS 评估与阶段 2 escape E2E |
+| GAP-002 | 无业务 tenant 隔离 | Day 20～23 已建立 tenant 模型、可信上下文和 tenant-aware Repository；Day 24 backfill 增加目标库/行数确认、活跃 writer 拒绝、事务回滚、批次上限和完成后 NULL 写入数据库护栏 | 新写入和受控历史迁移已有隔离机制，但各环境仍需执行 backfill，OIDC/RBAC/RLS 尚未完成 | 仅受控开发 Tenant；生产不得运行 Development backfill | 阶段 2～3 | 环境 backfill 证据、OIDC/RBAC、RLS 评估与阶段 2 escape E2E |
 | GAP-003 | migration 发布编排不足 | Day 18 已由独立 `FinOps.Migrator` 替代；API/Worker 无 migration API，IL 门禁覆盖直接调用和方法组别名；Migrator 使用 advisory lock | 自动 migration 和同库 Migrator 并发风险已关闭；仍缺发布审批、生产身份和回滚编排 | Migrator 必须先于业务宿主运行 | 阶段 12 | CI/CD migration gate、部署顺序 |
 | GAP-004 | 成本 sample fallback 默认开启 | 两个 appsettings 中为 `true` | Provider 故障或空数据可能表现为成功数据 | 只允许明确标记的本地演示 | 阶段 5～6 | 环境隔离、数据 provenance |
 | GAP-005 | Azure CLI 用户身份 | `DefaultAzureCredential` + 本地 `az login` | 无 workload identity、轮换和最小权限证明 | 仅开发机使用 | 阶段 2、5 | Managed/Workload Identity、RBAC |

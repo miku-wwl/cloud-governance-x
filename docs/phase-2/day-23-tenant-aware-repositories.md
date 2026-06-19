@@ -2,7 +2,7 @@
 
 Date: 2026-06-19
 Phase: 2 — Identity, tenancy, RBAC and audit
-Status: Validation
+Status: Accepted
 
 ## 1. Outcome
 

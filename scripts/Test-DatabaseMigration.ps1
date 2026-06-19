@@ -23,6 +23,7 @@ $migrationFiles = @(
 )
 $expectedMigrationCount = $migrationFiles.Count
 $previousMigration = $migrationFiles[-2].BaseName
+$tenantFoundationMigration = $migrationFiles[-3].BaseName
 $suffix = "$PID$([DateTimeOffset]::UtcNow.ToUnixTimeSeconds())"
 $database = "finops_migration_$suffix"
 $secondDatabase = "finops_migration_alt_$suffix"
@@ -31,6 +32,7 @@ $runtimeCredential = "finops_runtime_test_$suffix"
 $apiPort = 5099
 $apiProcess = $null
 $lockJob = $null
+$backfillWriterJob = $null
 $verificationError = $null
 $tempDirectory = [IO.Path]::GetTempPath()
 $apiStandardOutput = Join-Path $tempDirectory "finops-migration-api-$suffix.stdout.log"
@@ -149,21 +151,145 @@ function Invoke-Migrator {
     return ($output -join [Environment]::NewLine)
 }
 
+function Invoke-LegacyTenantBackfill {
+    param(
+        [Parameter(Mandatory)][string]$TargetDatabase,
+        [switch]$Apply,
+        [bool]$AllowNonZeroExit = $false,
+        [string]$EnvironmentName = "Development",
+        [bool]$WritersStopped = $true,
+        [long]$ExpectedResourceRows = 0,
+        [long]$ExpectedCostRows = 0,
+        [long]$ExpectedEtlRunRows = 0,
+        [long]$MaximumLegacyRows = 100000,
+        [string]$DatabaseConfirmation
+    )
+
+    $previousBackfillEnvironment = @{
+        DotnetEnvironment = $env:DOTNET_ENVIRONMENT
+        Database = $env:PostgreSql__Database
+        Enabled = $env:LegacyTenantBackfill__Enabled
+        Apply = $env:LegacyTenantBackfill__Apply
+        WritersStopped = $env:LegacyTenantBackfill__LegacyWritersStopped
+        DatabaseConfirmation = $env:LegacyTenantBackfill__DatabaseConfirmation
+        ExpectedResourceRows = $env:LegacyTenantBackfill__ExpectedResourceRows
+        ExpectedCostRows = $env:LegacyTenantBackfill__ExpectedCostRows
+        ExpectedEtlRunRows = $env:LegacyTenantBackfill__ExpectedEtlRunRows
+        MaximumLegacyRows = $env:LegacyTenantBackfill__MaximumLegacyRows
+        OrganizationId = $env:LegacyTenantBackfill__OrganizationId
+        TenantId = $env:LegacyTenantBackfill__TenantId
+        OrganizationDisplayName =
+            $env:LegacyTenantBackfill__OrganizationDisplayName
+        TenantSlug = $env:LegacyTenantBackfill__TenantSlug
+        TenantDisplayName = $env:LegacyTenantBackfill__TenantDisplayName
+    }
+
+    try {
+        $env:DOTNET_ENVIRONMENT = $EnvironmentName
+        $env:PostgreSql__Database = $TargetDatabase
+        $env:LegacyTenantBackfill__Enabled = "true"
+        $env:LegacyTenantBackfill__Apply = $Apply.IsPresent.ToString()
+        $env:LegacyTenantBackfill__LegacyWritersStopped =
+            $WritersStopped.ToString()
+        $env:LegacyTenantBackfill__DatabaseConfirmation = if (
+            [string]::IsNullOrWhiteSpace($DatabaseConfirmation)
+        ) {
+            $TargetDatabase
+        }
+        else {
+            $DatabaseConfirmation
+        }
+        $env:LegacyTenantBackfill__ExpectedResourceRows =
+            $ExpectedResourceRows.ToString()
+        $env:LegacyTenantBackfill__ExpectedCostRows =
+            $ExpectedCostRows.ToString()
+        $env:LegacyTenantBackfill__ExpectedEtlRunRows =
+            $ExpectedEtlRunRows.ToString()
+        $env:LegacyTenantBackfill__MaximumLegacyRows =
+            $MaximumLegacyRows.ToString()
+        $env:LegacyTenantBackfill__OrganizationId =
+            "11000000-0000-0000-0000-000000000024"
+        $env:LegacyTenantBackfill__TenantId =
+            "22000000-0000-0000-0000-000000000024"
+        $env:LegacyTenantBackfill__OrganizationDisplayName =
+            "Backfill Integration Organization"
+        $env:LegacyTenantBackfill__TenantSlug = "legacy-integration"
+        $env:LegacyTenantBackfill__TenantDisplayName =
+            "Legacy Integration Tenant"
+
+        $output = & dotnet $migratorAssembly `
+            --Operation=backfill-development-tenant 2>&1
+        $exitCode = $LASTEXITCODE
+        $output | ForEach-Object { Write-Host $_ }
+
+        if ($AllowNonZeroExit) {
+            if ($exitCode -ne 1) {
+                throw "Expected legacy Tenant backfill exit code 1, got $exitCode."
+            }
+        }
+        elseif ($exitCode -ne 0) {
+            throw "Legacy Tenant backfill exited with code $exitCode."
+        }
+
+        return ($output -join [Environment]::NewLine)
+    }
+    finally {
+        $env:DOTNET_ENVIRONMENT =
+            $previousBackfillEnvironment.DotnetEnvironment
+        $env:PostgreSql__Database = $previousBackfillEnvironment.Database
+        $env:LegacyTenantBackfill__Enabled =
+            $previousBackfillEnvironment.Enabled
+        $env:LegacyTenantBackfill__Apply = $previousBackfillEnvironment.Apply
+        $env:LegacyTenantBackfill__LegacyWritersStopped =
+            $previousBackfillEnvironment.WritersStopped
+        $env:LegacyTenantBackfill__DatabaseConfirmation =
+            $previousBackfillEnvironment.DatabaseConfirmation
+        $env:LegacyTenantBackfill__ExpectedResourceRows =
+            $previousBackfillEnvironment.ExpectedResourceRows
+        $env:LegacyTenantBackfill__ExpectedCostRows =
+            $previousBackfillEnvironment.ExpectedCostRows
+        $env:LegacyTenantBackfill__ExpectedEtlRunRows =
+            $previousBackfillEnvironment.ExpectedEtlRunRows
+        $env:LegacyTenantBackfill__MaximumLegacyRows =
+            $previousBackfillEnvironment.MaximumLegacyRows
+        $env:LegacyTenantBackfill__OrganizationId =
+            $previousBackfillEnvironment.OrganizationId
+        $env:LegacyTenantBackfill__TenantId =
+            $previousBackfillEnvironment.TenantId
+        $env:LegacyTenantBackfill__OrganizationDisplayName =
+            $previousBackfillEnvironment.OrganizationDisplayName
+        $env:LegacyTenantBackfill__TenantSlug =
+            $previousBackfillEnvironment.TenantSlug
+        $env:LegacyTenantBackfill__TenantDisplayName =
+            $previousBackfillEnvironment.TenantDisplayName
+    }
+}
+
 function Invoke-EfDatabaseUpdate {
     param(
         [Parameter(Mandatory)][string]$TargetDatabase,
-        [Parameter(Mandatory)][string]$TargetMigration
+        [Parameter(Mandatory)][string]$TargetMigration,
+        [switch]$ExpectFailure
     )
 
     $env:PostgreSql__Database = $TargetDatabase
-    & dotnet tool run dotnet-ef database update $TargetMigration `
+    $output = & dotnet tool run dotnet-ef database update $TargetMigration `
         --project (Join-Path $repositoryRoot "src/FinOps.Infrastructure/FinOps.Infrastructure.csproj") `
         --startup-project (Join-Path $repositoryRoot "src/FinOps.Infrastructure/FinOps.Infrastructure.csproj") `
         --context FinOpsDbContext `
-        --no-build
-    if ($LASTEXITCODE -ne 0) {
+        --no-build 2>&1
+    $exitCode = $LASTEXITCODE
+    $output | ForEach-Object { Write-Host $_ }
+    if ($ExpectFailure) {
+        if ($exitCode -eq 0) {
+            throw "Expected EF database update to '$TargetMigration' to fail."
+        }
+    }
+    elseif ($exitCode -ne 0) {
         throw "EF database update to '$TargetMigration' failed."
     }
+
+    return ($output -join [Environment]::NewLine)
 }
 
 function Wait-ForApiReadiness {
@@ -284,6 +410,58 @@ try {
         throw "The repeat run did not report 0 applied migrations."
     }
 
+    Write-Host "==> Empty legacy backfill no-op"
+    $emptyBackfillOutput = Invoke-LegacyTenantBackfill `
+        -TargetDatabase $database `
+        -Apply
+    if ($emptyBackfillOutput -notmatch "resources 0, costs 0, ETL runs 0") {
+        throw "Empty legacy Tenant backfill did not report a no-op."
+    }
+    $emptyBackfillTenantCount = [int](Invoke-PostgreSql `
+        -TargetDatabase $database `
+        -Sql @"
+SELECT count(*)
+FROM tenants
+WHERE id = '22000000-0000-0000-0000-000000000024';
+"@ `
+        -Scalar)
+    if ($emptyBackfillTenantCount -ne 0) {
+        throw "Empty legacy Tenant backfill created an unnecessary Tenant."
+    }
+    $emptyBackfillGuardCount = [int](Invoke-PostgreSql `
+        -TargetDatabase $database `
+        -Sql @"
+SELECT count(*)
+FROM pg_constraint
+WHERE conname IN (
+    'ck_cloud_resources_tenant_backfilled',
+    'ck_cloud_cost_daily_tenant_backfilled',
+    'ck_etl_job_runs_tenant_backfilled'
+);
+"@ `
+        -Scalar)
+    if ($emptyBackfillGuardCount -ne 3) {
+        throw "Empty apply did not install all post-backfill NULL guards."
+    }
+
+    $productionBackfillOutput = Invoke-LegacyTenantBackfill `
+        -TargetDatabase $database `
+        -Apply `
+        -EnvironmentName "Production" `
+        -AllowNonZeroExit:$true
+    if ($productionBackfillOutput -notmatch "restricted to the Development") {
+        throw "Production environment did not reject legacy Tenant backfill."
+    }
+
+    $writerAcknowledgementOutput = Invoke-LegacyTenantBackfill `
+        -TargetDatabase $database `
+        -Apply `
+        -WritersStopped $false `
+        -AllowNonZeroExit:$true
+    if ($writerAcknowledgementOutput -notmatch "pre-Day24 API and Worker") {
+        throw "Missing old-writer acknowledgement did not reject backfill."
+    }
+
     Write-Host "==> Concurrent migration rejection"
     $lockJob = Start-Job -ScriptBlock {
         param($TargetDatabase)
@@ -328,7 +506,7 @@ try {
         throw "A migration lock in one database incorrectly blocked another database."
     }
 
-    Write-Host "==> Latest migration Down and reapply"
+    Write-Host "==> Backfill control migration Down and reapply"
     Invoke-EfDatabaseUpdate `
         -TargetDatabase $secondDatabase `
         -TargetMigration $previousMigration
@@ -362,8 +540,15 @@ WHERE table_schema = 'public'
   AND table_name IN ('cloud_resources', 'cloud_cost_daily', 'etl_job_runs');
 "@ `
         -Scalar)
-    if ($tenantColumnCount -ne 0) {
-        throw "The latest migration Down path left core tenant columns behind."
+    if ($tenantColumnCount -ne 3) {
+        throw "The control migration Down path damaged core tenant columns."
+    }
+    $controlTableExists = Invoke-PostgreSql `
+        -TargetDatabase $secondDatabase `
+        -Sql "SELECT to_regclass('public.legacy_tenant_backfill_control') IS NOT NULL;" `
+        -Scalar
+    if ($controlTableExists -ne "f") {
+        throw "The unapplied backfill control table survived its Down path."
     }
 
     $rolledBackMigrationCount = [int](Invoke-PostgreSql `
@@ -379,7 +564,41 @@ WHERE table_schema = 'public'
 
     $reapplyOutput = Invoke-Migrator -TargetDatabase $secondDatabase
     if ($reapplyOutput -notmatch "Applied 1 migration\(s\)") {
-        throw "The rolled-back core tenant migration was not reapplied."
+        throw "The rolled-back backfill control migration was not reapplied."
+    }
+
+    Write-Host "==> Tenant-aware core migration Down and reapply"
+    Invoke-EfDatabaseUpdate `
+        -TargetDatabase $secondDatabase `
+        -TargetMigration $tenantFoundationMigration
+    $tenantColumnCount = [int](Invoke-PostgreSql `
+        -TargetDatabase $secondDatabase `
+        -Sql @"
+SELECT count(*)
+FROM information_schema.columns
+WHERE table_schema = 'public'
+  AND column_name = 'tenant_id'
+  AND table_name IN ('cloud_resources', 'cloud_cost_daily', 'etl_job_runs');
+"@ `
+        -Scalar)
+    if ($tenantColumnCount -ne 0) {
+        throw "The tenant-aware core Down path left tenant columns behind."
+    }
+
+    $rolledBackMigrationCount = [int](Invoke-PostgreSql `
+        -TargetDatabase $secondDatabase `
+        -Sql 'SELECT count(*) FROM "__EFMigrationsHistory";' `
+        -Scalar)
+    if ($rolledBackMigrationCount -ne ($expectedMigrationCount - 2)) {
+        throw (
+            "Expected $($expectedMigrationCount - 2) history rows after core rollback, " +
+            "found $rolledBackMigrationCount."
+        )
+    }
+
+    $reapplyOutput = Invoke-Migrator -TargetDatabase $secondDatabase
+    if ($reapplyOutput -notmatch "Applied 2 migration\(s\)") {
+        throw "The core tenant and backfill control migrations were not reapplied."
     }
 
     Write-Host "==> Rolling-deployment legacy uniqueness"
@@ -458,6 +677,285 @@ VALUES
      '2026-06-19', 'Storage', 'legacy-rg', 2, 'NZD', '{}');
 COMMIT;
 "@
+
+    Write-Host "==> Repeatable legacy Tenant backfill"
+    Invoke-PostgreSql `
+        -TargetDatabase $secondDatabase `
+        -Sql @"
+INSERT INTO cloud_resources
+    (id, provider, account_id, resource_id, resource_id_normalized,
+     resource_name, resource_type, region, tags_json, first_seen_at, last_seen_at)
+VALUES
+    ('61000000-0000-0000-0000-000000000001', 'Azure', 'legacy-subscription',
+     '/legacy/resource', '/LEGACY/RESOURCE', 'Legacy resource', 'demo/type',
+     'australiaeast', '{}', '2026-06-19T00:00:00Z', '2026-06-19T00:00:00Z');
+
+INSERT INTO cloud_cost_daily
+    (id, provider, account_id, usage_date, service_name, resource_group,
+     cost, currency, raw_json)
+VALUES
+    ('71000000-0000-0000-0000-000000000001', 'Azure',
+     'legacy-subscription', '2026-06-19', 'Storage', 'legacy-rg',
+     12.5, 'NZD', '{}');
+
+INSERT INTO etl_job_runs
+    (id, job_name, provider, started_at, status, records_processed)
+VALUES
+    ('81000000-0000-0000-0000-000000000001', 'legacy-sync', 'Azure',
+     '2026-06-19T00:00:00Z', 'Succeeded', 2);
+"@ | Out-Null
+
+    Write-Host "==> Active writer blocks legacy Tenant backfill"
+    $backfillWriterJob = Start-Job -ScriptBlock {
+        param($TargetDatabase)
+
+        & docker exec finops-postgres psql `
+            -v ON_ERROR_STOP=1 `
+            -U finops `
+            -d $TargetDatabase `
+            -c "BEGIN; LOCK TABLE cloud_resources IN ROW EXCLUSIVE MODE; SELECT pg_sleep(30); COMMIT;"
+    } -ArgumentList $secondDatabase
+
+    $writerLockObserved = $false
+    $writerBackendPid = 0
+    for ($attempt = 0; $attempt -lt 40; $attempt++) {
+        $writerBackendPid = [int](Invoke-PostgreSql `
+            -TargetDatabase $secondDatabase `
+            -Sql @"
+SELECT COALESCE(max(lock.pid), 0)
+FROM pg_locks AS lock
+JOIN pg_class AS relation ON relation.oid = lock.relation
+WHERE relation.relname = 'cloud_resources'
+  AND lock.mode = 'RowExclusiveLock'
+  AND lock.granted;
+"@ `
+            -Scalar)
+        if ($writerBackendPid -gt 0) {
+            $writerLockObserved = $true
+            break
+        }
+
+        Start-Sleep -Milliseconds 250
+    }
+    if (-not $writerLockObserved) {
+        throw "The simulated legacy writer did not acquire its table lock."
+    }
+
+    $activeWriterOutput = Invoke-LegacyTenantBackfill `
+        -TargetDatabase $secondDatabase `
+        -AllowNonZeroExit:$true
+    if ($activeWriterOutput -notmatch "could not obtain lock on relation") {
+        throw "An active legacy writer did not fail the backfill immediately."
+    }
+    Invoke-PostgreSql `
+        -TargetDatabase $secondDatabase `
+        -Sql "SELECT pg_terminate_backend($writerBackendPid);" | Out-Null
+    Stop-Job $backfillWriterJob -ErrorAction SilentlyContinue
+    Receive-Job $backfillWriterJob -ErrorAction SilentlyContinue | Write-Host
+    Remove-Job $backfillWriterJob -Force -ErrorAction SilentlyContinue
+    $backfillWriterJob = $null
+
+    Invoke-LegacyTenantBackfill -TargetDatabase $secondDatabase | Out-Null
+    $dryRunState = Invoke-PostgreSql `
+        -TargetDatabase $secondDatabase `
+        -Sql @"
+SELECT
+    (SELECT count(*) FROM cloud_resources WHERE tenant_id IS NULL),
+    (SELECT count(*) FROM cloud_cost_daily WHERE tenant_id IS NULL),
+    (SELECT count(*) FROM etl_job_runs WHERE tenant_id IS NULL),
+    (SELECT count(*) FROM tenants
+     WHERE id = '22000000-0000-0000-0000-000000000024');
+"@ `
+        -Scalar
+    if ($dryRunState -ne "1|1|1|0") {
+        throw "Legacy Tenant backfill dry-run changed persisted data: $dryRunState"
+    }
+
+    $staleCountOutput = Invoke-LegacyTenantBackfill `
+        -TargetDatabase $secondDatabase `
+        -Apply `
+        -ExpectedResourceRows 0 `
+        -ExpectedCostRows 1 `
+        -ExpectedEtlRunRows 1 `
+        -AllowNonZeroExit:$true
+    if ($staleCountOutput -notmatch "row counts changed after dry-run") {
+        throw "Stale dry-run counts did not reject the apply operation."
+    }
+
+    $maximumRowsOutput = Invoke-LegacyTenantBackfill `
+        -TargetDatabase $secondDatabase `
+        -Apply `
+        -ExpectedResourceRows 1 `
+        -ExpectedCostRows 1 `
+        -ExpectedEtlRunRows 1 `
+        -MaximumLegacyRows 2 `
+        -AllowNonZeroExit:$true
+    if ($maximumRowsOutput -notmatch "exceeds the approved maximum") {
+        throw "Legacy row maximum did not reject an oversized apply operation."
+    }
+
+    $wrongDatabaseOutput = Invoke-LegacyTenantBackfill `
+        -TargetDatabase $secondDatabase `
+        -Apply `
+        -ExpectedResourceRows 1 `
+        -ExpectedCostRows 1 `
+        -ExpectedEtlRunRows 1 `
+        -DatabaseConfirmation "wrong_database" `
+        -AllowNonZeroExit:$true
+    if ($wrongDatabaseOutput -notmatch "database confirmation does not match") {
+        throw "Wrong target database confirmation did not reject apply."
+    }
+
+    Invoke-PostgreSql `
+        -TargetDatabase $secondDatabase `
+        -Sql @"
+INSERT INTO cloud_resources
+    (id, provider, account_id, resource_id, resource_id_normalized,
+     resource_name, resource_type, region, tags_json, first_seen_at, last_seen_at)
+VALUES
+    ('61000000-0000-0000-0000-000000000002', 'Azure',
+     'collision-account', '/collision/a', '/COLLISION',
+     'Collision A', 'demo/type', 'australiaeast', '{}',
+     '2026-06-19T00:00:00Z', '2026-06-19T00:00:00Z'),
+    ('61000000-0000-0000-0000-000000000003', 'azure',
+     'collision-account', '/collision/b', '/COLLISION',
+     'Collision B', 'demo/type', 'australiaeast', '{}',
+     '2026-06-19T00:00:00Z', '2026-06-19T00:00:00Z');
+"@ | Out-Null
+    $collisionOutput = Invoke-LegacyTenantBackfill `
+        -TargetDatabase $secondDatabase `
+        -Apply `
+        -ExpectedResourceRows 3 `
+        -ExpectedCostRows 1 `
+        -ExpectedEtlRunRows 1 `
+        -AllowNonZeroExit:$true
+    if ($collisionOutput -notmatch "collide after Provider normalization") {
+        throw "Provider normalization collision was not reported."
+    }
+
+    $collisionRows = [int](Invoke-PostgreSql `
+        -TargetDatabase $secondDatabase `
+        -Sql @"
+SELECT count(*)
+FROM cloud_resources
+WHERE tenant_id IS NULL
+  AND resource_id_normalized = '/COLLISION';
+"@ `
+        -Scalar)
+    if ($collisionRows -ne 2) {
+        throw "Failed backfill did not preserve all collision rows."
+    }
+    Invoke-PostgreSql `
+        -TargetDatabase $secondDatabase `
+        -Sql @"
+DELETE FROM cloud_resources
+WHERE tenant_id IS NULL
+  AND resource_id_normalized = '/COLLISION';
+"@ | Out-Null
+
+    Invoke-LegacyTenantBackfill `
+        -TargetDatabase $secondDatabase `
+        -Apply `
+        -ExpectedResourceRows 1 `
+        -ExpectedCostRows 1 `
+        -ExpectedEtlRunRows 1 | Out-Null
+    $appliedState = Invoke-PostgreSql `
+        -TargetDatabase $secondDatabase `
+        -Sql @"
+SELECT
+    (SELECT count(*) FROM cloud_resources),
+    (SELECT count(*) FROM cloud_cost_daily),
+    (SELECT count(*) FROM etl_job_runs),
+    (SELECT count(*) FROM cloud_resources WHERE tenant_id IS NULL),
+    (SELECT count(*) FROM cloud_cost_daily WHERE tenant_id IS NULL),
+    (SELECT count(*) FROM etl_job_runs WHERE tenant_id IS NULL),
+    (SELECT count(*) FROM provider_connections
+     WHERE tenant_id = '22000000-0000-0000-0000-000000000024'),
+    (SELECT count(*) FROM cloud_accounts
+     WHERE tenant_id = '22000000-0000-0000-0000-000000000024'),
+    (SELECT provider FROM cloud_resources
+     WHERE id = '61000000-0000-0000-0000-000000000001');
+"@ `
+        -Scalar
+    if ($appliedState -ne "1|1|1|0|0|0|1|1|azure") {
+        throw "Legacy Tenant backfill result was unexpected: $appliedState"
+    }
+    $backfillGuardCount = [int](Invoke-PostgreSql `
+        -TargetDatabase $secondDatabase `
+        -Sql @"
+SELECT count(*)
+FROM pg_constraint
+WHERE conname IN (
+    'ck_cloud_resources_tenant_backfilled',
+    'ck_cloud_cost_daily_tenant_backfilled',
+    'ck_etl_job_runs_tenant_backfilled'
+);
+"@ `
+        -Scalar)
+    if ($backfillGuardCount -ne 3) {
+        throw "Applied backfill did not install all NULL Tenant guards."
+    }
+    $backfillMarkerState = Invoke-PostgreSql `
+        -TargetDatabase $secondDatabase `
+        -Sql @"
+SELECT tenant_id::text || '|' ||
+       resource_rows::text || '|' ||
+       cost_rows::text || '|' ||
+       etl_run_rows::text
+FROM legacy_tenant_backfill_control
+WHERE operation_name = 'day24-development-tenant-backfill';
+"@ `
+        -Scalar
+    if (
+        $backfillMarkerState -ne
+        "22000000-0000-0000-0000-000000000024|1|1|1"
+    ) {
+        throw "Persistent Day24 backfill completion marker is missing or invalid."
+    }
+
+    $blockedDownOutput = Invoke-EfDatabaseUpdate `
+        -TargetDatabase $secondDatabase `
+        -TargetMigration $previousMigration `
+        -ExpectFailure
+    if ($blockedDownOutput -notmatch "Cannot roll back tenant-aware schema") {
+        throw "Backfill completion did not report the controlled restore requirement."
+    }
+    $postDownAttemptState = Invoke-PostgreSql `
+        -TargetDatabase $secondDatabase `
+        -Sql @"
+SELECT
+    (SELECT count(*) FROM information_schema.columns
+     WHERE table_name IN ('cloud_resources', 'cloud_cost_daily', 'etl_job_runs')
+       AND column_name = 'tenant_id'),
+    (SELECT count(*) FROM legacy_tenant_backfill_control
+     WHERE operation_name = 'day24-development-tenant-backfill'),
+    (SELECT count(*) FROM "__EFMigrationsHistory");
+"@ `
+        -Scalar
+    if ($postDownAttemptState -ne "3|1|$expectedMigrationCount") {
+        throw "Failed schema Down changed tenant columns, marker, or migration history."
+    }
+
+    Assert-PostgreSqlRejected `
+        -TargetDatabase $secondDatabase `
+        -ExpectedError "ck_etl_job_runs_tenant_backfilled" `
+        -Sql @"
+INSERT INTO etl_job_runs
+    (id, job_name, provider, started_at, status, records_processed)
+VALUES
+    ('81000000-0000-0000-0000-000000000002', 'legacy-writer',
+     'azure', '2026-06-19T00:00:00Z', 'Succeeded', 0);
+"@
+
+    $repeatBackfillOutput = Invoke-LegacyTenantBackfill `
+        -TargetDatabase $secondDatabase `
+        -Apply
+    if (
+        $repeatBackfillOutput -notmatch
+        "resources 0, costs 0, ETL runs 0"
+    ) {
+        throw "Repeat legacy Tenant backfill was not a no-op."
+    }
 
     Write-Host "==> Tenancy PostgreSQL constraint integration"
     $organizationId = "10000000-0000-0000-0000-000000000001"
@@ -728,6 +1226,11 @@ finally {
         Stop-Job $lockJob -ErrorAction SilentlyContinue
         Receive-Job $lockJob -ErrorAction SilentlyContinue | Write-Host
         Remove-Job $lockJob -Force -ErrorAction SilentlyContinue
+    }
+    if ($backfillWriterJob) {
+        Stop-Job $backfillWriterJob -ErrorAction SilentlyContinue
+        Receive-Job $backfillWriterJob -ErrorAction SilentlyContinue | Write-Host
+        Remove-Job $backfillWriterJob -Force -ErrorAction SilentlyContinue
     }
 
     $env:PostgreSql__Host = "localhost"
