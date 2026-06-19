@@ -45,6 +45,7 @@ $previousEnvironment = @{
     ForceSampleData = $env:AzureCost__ForceSampleData
     Job = $env:Etl__Job
     TenantId = $env:Etl__TenantId
+    TenantTestConnection = $env:FINOPS_TENANT_TEST_CONNECTION
     Urls = $env:ASPNETCORE_URLS
 }
 
@@ -347,8 +348,22 @@ FROM (
 WHERE to_regclass('public.' || expected.name) IS NOT NULL;
 "@ `
         -Scalar)
-    if ($tenancyTableCount -ne 0) {
-        throw "The latest migration Down path left tenancy tables behind."
+    if ($tenancyTableCount -ne 5) {
+        throw "The latest migration Down path damaged the tenancy foundation tables."
+    }
+
+    $tenantColumnCount = [int](Invoke-PostgreSql `
+        -TargetDatabase $secondDatabase `
+        -Sql @"
+SELECT count(*)
+FROM information_schema.columns
+WHERE table_schema = 'public'
+  AND column_name = 'tenant_id'
+  AND table_name IN ('cloud_resources', 'cloud_cost_daily', 'etl_job_runs');
+"@ `
+        -Scalar)
+    if ($tenantColumnCount -ne 0) {
+        throw "The latest migration Down path left core tenant columns behind."
     }
 
     $rolledBackMigrationCount = [int](Invoke-PostgreSql `
@@ -364,8 +379,85 @@ WHERE to_regclass('public.' || expected.name) IS NOT NULL;
 
     $reapplyOutput = Invoke-Migrator -TargetDatabase $secondDatabase
     if ($reapplyOutput -notmatch "Applied 1 migration\(s\)") {
-        throw "The rolled-back tenancy migration was not reapplied."
+        throw "The rolled-back core tenant migration was not reapplied."
     }
+
+    Write-Host "==> Rolling-deployment legacy uniqueness"
+    $legacyIndexCount = [int](Invoke-PostgreSql `
+        -TargetDatabase $secondDatabase `
+        -Sql @"
+SELECT count(*)
+FROM pg_indexes
+WHERE schemaname = 'public'
+  AND indexname IN (
+      'ux_cloud_resources_legacy_provider_resource_id',
+      'ux_cloud_cost_daily_legacy_identity'
+  )
+  AND indexdef LIKE '%WHERE (tenant_id IS NULL)%';
+"@ `
+        -Scalar)
+    if ($legacyIndexCount -ne 2) {
+        throw "The nullable-tenant compatibility indexes are missing or unfiltered."
+    }
+
+    $cloudAccountConstraintCount = [int](Invoke-PostgreSql `
+        -TargetDatabase $secondDatabase `
+        -Sql @"
+SELECT count(*)
+FROM pg_constraint
+WHERE conname = 'ak_cloud_accounts_tenant_provider_external'
+  AND contype = 'u';
+"@ `
+        -Scalar)
+    $duplicateCloudAccountIndexCount = [int](Invoke-PostgreSql `
+        -TargetDatabase $secondDatabase `
+        -Sql @"
+SELECT count(*)
+FROM pg_indexes
+WHERE schemaname = 'public'
+  AND indexname = 'ux_cloud_accounts_tenant_provider_external';
+"@ `
+        -Scalar)
+    if (
+        $cloudAccountConstraintCount -ne 1 -or
+        $duplicateCloudAccountIndexCount -ne 0
+    ) {
+        throw "Cloud account composite uniqueness is not represented by exactly one alternate key."
+    }
+
+    Assert-PostgreSqlRejected `
+        -TargetDatabase $secondDatabase `
+        -ExpectedError "duplicate key value violates unique constraint `"ux_cloud_resources_legacy_provider_resource_id`"" `
+        -Sql @"
+BEGIN;
+INSERT INTO cloud_resources
+    (id, provider, account_id, resource_id, resource_id_normalized, resource_name,
+     resource_type, region, tags_json, first_seen_at, last_seen_at)
+VALUES
+    ('60000000-0000-0000-0000-000000000001', 'azure', 'legacy-account',
+     '/legacy/resource', '/LEGACY/RESOURCE', 'Legacy resource', 'demo/type',
+     'australiaeast', '{}', '2026-06-19T00:00:00Z', '2026-06-19T00:00:00Z'),
+    ('60000000-0000-0000-0000-000000000002', 'azure', 'legacy-account',
+     '/legacy/resource', '/LEGACY/RESOURCE', 'Legacy resource duplicate', 'demo/type',
+     'australiaeast', '{}', '2026-06-19T00:00:00Z', '2026-06-19T00:00:00Z');
+COMMIT;
+"@
+
+    Assert-PostgreSqlRejected `
+        -TargetDatabase $secondDatabase `
+        -ExpectedError "duplicate key value violates unique constraint `"ux_cloud_cost_daily_legacy_identity`"" `
+        -Sql @"
+BEGIN;
+INSERT INTO cloud_cost_daily
+    (id, provider, account_id, usage_date, service_name, resource_group,
+     cost, currency, raw_json)
+VALUES
+    ('70000000-0000-0000-0000-000000000001', 'azure', 'legacy-account',
+     '2026-06-19', 'Storage', 'legacy-rg', 1, 'NZD', '{}'),
+    ('70000000-0000-0000-0000-000000000002', 'azure', 'legacy-account',
+     '2026-06-19', 'Storage', 'legacy-rg', 2, 'NZD', '{}');
+COMMIT;
+"@
 
     Write-Host "==> Tenancy PostgreSQL constraint integration"
     $organizationId = "10000000-0000-0000-0000-000000000001"
@@ -479,7 +571,31 @@ INSERT INTO tenants
     (id, organization_id, slug, display_name, status, created_at, updated_at)
 VALUES
     ('20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', 'worker-tenant', 'Worker Tenant', 'Active', '2026-06-19T00:00:00Z', '2026-06-19T00:00:00Z');
+
+INSERT INTO provider_connections
+    (id, tenant_id, provider, display_name, credential_reference, status, created_at, updated_at)
+VALUES
+    ('30000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001', 'azure', 'Worker Azure', 'development://worker', 'Active', '2026-06-19T00:00:00Z', '2026-06-19T00:00:00Z');
+
+INSERT INTO cloud_accounts
+    (id, tenant_id, provider_connection_id, provider, external_account_id, display_name, status, created_at, updated_at)
+VALUES
+    ('40000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000001', 'azure', 'sample-subscription', 'Worker Sample Subscription', 'Active', '2026-06-19T00:00:00Z', '2026-06-19T00:00:00Z');
 "@ | Out-Null
+
+    Write-Host "==> Tenant A/B Repository integration"
+    $env:FINOPS_TENANT_TEST_CONNECTION = (
+        "Host=localhost;Port=5432;Database=$database;" +
+        "Username=finops;Password=finops_dev_password;Timeout=3"
+    )
+    & dotnet test `
+        (Join-Path $repositoryRoot "src/FinOps.Tests/FinOps.Tests.csproj") `
+        --no-build `
+        --filter "FullyQualifiedName~TenantRepositoryIntegrationTests.Repositories_isolate"
+    if ($LASTEXITCODE -ne 0) {
+        throw "Tenant A/B Repository integration test failed."
+    }
+    $env:FINOPS_TENANT_TEST_CONNECTION = $null
 
     Write-Host "==> Restricted runtime role"
     Invoke-PostgreSql `
@@ -644,6 +760,7 @@ finally {
     $env:AzureCost__ForceSampleData = $previousEnvironment.ForceSampleData
     $env:Etl__Job = $previousEnvironment.Job
     $env:Etl__TenantId = $previousEnvironment.TenantId
+    $env:FINOPS_TENANT_TEST_CONNECTION = $previousEnvironment.TenantTestConnection
     $env:ASPNETCORE_URLS = $previousEnvironment.Urls
     Remove-Item -LiteralPath $apiStandardOutput, $apiStandardError `
         -Force `

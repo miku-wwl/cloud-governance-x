@@ -1,3 +1,5 @@
+using FinOps.Domain.Tenancy;
+
 namespace FinOps.Domain.CloudResources;
 
 public sealed class CloudResource
@@ -7,6 +9,7 @@ public sealed class CloudResource
     }
 
     private CloudResource(
+        Guid tenantId,
         string provider,
         string accountId,
         string resourceId,
@@ -18,7 +21,8 @@ public sealed class CloudResource
         DateTimeOffset observedAt)
     {
         Id = Guid.NewGuid();
-        Provider = provider;
+        TenantId = tenantId;
+        Provider = ProviderConnection.NormalizeProvider(provider);
         AccountId = accountId;
         ResourceId = resourceId;
         ResourceIdNormalized = NormalizeResourceId(resourceId);
@@ -32,6 +36,8 @@ public sealed class CloudResource
     }
 
     public Guid Id { get; private set; }
+
+    public Guid? TenantId { get; private set; }
 
     public string Provider { get; private set; } = string.Empty;
 
@@ -56,6 +62,7 @@ public sealed class CloudResource
     public DateTimeOffset LastSeenAt { get; private set; }
 
     public static CloudResource Create(
+        Guid tenantId,
         string provider,
         string accountId,
         string resourceId,
@@ -66,7 +73,10 @@ public sealed class CloudResource
         string tagsJson,
         DateTimeOffset observedAt)
     {
+        ArgumentOutOfRangeException.ThrowIfEqual(tenantId, Guid.Empty);
+
         return new CloudResource(
+            tenantId,
             provider,
             accountId,
             resourceId,

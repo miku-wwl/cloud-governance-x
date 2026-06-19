@@ -1,17 +1,23 @@
 using System.Text.Json;
 using FinOps.Application.Cloud;
+using FinOps.Application.Tenancy;
 using FinOps.Domain.CloudResources;
+using FinOps.Domain.Tenancy;
 using Microsoft.EntityFrameworkCore;
 
 namespace FinOps.Infrastructure.Persistence;
 
-internal sealed class CloudResourceRepository(FinOpsDbContext dbContext) : ICloudResourceRepository
+internal sealed class CloudResourceRepository(
+    FinOpsDbContext dbContext,
+    ITenantContext tenantContext) : ICloudResourceRepository
 {
     public async Task<CloudResourceUpsertResult> UpsertAsync(
         IReadOnlyCollection<CloudResourceDto> resources,
         DateTimeOffset observedAt,
         CancellationToken cancellationToken = default)
     {
+        var tenantId = tenantContext.RequireCurrent().TenantId;
+
         if (resources.Count == 0)
         {
             return new CloudResourceUpsertResult(0, 0);
@@ -23,12 +29,13 @@ internal sealed class CloudResourceRepository(FinOpsDbContext dbContext) : IClou
             .ToArray();
 
         var providers = resources
-            .Select(resource => resource.Provider)
+            .Select(resource => ProviderConnection.NormalizeProvider(resource.Provider))
             .Distinct(StringComparer.Ordinal)
             .ToArray();
 
         var existingResources = await dbContext.CloudResources
             .Where(resource =>
+                resource.TenantId == tenantId &&
                 providers.Contains(resource.Provider) &&
                 normalizedIds.Contains(resource.ResourceIdNormalized))
             .ToDictionaryAsync(
@@ -41,7 +48,8 @@ internal sealed class CloudResourceRepository(FinOpsDbContext dbContext) : IClou
         foreach (var resource in resources)
         {
             var normalizedId = CloudResource.NormalizeResourceId(resource.ResourceId);
-            var key = CreateKey(resource.Provider, normalizedId);
+            var provider = ProviderConnection.NormalizeProvider(resource.Provider);
+            var key = CreateKey(provider, normalizedId);
             var tagsJson = JsonSerializer.Serialize(resource.Tags);
 
             if (existingResources.TryGetValue(key, out var existing))
@@ -59,7 +67,8 @@ internal sealed class CloudResourceRepository(FinOpsDbContext dbContext) : IClou
             }
 
             var entity = CloudResource.Create(
-                resource.Provider,
+                tenantId,
+                provider,
                 resource.AccountId,
                 resource.ResourceId,
                 resource.ResourceName,

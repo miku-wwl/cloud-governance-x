@@ -11,11 +11,13 @@ public sealed class EtlJobRun
     }
 
     private EtlJobRun(
+        Guid tenantId,
         string jobName,
         string provider,
         DateTimeOffset startedAt)
     {
         Id = Guid.NewGuid();
+        TenantId = tenantId;
         JobName = jobName;
         Provider = provider;
         StartedAt = startedAt;
@@ -23,6 +25,8 @@ public sealed class EtlJobRun
     }
 
     public Guid Id { get; private set; }
+
+    public Guid? TenantId { get; private set; }
 
     public string JobName { get; private set; } = string.Empty;
 
@@ -39,14 +43,16 @@ public sealed class EtlJobRun
     public string? ErrorMessage { get; private set; }
 
     public static EtlJobRun Start(
+        Guid tenantId,
         string jobName,
         string provider,
         DateTimeOffset startedAt)
     {
+        ArgumentOutOfRangeException.ThrowIfEqual(tenantId, Guid.Empty);
         ArgumentException.ThrowIfNullOrWhiteSpace(jobName);
         ArgumentException.ThrowIfNullOrWhiteSpace(provider);
 
-        return new EtlJobRun(jobName, provider, startedAt);
+        return new EtlJobRun(tenantId, jobName, provider, startedAt);
     }
 
     public void Complete(DateTimeOffset finishedAt, int recordsProcessed)

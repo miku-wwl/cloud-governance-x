@@ -13,6 +13,7 @@ internal sealed class EtlJobRunConfiguration : IEntityTypeConfiguration<EtlJobRu
         builder.HasKey(run => run.Id);
 
         builder.Property(run => run.Id).HasColumnName("id");
+        builder.Property(run => run.TenantId).HasColumnName("tenant_id");
         builder.Property(run => run.JobName).HasColumnName("job_name").HasMaxLength(128);
         builder.Property(run => run.Provider).HasColumnName("provider").HasMaxLength(32);
         builder.Property(run => run.StartedAt).HasColumnName("started_at");
@@ -21,12 +22,18 @@ internal sealed class EtlJobRunConfiguration : IEntityTypeConfiguration<EtlJobRu
         builder.Property(run => run.RecordsProcessed).HasColumnName("records_processed");
         builder.Property(run => run.ErrorMessage).HasColumnName("error_message").HasMaxLength(4000);
 
+        builder.HasOne<FinOps.Domain.Tenancy.Tenant>()
+            .WithMany()
+            .HasForeignKey(run => run.TenantId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.HasIndex(run => new
         {
+            run.TenantId,
             run.JobName,
             run.StartedAt
         })
-            .IsDescending(false, true)
-            .HasDatabaseName("ix_etl_job_runs_job_name_started_at");
+            .IsDescending(false, false, true)
+            .HasDatabaseName("ix_etl_job_runs_tenant_job_name_started_at");
     }
 }

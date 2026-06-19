@@ -1,27 +1,37 @@
 using FinOps.Application.Cloud;
+using FinOps.Application.Tenancy;
 using FinOps.Domain.Costs;
+using FinOps.Domain.Tenancy;
 using Microsoft.EntityFrameworkCore;
 
 namespace FinOps.Infrastructure.Persistence;
 
-internal sealed class CloudCostRepository(FinOpsDbContext dbContext) : ICloudCostRepository
+internal sealed class CloudCostRepository(
+    FinOpsDbContext dbContext,
+    ITenantContext tenantContext) : ICloudCostRepository
 {
     public async Task<CloudCostUpsertResult> UpsertAsync(
         IReadOnlyCollection<CloudCostDailyDto> costs,
         CancellationToken cancellationToken = default)
     {
+        var tenantId = tenantContext.RequireCurrent().TenantId;
+
         if (costs.Count == 0)
         {
             return new CloudCostUpsertResult(0, 0);
         }
 
-        var providers = costs.Select(cost => cost.Provider).Distinct().ToArray();
+        var providers = costs
+            .Select(cost => ProviderConnection.NormalizeProvider(cost.Provider))
+            .Distinct()
+            .ToArray();
         var accounts = costs.Select(cost => cost.AccountId).Distinct().ToArray();
         var from = costs.Min(cost => cost.UsageDate);
         var to = costs.Max(cost => cost.UsageDate);
 
         var existing = await dbContext.CloudCosts
             .Where(cost =>
+                cost.TenantId == tenantId &&
                 providers.Contains(cost.Provider) &&
                 accounts.Contains(cost.AccountId) &&
                 cost.UsageDate >= from &&
@@ -42,8 +52,9 @@ internal sealed class CloudCostRepository(FinOpsDbContext dbContext) : ICloudCos
         foreach (var cost in costs)
         {
             var resourceGroup = CloudCostDaily.NormalizeResourceGroup(cost.ResourceGroup);
+            var provider = ProviderConnection.NormalizeProvider(cost.Provider);
             var key = CreateKey(
-                cost.Provider,
+                provider,
                 cost.AccountId,
                 cost.UsageDate,
                 cost.ServiceName,
@@ -58,7 +69,8 @@ internal sealed class CloudCostRepository(FinOpsDbContext dbContext) : ICloudCos
             }
 
             entity = CloudCostDaily.Create(
-                cost.Provider,
+                tenantId,
+                provider,
                 cost.AccountId,
                 cost.UsageDate,
                 cost.ServiceName,

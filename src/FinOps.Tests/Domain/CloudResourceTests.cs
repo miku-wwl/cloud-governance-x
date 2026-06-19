@@ -10,6 +10,7 @@ public sealed class CloudResourceTests
         var firstSeen = DateTimeOffset.Parse("2026-06-12T00:00:00Z");
         var lastSeen = firstSeen.AddMinutes(5);
         var resource = CloudResource.Create(
+            Guid.NewGuid(),
             "Azure",
             "subscription-1",
             "/subscriptions/1/resourceGroups/RG/providers/Microsoft.Storage/storageAccounts/demo",
@@ -31,6 +32,7 @@ public sealed class CloudResourceTests
 
         Assert.Equal(firstSeen, resource.FirstSeenAt);
         Assert.Equal(lastSeen, resource.LastSeenAt);
+        Assert.Equal("azure", resource.Provider);
         Assert.Equal("demo-renamed", resource.ResourceName);
         Assert.Equal("""{"environment":"dev"}""", resource.TagsJson);
     }
@@ -41,5 +43,22 @@ public sealed class CloudResourceTests
         var result = CloudResource.NormalizeResourceId(" /subscriptions/AbC ");
 
         Assert.Equal("/SUBSCRIPTIONS/ABC", result);
+    }
+
+    [Fact]
+    public void Create_requires_tenant()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            CloudResource.Create(
+                Guid.Empty,
+                "Azure",
+                "subscription-1",
+                "/subscriptions/1/resource",
+                "resource",
+                "demo/type",
+                "australiaeast",
+                null,
+                "{}",
+                DateTimeOffset.UtcNow));
     }
 }

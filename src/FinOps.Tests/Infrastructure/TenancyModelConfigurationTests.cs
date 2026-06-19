@@ -1,3 +1,6 @@
+using FinOps.Domain.CloudResources;
+using FinOps.Domain.Costs;
+using FinOps.Domain.Etl;
 using FinOps.Domain.Tenancy;
 using FinOps.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -23,9 +26,9 @@ public sealed class TenancyModelConfigurationTests
             nameof(ProviderConnection.TenantId),
             nameof(ProviderConnection.Provider),
             nameof(ProviderConnection.DisplayName));
-        AssertUniqueIndex<CloudAccount>(
+        AssertAlternateKey<CloudAccount>(
             context,
-            "ux_cloud_accounts_tenant_provider_external",
+            "ak_cloud_accounts_tenant_provider_external",
             nameof(CloudAccount.TenantId),
             nameof(CloudAccount.Provider),
             nameof(CloudAccount.ExternalAccountId));
@@ -35,6 +38,38 @@ public sealed class TenancyModelConfigurationTests
             nameof(Membership.TenantId),
             nameof(Membership.Issuer),
             nameof(Membership.Subject));
+        AssertUniqueIndex<CloudResource>(
+            context,
+            "ux_cloud_resources_tenant_provider_resource_id",
+            nameof(CloudResource.TenantId),
+            nameof(CloudResource.Provider),
+            nameof(CloudResource.ResourceIdNormalized));
+        AssertUniqueIndex<CloudCostDaily>(
+            context,
+            "ux_cloud_cost_daily_tenant_identity",
+            nameof(CloudCostDaily.TenantId),
+            nameof(CloudCostDaily.Provider),
+            nameof(CloudCostDaily.AccountId),
+            nameof(CloudCostDaily.UsageDate),
+            nameof(CloudCostDaily.ServiceName),
+            nameof(CloudCostDaily.ResourceGroup),
+            nameof(CloudCostDaily.Currency));
+        AssertFilteredUniqueIndex<CloudResource>(
+            context,
+            "ux_cloud_resources_legacy_provider_resource_id",
+            "tenant_id IS NULL",
+            nameof(CloudResource.Provider),
+            nameof(CloudResource.ResourceIdNormalized));
+        AssertFilteredUniqueIndex<CloudCostDaily>(
+            context,
+            "ux_cloud_cost_daily_legacy_identity",
+            "tenant_id IS NULL",
+            nameof(CloudCostDaily.Provider),
+            nameof(CloudCostDaily.AccountId),
+            nameof(CloudCostDaily.UsageDate),
+            nameof(CloudCostDaily.ServiceName),
+            nameof(CloudCostDaily.ResourceGroup),
+            nameof(CloudCostDaily.Currency));
     }
 
     [Fact]
@@ -56,6 +91,24 @@ public sealed class TenancyModelConfigurationTests
         Assert.Equal(DeleteBehavior.Restrict, foreignKey.DeleteBehavior);
     }
 
+    [Theory]
+    [InlineData(typeof(CloudResource))]
+    [InlineData(typeof(CloudCostDaily))]
+    public void Core_data_account_foreign_keys_enforce_tenant_provider_and_account(
+        Type entityClrType)
+    {
+        using var context = CreateContext();
+        var entityType = context.Model.FindEntityType(entityClrType);
+        var foreignKey = Assert.Single(
+            entityType!.GetForeignKeys(),
+            key => key.PrincipalEntityType.ClrType == typeof(CloudAccount));
+
+        Assert.Equal(
+            ["TenantId", "Provider", "AccountId"],
+            foreignKey.Properties.Select(property => property.Name));
+        Assert.Equal(DeleteBehavior.Restrict, foreignKey.DeleteBehavior);
+    }
+
     [Fact]
     public void All_tenancy_relationships_restrict_cascade_delete()
     {
@@ -65,7 +118,10 @@ public sealed class TenancyModelConfigurationTests
             typeof(Tenant),
             typeof(ProviderConnection),
             typeof(CloudAccount),
-            typeof(Membership)
+            typeof(Membership),
+            typeof(CloudResource),
+            typeof(CloudCostDaily),
+            typeof(EtlJobRun)
         ];
 
         var foreignKeys = tenancyTypes
@@ -104,5 +160,38 @@ public sealed class TenancyModelConfigurationTests
         Assert.Equal(
             propertyNames,
             index.Properties.Select(property => property.Name));
+    }
+
+    private static void AssertFilteredUniqueIndex<TEntity>(
+        FinOpsDbContext context,
+        string databaseName,
+        string filter,
+        params string[] propertyNames)
+    {
+        var entityType = context.Model.FindEntityType(typeof(TEntity));
+        var index = Assert.Single(
+            entityType!.GetIndexes(),
+            candidate => candidate.GetDatabaseName() == databaseName);
+
+        Assert.True(index.IsUnique);
+        Assert.Equal(filter, index.GetFilter());
+        Assert.Equal(
+            propertyNames,
+            index.Properties.Select(property => property.Name));
+    }
+
+    private static void AssertAlternateKey<TEntity>(
+        FinOpsDbContext context,
+        string databaseName,
+        params string[] propertyNames)
+    {
+        var entityType = context.Model.FindEntityType(typeof(TEntity));
+        var key = Assert.Single(
+            entityType!.GetKeys(),
+            candidate => candidate.GetName() == databaseName);
+
+        Assert.Equal(
+            propertyNames,
+            key.Properties.Select(property => property.Name));
     }
 }

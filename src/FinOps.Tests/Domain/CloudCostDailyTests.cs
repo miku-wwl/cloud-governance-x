@@ -8,6 +8,7 @@ public sealed class CloudCostDailyTests
     public void Create_NormalizesCurrencyAndMissingResourceGroup()
     {
         var cost = CloudCostDaily.Create(
+            Guid.NewGuid(),
             "Azure",
             "subscription-1",
             new DateOnly(2026, 6, 12),
@@ -18,6 +19,23 @@ public sealed class CloudCostDailyTests
             "{}");
 
         Assert.Equal("NZD", cost.Currency);
+        Assert.Equal("azure", cost.Provider);
         Assert.Equal(CloudCostDaily.UnassignedResourceGroup, cost.ResourceGroup);
+    }
+
+    [Fact]
+    public void Create_requires_tenant()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            CloudCostDaily.Create(
+                Guid.Empty,
+                "Azure",
+                "subscription-1",
+                new DateOnly(2026, 6, 19),
+                "Storage",
+                null,
+                1m,
+                "NZD",
+                "{}"));
     }
 }

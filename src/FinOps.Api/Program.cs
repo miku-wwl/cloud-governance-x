@@ -17,6 +17,7 @@ builder.Services
 var app = builder.Build();
 
 app.UseExceptionHandler();
+app.UseE2eTestIdentity(app.Environment, builder.Configuration);
 app.UseHttpTenantContext();
 
 app.MapFinOpsEndpoints();
