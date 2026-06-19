@@ -1,4 +1,5 @@
 using FinOps.Api.Endpoints;
+using FinOps.Api.Tenancy;
 using FinOps.Infrastructure;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
@@ -16,6 +17,7 @@ builder.Services
 var app = builder.Build();
 
 app.UseExceptionHandler();
+app.UseHttpTenantContext();
 
 app.MapFinOpsEndpoints();
 

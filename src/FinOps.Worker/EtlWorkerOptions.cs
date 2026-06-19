@@ -6,5 +6,7 @@ public sealed class EtlWorkerOptions
 
     public string Job { get; init; } = "Resources";
 
+    public Guid TenantId { get; init; }
+
     public int CostDays { get; init; } = 7;
 }

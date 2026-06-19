@@ -175,8 +175,10 @@ try {
         -NoBuild
 
     $previousDatabase = $env:PostgreSql__Database
+    $previousTenantId = $env:Etl__TenantId
     try {
         $env:PostgreSql__Database = $Database
+        $env:Etl__TenantId = "20000000-0000-0000-0000-000000000001"
         Push-Location $workerProject
         try {
             & dotnet $workerAssembly
@@ -191,6 +193,7 @@ try {
     }
     finally {
         $env:PostgreSql__Database = $previousDatabase
+        $env:Etl__TenantId = $previousTenantId
     }
 
     $workerRunCount = [int](Invoke-PostgreSql `

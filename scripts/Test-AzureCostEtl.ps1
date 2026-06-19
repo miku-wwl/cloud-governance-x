@@ -49,11 +49,13 @@ function Invoke-PostgreSql {
 function Invoke-CostWorker {
     $previousDatabase = $env:PostgreSql__Database
     $previousJob = $env:Etl__Job
+    $previousTenantId = $env:Etl__TenantId
     $previousDays = $env:Etl__CostDays
 
     try {
         $env:PostgreSql__Database = $Database
         $env:Etl__Job = "Costs"
+        $env:Etl__TenantId = "20000000-0000-0000-0000-000000000001"
         $env:Etl__CostDays = "7"
 
         Push-Location $workerProject
@@ -71,6 +73,7 @@ function Invoke-CostWorker {
     finally {
         $env:PostgreSql__Database = $previousDatabase
         $env:Etl__Job = $previousJob
+        $env:Etl__TenantId = $previousTenantId
         $env:Etl__CostDays = $previousDays
     }
 }

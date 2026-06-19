@@ -44,6 +44,7 @@ $previousEnvironment = @{
     TimeoutSeconds = $env:PostgreSql__TimeoutSeconds
     ForceSampleData = $env:AzureCost__ForceSampleData
     Job = $env:Etl__Job
+    TenantId = $env:Etl__TenantId
     Urls = $env:ASPNETCORE_URLS
 }
 
@@ -465,6 +466,21 @@ VALUES
     $env:PostgreSql__Port = "5432"
     $env:PostgreSql__TimeoutSeconds = "3"
 
+    Write-Host "==> Explicit active Worker tenant"
+    Invoke-PostgreSql `
+        -TargetDatabase $database `
+        -Sql @"
+INSERT INTO organizations
+    (id, display_name, status, created_at, updated_at)
+VALUES
+    ('10000000-0000-0000-0000-000000000001', 'Worker Organization', 'Active', '2026-06-19T00:00:00Z', '2026-06-19T00:00:00Z');
+
+INSERT INTO tenants
+    (id, organization_id, slug, display_name, status, created_at, updated_at)
+VALUES
+    ('20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', 'worker-tenant', 'Worker Tenant', 'Active', '2026-06-19T00:00:00Z', '2026-06-19T00:00:00Z');
+"@ | Out-Null
+
     Write-Host "==> Restricted runtime role"
     Invoke-PostgreSql `
         -TargetDatabase "postgres" `
@@ -516,6 +532,7 @@ VALUES
 
     $env:AzureCost__ForceSampleData = "true"
     $env:Etl__Job = "Costs"
+    $env:Etl__TenantId = "20000000-0000-0000-0000-000000000001"
     & dotnet $workerAssembly
     if ($LASTEXITCODE -ne 0) {
         throw "Worker Costs failed with restricted runtime role."
@@ -528,6 +545,22 @@ VALUES
     if ($costRowCount -le 0) {
         throw "Worker Costs did not write any rows."
     }
+
+    Write-Host "==> Missing Worker tenant exit code"
+    $env:Etl__TenantId = "00000000-0000-0000-0000-000000000000"
+    $missingTenantOutput = & dotnet $workerAssembly 2>&1
+    $missingTenantExitCode = $LASTEXITCODE
+    $missingTenantOutput | ForEach-Object { Write-Host $_ }
+    if ($missingTenantExitCode -ne 1) {
+        throw "Expected missing-tenant Worker exit code 1, got $missingTenantExitCode."
+    }
+    if (
+        ($missingTenantOutput -join [Environment]::NewLine) -notmatch
+        "TenantId"
+    ) {
+        throw "The missing-tenant Worker failure did not identify TenantId."
+    }
+    $env:Etl__TenantId = "20000000-0000-0000-0000-000000000001"
 
     Write-Host "==> Unknown Worker job exit code"
     $env:Etl__Job = "Unknown"
@@ -610,6 +643,7 @@ finally {
     $env:PostgreSql__TimeoutSeconds = $previousEnvironment.TimeoutSeconds
     $env:AzureCost__ForceSampleData = $previousEnvironment.ForceSampleData
     $env:Etl__Job = $previousEnvironment.Job
+    $env:Etl__TenantId = $previousEnvironment.TenantId
     $env:ASPNETCORE_URLS = $previousEnvironment.Urls
     Remove-Item -LiteralPath $apiStandardOutput, $apiStandardError `
         -Force `
