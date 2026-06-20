@@ -20,6 +20,9 @@ $failureLog = Join-Path $env:TEMP "finops-day5-failure.log"
 $successErrorLog = Join-Path $env:TEMP "finops-day5-success.err.log"
 $failureErrorLog = Join-Path $env:TEMP "finops-day5-failure.err.log"
 $apiProcesses = [System.Collections.Generic.List[System.Diagnostics.Process]]::new()
+$tenantHeaders = @{
+    "X-FinOps-Tenant-Id" = "20000000-0000-0000-0000-000000000001"
+}
 $verified = $false
 
 function Invoke-PostgreSql {
@@ -61,10 +64,18 @@ function Start-Day5Api {
     $previousDatabase = $env:PostgreSql__Database
     $previousTenant = $env:Azure__TenantId
     $previousCredential = $env:AZURE_TOKEN_CREDENTIALS
+    $previousEnvironment = $env:ASPNETCORE_ENVIRONMENT
+    $previousIdentityEnabled = $env:E2EIdentity__Enabled
+    $previousIdentityIssuer = $env:E2EIdentity__Issuer
+    $previousIdentitySubject = $env:E2EIdentity__Subject
 
     try {
         $env:PostgreSql__Database = $Database
         $env:Azure__TenantId = $TenantId
+        $env:ASPNETCORE_ENVIRONMENT = "E2E"
+        $env:E2EIdentity__Enabled = "true"
+        $env:E2EIdentity__Issuer = "https://e2e.finops.local"
+        $env:E2EIdentity__Subject = "e2e-operator"
         $env:AZURE_TOKEN_CREDENTIALS = if ($TenantId) {
             "AzureCliCredential"
         }
@@ -92,6 +103,10 @@ function Start-Day5Api {
         $env:PostgreSql__Database = $previousDatabase
         $env:Azure__TenantId = $previousTenant
         $env:AZURE_TOKEN_CREDENTIALS = $previousCredential
+        $env:ASPNETCORE_ENVIRONMENT = $previousEnvironment
+        $env:E2EIdentity__Enabled = $previousIdentityEnabled
+        $env:E2EIdentity__Issuer = $previousIdentityIssuer
+        $env:E2EIdentity__Subject = $previousIdentitySubject
     }
 }
 
@@ -174,6 +189,9 @@ try {
         -Database $Database `
         -NoBuild
 
+    & (Join-Path $repositoryRoot "scripts/Initialize-TestTenant.ps1") `
+        -Database $Database
+
     $previousDatabase = $env:PostgreSql__Database
     $previousTenantId = $env:Etl__TenantId
     try {
@@ -215,10 +233,12 @@ try {
     $syncResult = Invoke-RestMethod `
         "$successBaseUri/api/admin/sync/azure/resources" `
         -Method Post `
+        -Headers $tenantHeaders `
         -TimeoutSec 120
 
     $successfulRuns = Invoke-RestMethod `
         "$successBaseUri/api/admin/etl-runs?jobName=azure-resource-sync&take=10" `
+        -Headers $tenantHeaders `
         -TimeoutSec 30
     $successfulRun = $null
     foreach ($run in $successfulRuns) {
@@ -259,6 +279,7 @@ try {
     $failureResponse = Invoke-WebRequest `
         "$failureBaseUri/api/admin/sync/azure/resources" `
         -Method Post `
+        -Headers $tenantHeaders `
         -SkipHttpErrorCheck `
         -TimeoutSec 120
 
@@ -268,6 +289,7 @@ try {
 
     $runsAfterFailure = Invoke-RestMethod `
         "$failureBaseUri/api/admin/etl-runs?jobName=azure-resource-sync&take=10" `
+        -Headers $tenantHeaders `
         -TimeoutSec 30
     $failedRun = $null
     foreach ($run in $runsAfterFailure) {

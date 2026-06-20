@@ -59,14 +59,13 @@ internal sealed class CloudAccountConfiguration : IEntityTypeConfiguration<Cloud
             .HasConstraintName("fk_cloud_accounts_provider_connection_scope")
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasIndex(account => new
+        builder.HasAlternateKey(account => new
         {
             account.TenantId,
             account.Provider,
             account.ExternalAccountId
         })
-            .IsUnique()
-            .HasDatabaseName("ux_cloud_accounts_tenant_provider_external");
+            .HasName("ak_cloud_accounts_tenant_provider_external");
 
         builder.HasIndex(account => new
         {

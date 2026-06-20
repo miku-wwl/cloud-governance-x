@@ -13,6 +13,7 @@ internal sealed class CloudResourceConfiguration : IEntityTypeConfiguration<Clou
         builder.HasKey(resource => resource.Id);
 
         builder.Property(resource => resource.Id).HasColumnName("id");
+        builder.Property(resource => resource.TenantId).HasColumnName("tenant_id");
         builder.Property(resource => resource.Provider).HasColumnName("provider").HasMaxLength(32);
         builder.Property(resource => resource.AccountId).HasColumnName("account_id").HasMaxLength(128);
         builder.Property(resource => resource.ResourceId).HasColumnName("resource_id").HasMaxLength(2048);
@@ -27,12 +28,44 @@ internal sealed class CloudResourceConfiguration : IEntityTypeConfiguration<Clou
         builder.Property(resource => resource.FirstSeenAt).HasColumnName("first_seen_at");
         builder.Property(resource => resource.LastSeenAt).HasColumnName("last_seen_at");
 
+        builder.HasOne<FinOps.Domain.Tenancy.Tenant>()
+            .WithMany()
+            .HasForeignKey(resource => resource.TenantId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne<FinOps.Domain.Tenancy.CloudAccount>()
+            .WithMany()
+            .HasForeignKey(resource => new
+            {
+                resource.TenantId,
+                resource.Provider,
+                resource.AccountId
+            })
+            .HasPrincipalKey(account => new
+            {
+                account.TenantId,
+                account.Provider,
+                account.ExternalAccountId
+            })
+            .HasConstraintName("fk_cloud_resources_cloud_account_scope")
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasIndex(resource => new
+        {
+            resource.TenantId,
+            resource.Provider,
+            resource.ResourceIdNormalized
+        })
+            .IsUnique()
+            .HasDatabaseName("ux_cloud_resources_tenant_provider_resource_id");
+
         builder.HasIndex(resource => new
         {
             resource.Provider,
             resource.ResourceIdNormalized
         })
             .IsUnique()
-            .HasDatabaseName("ux_cloud_resources_provider_resource_id");
+            .HasFilter("tenant_id IS NULL")
+            .HasDatabaseName("ux_cloud_resources_legacy_provider_resource_id");
     }
 }

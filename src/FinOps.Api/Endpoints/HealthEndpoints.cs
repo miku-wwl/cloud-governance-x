@@ -10,17 +10,17 @@ internal static class HealthEndpoints
         {
             service = "FinOps.Api",
             status = "running"
-        }));
+        })).AllowAnonymous();
 
         endpoints.MapHealthChecks("/health", new HealthCheckOptions
         {
             Predicate = check => check.Tags.Contains("ready")
-        });
+        }).AllowAnonymous();
 
         endpoints.MapHealthChecks("/health/live", new HealthCheckOptions
         {
             Predicate = check => check.Tags.Contains("live")
-        });
+        }).AllowAnonymous();
 
         return endpoints;
     }

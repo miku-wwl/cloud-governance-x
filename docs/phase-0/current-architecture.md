@@ -311,9 +311,9 @@ sequenceDiagram
 
 | 存储 | 写入者 | 主要数据 | 保留与完整性 | 分类提示 |
 | --- | --- | --- | --- | --- |
-| `cloud_resources` | `CloudResourceRepository` | Azure 资源 ID、订阅、资源组、区域、tags | 唯一键保证幂等；无删除语义 | 资产元数据，tags 可能含组织信息 |
-| `cloud_cost_daily` | `CloudCostRepository` | 订阅、日期、服务、资源组、金额、币种、原始 JSON | 业务唯一键 Upsert；可能含 sample | 财务与账单数据 |
-| `etl_job_runs` | `EtlJobRunRepository` | Job、时间、状态、数量、错误消息 | 每次操作使用独立 DbContext | 运行审计；错误可能泄漏外部细节 |
+| `cloud_resources` | `CloudResourceRepository` | tenant、Azure 资源 ID、订阅、资源组、区域、tags | tenant 唯一键保证幂等；账号必须属于同 Tenant；无删除语义 | 资产元数据，tags 可能含组织信息 |
+| `cloud_cost_daily` | `CloudCostRepository` | tenant、订阅、日期、服务、资源组、金额、币种、原始 JSON | tenant 业务唯一键 Upsert；账号必须属于同 Tenant；可能含 sample | 财务与账单数据 |
+| `etl_job_runs` | `EtlJobRunRepository` | tenant、Job、时间、状态、数量、错误消息 | 每次操作使用独立 DbContext；按 tenant 查询和更新 | 运行审计；错误可能泄漏外部细节 |
 | Docker named volume | PostgreSQL | 上述三表与 migration 历史 | `docker compose down` 不删除 | 本地持久数据 |
 | Terraform state/plan | Terraform CLI | 资源标识、属性和 outputs | 本地文件，Git 忽略 | 基础设施敏感元数据 |
 | `tmp/` 与 `$env:TEMP` | E2E 脚本 | 日志、断言和运行证据 | Git 忽略，脚本负责清理 | 可能含订阅和资源标识 |

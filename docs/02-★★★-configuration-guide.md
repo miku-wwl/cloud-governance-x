@@ -174,8 +174,25 @@ MSBuild 会自动把该文件导入当前目录下的所有项目：
   或没有数据时，是否允许生成明确标记为 sample 的演示数据。
 - `AzureCost.ForceSampleData`：强制使用样例数据的测试开关，正常运行应为
   `false`。
+- `Authentication.Oidc.Enabled`：是否允许 API 使用 JWT Bearer handler
+  接受外部 OIDC Provider 签发的 token。默认 `false`，关闭时即使收到格式
+  正确的 Bearer token 也不会建立认证身份。
+- `Authentication.Oidc.Authority`：OIDC issuer/metadata 根地址。启用认证时
+  必须是绝对 URI；Day 26 才配置真实 Microsoft Entra ID 地址。
+- `Authentication.Oidc.Audience`：API 接受的 token audience。启用认证时
+  必须显式配置。
+- `Authentication.Oidc.RequireHttpsMetadata`：是否要求 OIDC metadata 使用
+  HTTPS。生产和共享环境必须保持 `true`。
+- `Authentication.Oidc.ClockSkewSeconds`：token 时间验证允许的时钟偏差，
+  必须在 0～300 秒之间，默认 60 秒。
 - `AllowedHosts`：ASP.NET Core 接受的 Host 请求头。`*` 适用于本地学习环境，
   生产环境应限制为真实域名。
+
+OIDC 配置不包含 password、client secret、private key 或 token。API 只验证
+身份提供方签发的 token，不实现用户名密码登录或 token 签发。JWT handler
+保留原始 `iss` 和 `sub` Claim，随后由 `HttpTenantContextMiddleware` 验证
+Tenant Membership。health 与根状态端点显式匿名；业务 endpoint 的权限策略和
+全面保护属于 Day 27～28。
 
 API 不再自动应用 EF Core migration。首次启动或 schema 更新后必须先运行：
 

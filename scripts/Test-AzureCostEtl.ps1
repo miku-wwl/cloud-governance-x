@@ -16,6 +16,9 @@ $workerAssembly = Join-Path $workerProject "bin/Debug/net10.0/FinOps.Worker.dll"
 $stdoutPath = Join-Path $env:TEMP "finops-day7-api.log"
 $stderrPath = Join-Path $env:TEMP "finops-day7-api.err.log"
 $apiProcess = $null
+$tenantHeaders = @{
+    "X-FinOps-Tenant-Id" = "20000000-0000-0000-0000-000000000001"
+}
 $verified = $false
 
 function Invoke-PostgreSql {
@@ -80,9 +83,17 @@ function Invoke-CostWorker {
 
 function Start-Day7Api {
     $previousDatabase = $env:PostgreSql__Database
+    $previousEnvironment = $env:ASPNETCORE_ENVIRONMENT
+    $previousIdentityEnabled = $env:E2EIdentity__Enabled
+    $previousIdentityIssuer = $env:E2EIdentity__Issuer
+    $previousIdentitySubject = $env:E2EIdentity__Subject
 
     try {
         $env:PostgreSql__Database = $Database
+        $env:ASPNETCORE_ENVIRONMENT = "E2E"
+        $env:E2EIdentity__Enabled = "true"
+        $env:E2EIdentity__Issuer = "https://e2e.finops.local"
+        $env:E2EIdentity__Subject = "e2e-operator"
 
         $startProcessArguments = @{
             FilePath = "dotnet"
@@ -100,6 +111,10 @@ function Start-Day7Api {
     }
     finally {
         $env:PostgreSql__Database = $previousDatabase
+        $env:ASPNETCORE_ENVIRONMENT = $previousEnvironment
+        $env:E2EIdentity__Enabled = $previousIdentityEnabled
+        $env:E2EIdentity__Issuer = $previousIdentityIssuer
+        $env:E2EIdentity__Subject = $previousIdentitySubject
     }
 }
 
@@ -178,6 +193,9 @@ try {
         -Database $Database `
         -NoBuild
 
+    & (Join-Path $repositoryRoot "scripts/Initialize-TestTenant.ps1") `
+        -Database $Database
+
     Invoke-CostWorker
 
     $workerRunCount = [int](Invoke-PostgreSql `
@@ -194,6 +212,7 @@ try {
     $manualResult = Invoke-RestMethod `
         "http://localhost:$Port/api/admin/sync/azure/costs?days=7" `
         -Method Post `
+        -Headers $tenantHeaders `
         -TimeoutSec 180
 
     if ($manualResult.inserted -ne 0 -or $manualResult.updated -ne $manualResult.retrieved) {
@@ -202,12 +221,15 @@ try {
 
     $daily = Invoke-RestMethod `
         "http://localhost:$Port/api/costs/daily" `
+        -Headers $tenantHeaders `
         -TimeoutSec 30
     $byService = Invoke-RestMethod `
         "http://localhost:$Port/api/costs/by-service" `
+        -Headers $tenantHeaders `
         -TimeoutSec 30
     $byResourceGroup = Invoke-RestMethod `
         "http://localhost:$Port/api/costs/by-resource-group" `
+        -Headers $tenantHeaders `
         -TimeoutSec 30
 
     if (

@@ -14,8 +14,8 @@ Day 11 的正式风险登记册，因此本日不虚构 Owner、概率和风险�
 
 | ID | 差距 | 当前证据 | 为什么阻止生产 | 临时边界 | 目标阶段 | 主要依赖 |
 | --- | --- | --- | --- | --- | --- | --- |
-| GAP-001 | 管理 API 和查询 API 匿名 | `FinOps.Api/Program.cs` 无认证授权 | 任意调用者可读取成本、枚举订阅或触发云采集与写库 | 仅绑定本机并保持非公开 | 阶段 2、8 | Identity、RBAC、API policy |
-| GAP-002 | 无业务 tenant 隔离 | Day 20 ADR-0003 已定义模型；Day 21 已增加 tenancy schema；Day 22 已增加基于 Active Membership 的 HTTP TenantContext 和后台显式 TenantContext；核心业务表仍无 `tenant_id` | 尚无 Repository 隔离和历史数据 backfill，仍无法证明业务数据的组织间隔离 | 仅单人单环境学习 | 阶段 2～3 | tenant-aware Repository、backfill 与隔离测试 |
+| GAP-001 | 管理 API 和查询 API 匿名 | Day 25 已接入标准 OIDC JWT Bearer 验证并覆盖无 token、过期、issuer、audience 和签名错误；现有业务 endpoint 尚未绑定授权 policy | 身份可验证，但匿名调用者仍可到达未显式保护的 endpoint | 仅绑定本机并保持非公开 | 阶段 2、8 | Day 27 RBAC、Day 28 API policy 与稳定错误 |
+| GAP-002 | 无业务 tenant 隔离 | Day 20～23 已建立 tenant 模型、可信上下文和 tenant-aware Repository；Day 24 backfill 增加数据库护栏；Day 25 已把验证后的 OIDC `iss/sub` 接入 Membership 和 TenantContext | 新写入、历史迁移和 HTTP 身份转换已有隔离机制，但各环境 backfill、RBAC、全 endpoint 授权和 RLS 尚未完成 | 仅受控开发 Tenant；生产不得运行 Development backfill | 阶段 2～3 | 环境 backfill 证据、RBAC、API policy、RLS 评估与阶段 2 escape E2E |
 | GAP-003 | migration 发布编排不足 | Day 18 已由独立 `FinOps.Migrator` 替代；API/Worker 无 migration API，IL 门禁覆盖直接调用和方法组别名；Migrator 使用 advisory lock | 自动 migration 和同库 Migrator 并发风险已关闭；仍缺发布审批、生产身份和回滚编排 | Migrator 必须先于业务宿主运行 | 阶段 12 | CI/CD migration gate、部署顺序 |
 | GAP-004 | 成本 sample fallback 默认开启 | 两个 appsettings 中为 `true` | Provider 故障或空数据可能表现为成功数据 | 只允许明确标记的本地演示 | 阶段 5～6 | 环境隔离、数据 provenance |
 | GAP-005 | Azure CLI 用户身份 | `DefaultAzureCredential` + 本地 `az login` | 无 workload identity、轮换和最小权限证明 | 仅开发机使用 | 阶段 2、5 | Managed/Workload Identity、RBAC |
@@ -33,7 +33,7 @@ Day 11 的正式风险登记册，因此本日不虚构 Owner、概率和风险�
 
 | ID | 差距 | 当前证据 | 影响 | 目标阶段 |
 | --- | --- | --- | --- | --- |
-| GAP-015 | 测试层次不足 | 当前 44 个执行测试加独立数据库 migration/权限回归 | 仍无认证、tenant、Provider 故障注入、负载和生产规模回归 | 阶段 2～4、14 |
+| GAP-015 | 测试层次不足 | 当前本地运行 82 个测试通过、1 个 PostgreSQL 集成测试按环境条件跳过，另有独立数据库 migration/权限回归；Day 25 覆盖 JWT 认证负向矩阵和 TenantContext 接缝 | 仍缺真实 Entra、RBAC、Provider 故障注入、负载和生产规模回归 | 阶段 2～4、14 |
 | GAP-016 | API 契约未生产化 | Minimal API 已拆分为按领域组织的 endpoint modules | 无版本、分页、稳定错误码、限流和 OpenAPI 治理 | 阶段 8 |
 | GAP-017 | Provider 可靠性策略不统一 | 外部调用无统一 retry/backoff/错误分类 | 限流、暂时故障和永久错误无法稳定区分 | 阶段 4～7 |
 | GAP-018 | 资源同步无 checkpoint | Resource Graph 仅单次内消费 SkipToken | 大规模扫描中断后需要从头开始 | 阶段 4～5 |

@@ -175,6 +175,20 @@ PostgreSQL readiness 会使用 Npgsql 建立真实数据库连接并执行 `SELE
 EF Core migration 负责创建表结构；资源和成本数据由同步服务写入
 `cloud_resources` 与 `cloud_cost_daily`。
 
+Day 25 已接入标准 OIDC JWT Bearer 验证管道。基础配置默认关闭，Day 26
+配置真实 Microsoft Entra ID 前不会联系任何外部身份服务：
+
+```powershell
+$env:Authentication__Oidc__Enabled = "true"
+$env:Authentication__Oidc__Authority = "https://issuer.example"
+$env:Authentication__Oidc__Audience = "api://finops-api"
+```
+
+启用后会验证签名、有效期、issuer 和 audience，并保留原始 `iss`、`sub`
+Claims 供 Tenant Membership 校验。`/`、`/health` 和 `/health/live` 明确允许
+匿名访问。Day 25 只建立认证能力；业务 endpoint 的 permission、RBAC 和全面
+授权分别属于 Day 27～28，当前不得据此宣称 API 已完成访问控制。
+
 ## 配置
 
 JSON、YAML、SLNX、MSBuild、项目引用、环境变量和 Terraform 配置的逐项作用见

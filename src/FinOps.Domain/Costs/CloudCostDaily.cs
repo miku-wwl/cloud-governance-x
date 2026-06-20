@@ -1,3 +1,5 @@
+using FinOps.Domain.Tenancy;
+
 namespace FinOps.Domain.Costs;
 
 public sealed class CloudCostDaily
@@ -9,6 +11,7 @@ public sealed class CloudCostDaily
     }
 
     private CloudCostDaily(
+        Guid tenantId,
         string provider,
         string accountId,
         DateOnly usageDate,
@@ -19,7 +22,8 @@ public sealed class CloudCostDaily
         string rawJson)
     {
         Id = Guid.NewGuid();
-        Provider = provider;
+        TenantId = tenantId;
+        Provider = ProviderConnection.NormalizeProvider(provider);
         AccountId = accountId;
         UsageDate = usageDate;
         ServiceName = serviceName;
@@ -30,6 +34,8 @@ public sealed class CloudCostDaily
     }
 
     public Guid Id { get; private set; }
+
+    public Guid? TenantId { get; private set; }
 
     public string Provider { get; private set; } = string.Empty;
 
@@ -48,6 +54,7 @@ public sealed class CloudCostDaily
     public string RawJson { get; private set; } = "{}";
 
     public static CloudCostDaily Create(
+        Guid tenantId,
         string provider,
         string accountId,
         DateOnly usageDate,
@@ -57,6 +64,7 @@ public sealed class CloudCostDaily
         string currency,
         string rawJson)
     {
+        ArgumentOutOfRangeException.ThrowIfEqual(tenantId, Guid.Empty);
         ArgumentException.ThrowIfNullOrWhiteSpace(provider);
         ArgumentException.ThrowIfNullOrWhiteSpace(accountId);
         ArgumentException.ThrowIfNullOrWhiteSpace(serviceName);
@@ -64,6 +72,7 @@ public sealed class CloudCostDaily
         ArgumentException.ThrowIfNullOrWhiteSpace(rawJson);
 
         return new CloudCostDaily(
+            tenantId,
             provider.Trim(),
             accountId.Trim(),
             usageDate,

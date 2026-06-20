@@ -121,6 +121,9 @@ try {
         -Database $Database `
         -NoBuild
 
+    & (Join-Path $repositoryRoot "scripts/Initialize-TestTenant.ps1") `
+        -Database $Database
+
     Invoke-Terraform @("init", "-input=false")
     Invoke-Terraform @("fmt", "-check")
     Invoke-Terraform @("validate")

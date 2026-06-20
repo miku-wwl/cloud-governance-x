@@ -9,7 +9,11 @@ public sealed class EtlJobRunTests
     {
         var startedAt = new DateTimeOffset(2026, 6, 13, 0, 0, 0, TimeSpan.Zero);
         var finishedAt = startedAt.AddMinutes(1);
-        var run = EtlJobRun.Start("azure-resource-sync", "Azure", startedAt);
+        var run = EtlJobRun.Start(
+            Guid.NewGuid(),
+            "azure-resource-sync",
+            "Azure",
+            startedAt);
 
         run.Complete(finishedAt, 42);
 
@@ -23,6 +27,7 @@ public sealed class EtlJobRunTests
     public void Fail_TruncatesOversizedErrorMessage()
     {
         var run = EtlJobRun.Start(
+            Guid.NewGuid(),
             "azure-resource-sync",
             "Azure",
             DateTimeOffset.UtcNow);
@@ -32,5 +37,16 @@ public sealed class EtlJobRunTests
         Assert.Equal(EtlJobRun.FailedStatus, run.Status);
         Assert.Equal(3, run.RecordsProcessed);
         Assert.Equal(4000, run.ErrorMessage?.Length);
+    }
+
+    [Fact]
+    public void Start_requires_tenant()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            EtlJobRun.Start(
+                Guid.Empty,
+                "azure-resource-sync",
+                "Azure",
+                DateTimeOffset.UtcNow));
     }
 }

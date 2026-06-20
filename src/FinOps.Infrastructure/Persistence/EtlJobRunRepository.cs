@@ -1,11 +1,13 @@
 using FinOps.Application.Etl;
+using FinOps.Application.Tenancy;
 using FinOps.Domain.Etl;
 using Microsoft.EntityFrameworkCore;
 
 namespace FinOps.Infrastructure.Persistence;
 
 internal sealed class EtlJobRunRepository(
-    IDbContextFactory<FinOpsDbContext> dbContextFactory) : IEtlJobRunRepository
+    IDbContextFactory<FinOpsDbContext> dbContextFactory,
+    ITenantContext tenantContext) : IEtlJobRunRepository
 {
     public async Task<Guid> StartAsync(
         string jobName,
@@ -13,8 +15,9 @@ internal sealed class EtlJobRunRepository(
         DateTimeOffset startedAt,
         CancellationToken cancellationToken = default)
     {
+        var tenantId = tenantContext.RequireCurrent().TenantId;
         await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
-        var run = EtlJobRun.Start(jobName, provider, startedAt);
+        var run = EtlJobRun.Start(tenantId, jobName, provider, startedAt);
         dbContext.EtlJobRuns.Add(run);
         await dbContext.SaveChangesAsync(cancellationToken);
         return run.Id;
@@ -26,8 +29,9 @@ internal sealed class EtlJobRunRepository(
         int recordsProcessed,
         CancellationToken cancellationToken = default)
     {
+        var tenantId = tenantContext.RequireCurrent().TenantId;
         await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
-        var run = await GetRequiredAsync(dbContext, id, cancellationToken);
+        var run = await GetRequiredAsync(dbContext, tenantId, id, cancellationToken);
         run.Complete(finishedAt, recordsProcessed);
         await dbContext.SaveChangesAsync(cancellationToken);
     }
@@ -39,8 +43,9 @@ internal sealed class EtlJobRunRepository(
         string errorMessage,
         CancellationToken cancellationToken = default)
     {
+        var tenantId = tenantContext.RequireCurrent().TenantId;
         await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
-        var run = await GetRequiredAsync(dbContext, id, cancellationToken);
+        var run = await GetRequiredAsync(dbContext, tenantId, id, cancellationToken);
         run.Fail(finishedAt, recordsProcessed, errorMessage);
         await dbContext.SaveChangesAsync(cancellationToken);
     }
@@ -50,8 +55,11 @@ internal sealed class EtlJobRunRepository(
         int take,
         CancellationToken cancellationToken = default)
     {
+        var tenantId = tenantContext.RequireCurrent().TenantId;
         await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
-        var query = dbContext.EtlJobRuns.AsNoTracking();
+        var query = dbContext.EtlJobRuns
+            .AsNoTracking()
+            .Where(run => run.TenantId == tenantId);
 
         if (!string.IsNullOrWhiteSpace(jobName))
         {
@@ -75,11 +83,14 @@ internal sealed class EtlJobRunRepository(
 
     private static async Task<EtlJobRun> GetRequiredAsync(
         FinOpsDbContext dbContext,
+        Guid tenantId,
         Guid id,
         CancellationToken cancellationToken)
     {
         return await dbContext.EtlJobRuns
-            .SingleOrDefaultAsync(run => run.Id == id, cancellationToken)
+            .SingleOrDefaultAsync(
+                run => run.TenantId == tenantId && run.Id == id,
+                cancellationToken)
             ?? throw new InvalidOperationException($"ETL job run '{id}' was not found.");
     }
 }

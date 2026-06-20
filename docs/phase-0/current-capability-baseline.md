@@ -45,7 +45,7 @@ NuGet 包和 Terraform CLI 已有可用更新，已登记为 RISK-0027。阶段�
 | 编译质量门槛 | `VerifiedBaseline` | `Directory.Build.props`、`.editorconfig` 和 `Test-RepositoryStatic.ps1` 统一 analyzer、warnings as errors、格式、actionlint、依赖漏洞、配置解析、build/test 与 Terraform 静态检查；Day 19 CI 复用该入口 | branch protection 是外部设置；阶段报告记录了 2026-06-18 的启用证据，每个待签收 SHA 仍需对应 CI 证据 | 受限 | 阶段 1、14 |
 | 本地 PostgreSQL | `ImplementedLimited` | `compose.yaml` 提供 PostgreSQL 18、healthcheck 和持久卷 | 开发密码、单实例、无备份/PITR | 禁止直接生产 | Release A、阶段 15 |
 | 配置覆盖 | `VerifiedBaseline` | JSON 默认值可由双下划线环境变量覆盖；`.env` 被忽略 | 无集中 secret provider 和环境配置验证 | 受限 | 阶段 1、2 |
-| liveness/readiness | `ImplementedLimited` | `/health/live` 检查进程；`/health` 连接 PostgreSQL 并执行查询 | 无 Provider、队列和依赖降级状态 | 受限 | Release A、阶段 11 |
+| liveness/readiness | `ImplementedLimited` | `/health/live` 检查进程；`/health` 连接 PostgreSQL 并执行查询；Day 25 将根状态和两个 health endpoint 显式标记为匿名 | 无 Provider、队列和依赖降级状态 | 受限 | Release A、阶段 11 |
 | EF Core migration | `ImplementedLimited` | Day 18 新增 `FinOps.Migrator`、PostgreSQL advisory lock 和 `Test-DatabaseMigration.ps1`；API/Worker 不再调用 migration API；脚本可重复验证空库、重复执行、并发拒绝、失败退出码和无 DDL runtime role | 尚无 CI/CD migration approval、回滚和生产身份配置 | 受限 | 阶段 12 |
 
 ### 3.2 Azure 与 Terraform
@@ -53,7 +53,7 @@ NuGet 包和 Terraform CLI 已有可用更新，已登记为 RISK-0027。阶段�
 | 能力 | 当前状态 | 当前实现与证据 | 当前限制 | 生产结论 | 后续阶段 |
 | --- | --- | --- | --- | --- | --- |
 | 本地 Azure 身份 | `ImplementedLimited` | `DefaultAzureCredential`，本地验收依赖 Azure CLI | 未建立 Managed Identity、Workload Identity 和最小权限 | 仅本地允许 | 阶段 2、5 |
-| 订阅读取 | `VerifiedBaseline` | Day 9 真实 E2E 使用 Azure CLI 身份读取启用状态订阅，并与 CLI 结果一致 | 管理 API 匿名，身份仍是本地用户身份 | 禁止公开部署 | 阶段 2 |
+| 订阅读取 | `VerifiedBaseline` | Day 9 真实 E2E 使用 Azure CLI 身份读取启用状态订阅，并与 CLI 结果一致 | Day 25 可验证调用方 OIDC token，但 endpoint 尚未要求授权；Azure 身份仍是本地用户身份 | 禁止公开部署 | 阶段 2 |
 | Terraform 基础资源 | `VerifiedBaseline` | Day 9 创建并核验 Resource Group、Storage、Service Bus Namespace/Queue | 仅开发规模，Storage 仍启用 shared key | 禁止直接生产 | 阶段 12 |
 | apply/destroy 生命周期 | `VerifiedBaseline` | Day 9 完整 apply/destroy，确认 state 为空且 Resource Group 不存在 | 使用本地 state 和个人 Azure CLI 身份 | 受限 | 阶段 12 |
 | Terraform state | `ProductionProhibited` | 当前使用本地 state，state/plan 已被 Git 忽略 | 无远端锁、加密、审计、环境隔离 | 禁止团队生产 | 阶段 12 |
@@ -77,7 +77,7 @@ NuGet 包和 Terraform CLI 已有可用更新，已登记为 RISK-0027。阶段�
 | Cost Management 查询 | `VerifiedBaseline` | Day 9 在关闭 fallback 后取得 HTTP 200 和 28 行真实成本，`sample data: False` | 仍受订阅账单延迟、权限和有限成本语义约束 | 受限 | 阶段 6 |
 | 成本粒度 | `ImplementedLimited` | Daily + ServiceName + ResourceGroup + Currency | 不是资源级成本；无 charge type、billing period、amortized cost | 禁止声称精确资源归因 | 阶段 3、6 |
 | 成本 Upsert | `VerifiedBaseline` | 六列业务唯一键，重复同步更新 cost/raw_json | 账单修订语义和 lineage 不完整 | 受限 | 阶段 3、6 |
-| 成本查询 API | `VerifiedBaseline` | daily、by-service、by-resource-group；按币种独立计算占比 | 无分页、版本、认证、租户范围 | 禁止公开部署 | 阶段 2、8 |
+| 成本查询 API | `VerifiedBaseline` | daily、by-service、by-resource-group；按币种独立计算占比；Repository 查询已 tenant-aware | 无分页、版本，endpoint 尚未要求 Bearer/授权 policy | 禁止公开部署 | 阶段 2、8 |
 | 样例 fallback | `ProductionProhibited` | `UseSampleDataWhenUnavailable=true`；失败、空响应可转为 `source=sample` | Provider 故障可能被业务流程视为成功 | 仅本地演示允许 | 阶段 5、6 |
 | 强制样例 | `ImplementedLimited` | `ForceSampleData` 为测试和演示生成两种服务的日数据 | 不是 Azure 账单证据 | 禁止生产 | 阶段 1、5 |
 | 多币种处理 | `ImplementedLimited` | 存储 currency，查询按币种分别汇总比例 | 无汇率、统一展示币种和汇率日期 | 受限 | 阶段 3、6 |
@@ -87,7 +87,7 @@ NuGet 包和 Terraform CLI 已有可用更新，已登记为 RISK-0027。阶段�
 | 能力 | 当前状态 | 当前实现与证据 | 当前限制 | 生产结论 | 后续阶段 |
 | --- | --- | --- | --- | --- | --- |
 | 一次性 Worker | `VerifiedBaseline` | `Etl.Job` 选择 Resources 或 Costs，执行后停止宿主 | 无调度、队列和长期运行策略 | 仅手工/学习允许 | 阶段 4 |
-| 管理 API 触发 | `ProductionProhibited` | 两个匿名 POST 路由可触发资源或成本同步 | 无身份、RBAC、审计、限流 | 禁止生产 | 阶段 2、8 |
+| 管理 API 触发 | `ProductionProhibited` | 两个 POST 路由可触发资源或成本同步；Day 25 已具备 Bearer token 验证能力 | 路由尚未要求身份或 RBAC，且无审计、限流 | 禁止生产 | 阶段 2、8 |
 | ETL 历史 | `VerifiedBaseline` | `etl_job_runs` 记录 Running/Succeeded/Failed、数量和错误摘要 | 无 attempt、checkpoint、correlation、owner | 受限 | 阶段 3、4 |
 | 失败记录 | `VerifiedBaseline` | Application 服务捕获异常，写 Failed 后重新抛出 | 失败记录写入使用独立上下文但无可靠 outbox | 受限 | 阶段 4、10 |
 | 调度与恢复 | `Planned` | 当前仅 Worker/API 手工触发 | 无 scheduler、lease、heartbeat、retry、checkpoint、dead-letter | 禁止生产 ETL | 阶段 4 |
@@ -97,10 +97,10 @@ NuGet 包和 Terraform CLI 已有可用更新，已登记为 RISK-0027。阶段�
 
 | 能力 | 当前状态 | 当前实现与证据 | 当前限制 | 生产结论 | 后续阶段 |
 | --- | --- | --- | --- | --- | --- |
-| 自动化测试 | `VerifiedBaseline` | 当前 44 个执行测试覆盖映射、领域、应用服务、API route、DI、架构边界、migration API 的 IL 所有权和 Worker Job 行为 | 数据库 migration 仍由独立 PowerShell 集成脚本验证；尚无认证、安全和负载测试 | 受限 | 阶段 1～4 |
+| 自动化测试 | `VerifiedBaseline` | 当前本地运行 82 个测试通过、1 个 PostgreSQL 集成测试按环境条件跳过；覆盖领域、tenant、API route、OIDC JWT 负向矩阵、DI、架构边界、migration 所有权和 Worker Job 行为 | 数据库 migration 仍由独立 PowerShell 集成脚本验证；尚无真实 Entra、完整 RBAC、负载和生产规模测试 | 受限 | 阶段 1～4 |
 | E2E 脚本 | `VerifiedBaseline` | Day 9 串行执行 6 个 Azure/Terraform 脚本；Day 18 增加不访问 Azure 的数据库 migration/权限回归脚本 | Azure E2E 仍是本地开发身份和单订阅规模 | 受限 | 阶段 1～15 |
 | CI、staging、SLO、备份 | `ImplementedLimited` | Day 19 初版 GitHub Actions 执行静态和数据库 migration 门禁；2026-06-18 的保护规则证据记录在阶段报告；staging、SLO 和备份仍在施工计划中 | 外部保护规则和每个新 SHA 的通过状态必须重新取证；无 artifact promotion、部署或恢复证据 | 禁止生产 | Release A、阶段 11～15 |
-| 用户、RBAC、tenant、audit | `Planned` | 当前没有身份中间件、业务 tenant schema 或审计模型 | 无法保护管理操作和证明组织隔离 | 禁止生产 | 阶段 2～3 |
+| OIDC、RBAC、tenant、audit | `ImplementedLimited` | Day 20～24 已建立 tenant schema、可信上下文、tenant-aware Repository 和 legacy backfill；Day 25 已接入标准 OIDC JWT Bearer 验证 | 尚无真实 Entra 配置、permission/scope RBAC、全 endpoint 授权和 append-only audit | 禁止生产 | 阶段 2～3 |
 | Policy、Monitor、finding、waiver | `Planned` | 只有 compliance DTO/interface，无 Provider 和持久化实现 | 不能声称合规治理能力 | 未实现 | 阶段 7、9 |
 | React 前端、AWS、多云统一 | `Planned` | 当前仓库没有前端项目或 AWS SDK/Provider | “多云”仅是目标 | 未实现 | 阶段 8、13 |
 | outbox/inbox、通知 | `Planned` | 当前没有事件可靠投递模型 | 无可靠异步治理流程 | 未实现 | 阶段 10 |
