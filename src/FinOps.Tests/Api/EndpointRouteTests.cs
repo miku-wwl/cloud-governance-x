@@ -3,6 +3,7 @@ using FinOps.Api.Endpoints;
 using FinOps.Application.Cloud;
 using FinOps.Application.Cloud.Azure;
 using FinOps.Application.Etl;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
@@ -47,6 +48,24 @@ public sealed class EndpointRouteTests
             route => AssertRoute(route.Pattern, route.Methods, "GET", "/api/costs/daily"),
             route => AssertRoute(route.Pattern, route.Methods, null, "/health"),
             route => AssertRoute(route.Pattern, route.Methods, null, "/health/live"));
+    }
+
+    [Fact]
+    public void Health_routes_are_explicitly_anonymous()
+    {
+        var app = BuildRouteOnlyApplication();
+        var healthRoutes = ((IEndpointRouteBuilder)app)
+            .DataSources
+            .SelectMany(dataSource => dataSource.Endpoints)
+            .OfType<RouteEndpoint>()
+            .Where(endpoint => endpoint.RoutePattern.RawText is
+                "/" or "/health" or "/health/live")
+            .ToArray();
+
+        Assert.Equal(3, healthRoutes.Length);
+        Assert.All(
+            healthRoutes,
+            endpoint => Assert.NotNull(endpoint.Metadata.GetMetadata<IAllowAnonymous>()));
     }
 
     [Fact]

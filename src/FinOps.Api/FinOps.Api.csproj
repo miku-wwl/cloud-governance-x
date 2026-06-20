@@ -6,4 +6,9 @@
     <ProjectReference Include="..\FinOps.Infrastructure\FinOps.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- 使用 ASP.NET Core 标准 Bearer handler 验证外部 OIDC Provider 签发的 JWT。 -->
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.4" />
+  </ItemGroup>
+
 </Project>

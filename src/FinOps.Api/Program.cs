@@ -1,3 +1,4 @@
+using FinOps.Api.Authentication;
 using FinOps.Api.Endpoints;
 using FinOps.Api.Tenancy;
 using FinOps.Infrastructure;
@@ -7,6 +8,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddApplicationUseCases();
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddFinOpsOidcAuthentication(builder.Configuration);
+builder.Services.AddAuthorization();
 builder.Services.AddProblemDetails();
 
 builder.Services
@@ -17,8 +20,10 @@ builder.Services
 var app = builder.Build();
 
 app.UseExceptionHandler();
+app.UseAuthentication();
 app.UseE2eTestIdentity(app.Environment, builder.Configuration);
 app.UseHttpTenantContext();
+app.UseAuthorization();
 
 app.MapFinOpsEndpoints();
 
