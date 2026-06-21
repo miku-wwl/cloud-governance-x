@@ -53,7 +53,7 @@ NuGet 包和 Terraform CLI 已有可用更新，已登记为 RISK-0027。阶段�
 | 能力 | 当前状态 | 当前实现与证据 | 当前限制 | 生产结论 | 后续阶段 |
 | --- | --- | --- | --- | --- | --- |
 | 本地 Azure 身份 | `ImplementedLimited` | `DefaultAzureCredential`，本地验收依赖 Azure CLI | 未建立 Managed Identity、Workload Identity 和最小权限 | 仅本地允许 | 阶段 2、5 |
-| 订阅读取 | `VerifiedBaseline` | Day 9 真实 E2E 使用 Azure CLI 身份读取启用状态订阅，并与 CLI 结果一致 | Day 25 可验证调用方 OIDC token，但 endpoint 尚未要求授权；Azure 身份仍是本地用户身份 | 禁止公开部署 | 阶段 2 |
+| 订阅读取 | `VerifiedBaseline` | Day 9 真实 E2E 使用 Azure CLI 身份读取启用状态订阅，并与 CLI 结果一致；Day 26 已验证真实 Entra caller token | endpoint 尚未要求授权；Azure Provider 身份仍是本地用户身份 | 禁止公开部署 | 阶段 2、5 |
 | Terraform 基础资源 | `VerifiedBaseline` | Day 9 创建并核验 Resource Group、Storage、Service Bus Namespace/Queue | 仅开发规模，Storage 仍启用 shared key | 禁止直接生产 | 阶段 12 |
 | apply/destroy 生命周期 | `VerifiedBaseline` | Day 9 完整 apply/destroy，确认 state 为空且 Resource Group 不存在 | 使用本地 state 和个人 Azure CLI 身份 | 受限 | 阶段 12 |
 | Terraform state | `ProductionProhibited` | 当前使用本地 state，state/plan 已被 Git 忽略 | 无远端锁、加密、审计、环境隔离 | 禁止团队生产 | 阶段 12 |
@@ -87,7 +87,7 @@ NuGet 包和 Terraform CLI 已有可用更新，已登记为 RISK-0027。阶段�
 | 能力 | 当前状态 | 当前实现与证据 | 当前限制 | 生产结论 | 后续阶段 |
 | --- | --- | --- | --- | --- | --- |
 | 一次性 Worker | `VerifiedBaseline` | `Etl.Job` 选择 Resources 或 Costs，执行后停止宿主 | 无调度、队列和长期运行策略 | 仅手工/学习允许 | 阶段 4 |
-| 管理 API 触发 | `ProductionProhibited` | 两个 POST 路由可触发资源或成本同步；Day 25 已具备 Bearer token 验证能力 | 路由尚未要求身份或 RBAC，且无审计、限流 | 禁止生产 | 阶段 2、8 |
+| 管理 API 触发 | `ProductionProhibited` | 两个 POST 路由可触发资源或成本同步；Day 26 已具备真实 Entra caller 验证能力 | 路由尚未要求身份或 RBAC，且无审计、限流 | 禁止生产 | 阶段 2、8 |
 | ETL 历史 | `VerifiedBaseline` | `etl_job_runs` 记录 Running/Succeeded/Failed、数量和错误摘要 | 无 attempt、checkpoint、correlation、owner | 受限 | 阶段 3、4 |
 | 失败记录 | `VerifiedBaseline` | Application 服务捕获异常，写 Failed 后重新抛出 | 失败记录写入使用独立上下文但无可靠 outbox | 受限 | 阶段 4、10 |
 | 调度与恢复 | `Planned` | 当前仅 Worker/API 手工触发 | 无 scheduler、lease、heartbeat、retry、checkpoint、dead-letter | 禁止生产 ETL | 阶段 4 |
@@ -97,10 +97,10 @@ NuGet 包和 Terraform CLI 已有可用更新，已登记为 RISK-0027。阶段�
 
 | 能力 | 当前状态 | 当前实现与证据 | 当前限制 | 生产结论 | 后续阶段 |
 | --- | --- | --- | --- | --- | --- |
-| 自动化测试 | `VerifiedBaseline` | 当前本地运行 82 个测试通过、1 个 PostgreSQL 集成测试按环境条件跳过；覆盖领域、tenant、API route、OIDC JWT 负向矩阵、DI、架构边界、migration 所有权和 Worker Job 行为 | 数据库 migration 仍由独立 PowerShell 集成脚本验证；尚无真实 Entra、完整 RBAC、负载和生产规模测试 | 受限 | 阶段 1～4 |
+| 自动化测试 | `VerifiedBaseline` | Day 26 增加 OIDC signing-key refresh 回归，并完成真实 Entra token、JWKS、Membership 和本地 API E2E；其余测试覆盖领域、tenant、API route、DI、架构边界、migration 所有权和 Worker Job 行为 | 数据库 migration 仍由独立 PowerShell 集成脚本验证；尚无完整 RBAC、负载和生产规模测试 | 受限 | 阶段 1～4 |
 | E2E 脚本 | `VerifiedBaseline` | Day 9 串行执行 6 个 Azure/Terraform 脚本；Day 18 增加不访问 Azure 的数据库 migration/权限回归脚本 | Azure E2E 仍是本地开发身份和单订阅规模 | 受限 | 阶段 1～15 |
 | CI、staging、SLO、备份 | `ImplementedLimited` | Day 19 初版 GitHub Actions 执行静态和数据库 migration 门禁；2026-06-18 的保护规则证据记录在阶段报告；staging、SLO 和备份仍在施工计划中 | 外部保护规则和每个新 SHA 的通过状态必须重新取证；无 artifact promotion、部署或恢复证据 | 禁止生产 | Release A、阶段 11～15 |
-| OIDC、RBAC、tenant、audit | `ImplementedLimited` | Day 20～24 已建立 tenant schema、可信上下文、tenant-aware Repository 和 legacy backfill；Day 25 已接入标准 OIDC JWT Bearer 验证 | 尚无真实 Entra 配置、permission/scope RBAC、全 endpoint 授权和 append-only audit | 禁止生产 | 阶段 2～3 |
+| OIDC、RBAC、tenant、audit | `ImplementedLimited` | Day 20～24 已建立 tenant schema、可信上下文、tenant-aware Repository 和 legacy backfill；Day 25～26 已接入标准 JWT Bearer 和真实 Entra development identity | 尚无 permission/scope RBAC、全 endpoint 授权和 append-only audit | 禁止生产 | 阶段 2～3 |
 | Policy、Monitor、finding、waiver | `Planned` | 只有 compliance DTO/interface，无 Provider 和持久化实现 | 不能声称合规治理能力 | 未实现 | 阶段 7、9 |
 | React 前端、AWS、多云统一 | `Planned` | 当前仓库没有前端项目或 AWS SDK/Provider | “多云”仅是目标 | 未实现 | 阶段 8、13 |
 | outbox/inbox、通知 | `Planned` | 当前没有事件可靠投递模型 | 无可靠异步治理流程 | 未实现 | 阶段 10 |

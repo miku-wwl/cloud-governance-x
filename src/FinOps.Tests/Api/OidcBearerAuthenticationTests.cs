@@ -126,6 +126,62 @@ public sealed class OidcBearerAuthenticationTests
     }
 
     [Fact]
+    public async Task Unknown_signing_key_refreshes_configuration_for_next_request()
+    {
+        using var oldRsa = RSA.Create(2048);
+        using var rotatedRsa = RSA.Create(2048);
+        var oldKey = CreateSigningKey(oldRsa);
+        var rotatedKey = CreateSigningKey(rotatedRsa);
+        var configurationManager = new SigningKeyRefreshConfigurationManager(
+            CreateOidcConfiguration(oldKey),
+            CreateOidcConfiguration(rotatedKey));
+        await using var application = await CreateApplicationAsync(
+            oldKey,
+            configurationManager: configurationManager);
+        using var firstRequest = CreateAuthenticatedRequest(
+            CreateToken(
+                rotatedKey,
+                Issuer,
+                Audience,
+                DateTime.UtcNow.AddMinutes(5)));
+
+        using var firstResponse = await application.GetTestClient().SendAsync(firstRequest);
+        using var secondRequest = CreateAuthenticatedRequest(
+            CreateToken(
+                rotatedKey,
+                Issuer,
+                Audience,
+                DateTime.UtcNow.AddMinutes(5)));
+        using var secondResponse = await application.GetTestClient().SendAsync(secondRequest);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, firstResponse.StatusCode);
+        Assert.True(configurationManager.RefreshCount > 0);
+        Assert.Equal(HttpStatusCode.OK, secondResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task Unavailable_oidc_metadata_fails_authentication_closed()
+    {
+        using var rsa = RSA.Create(2048);
+        var signingKey = CreateSigningKey(rsa);
+        var configurationManager = new UnavailableConfigurationManager();
+        await using var application = await CreateApplicationAsync(
+            signingKey,
+            configurationManager: configurationManager);
+        using var request = CreateAuthenticatedRequest(
+            CreateToken(
+                signingKey,
+                Issuer,
+                Audience,
+                DateTime.UtcNow.AddMinutes(5)));
+
+        using var response = await application.GetTestClient().SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.True(configurationManager.RequestCount > 0);
+    }
+
+    [Fact]
     public async Task Health_endpoint_remains_anonymous()
     {
         using var rsa = RSA.Create(2048);
@@ -217,7 +273,8 @@ public sealed class OidcBearerAuthenticationTests
 
     private static async Task<WebApplication> CreateApplicationAsync(
         SecurityKey trustedSigningKey,
-        bool enabled = true)
+        bool enabled = true,
+        IConfigurationManager<OpenIdConnectConfiguration>? configurationManager = null)
     {
         var configurationValues = new Dictionary<string, string?>
         {
@@ -249,6 +306,7 @@ public sealed class OidcBearerAuthenticationTests
                 };
                 oidcConfiguration.SigningKeys.Add(trustedSigningKey);
                 options.ConfigurationManager =
+                    configurationManager ??
                     new StaticConfigurationManager<OpenIdConnectConfiguration>(
                         oidcConfiguration);
             });
@@ -285,6 +343,17 @@ public sealed class OidcBearerAuthenticationTests
         {
             KeyId = Guid.NewGuid().ToString("N")
         };
+
+    private static OpenIdConnectConfiguration CreateOidcConfiguration(
+        SecurityKey signingKey)
+    {
+        var configuration = new OpenIdConnectConfiguration
+        {
+            Issuer = Issuer
+        };
+        configuration.SigningKeys.Add(signingKey);
+        return configuration;
+    }
 
     private static string CreateToken(
         SecurityKey signingKey,
@@ -335,5 +404,44 @@ public sealed class OidcBearerAuthenticationTests
                 tenantId == TenantId &&
                 issuer == Issuer &&
                 subject == Subject);
+    }
+
+    private sealed class SigningKeyRefreshConfigurationManager(
+        OpenIdConnectConfiguration initialConfiguration,
+        OpenIdConnectConfiguration refreshedConfiguration) :
+        IConfigurationManager<OpenIdConnectConfiguration>
+    {
+        private OpenIdConnectConfiguration currentConfiguration =
+            initialConfiguration;
+
+        public int RefreshCount { get; private set; }
+
+        public Task<OpenIdConnectConfiguration> GetConfigurationAsync(
+            CancellationToken cancel) =>
+            Task.FromResult(currentConfiguration);
+
+        public void RequestRefresh()
+        {
+            RefreshCount++;
+            currentConfiguration = refreshedConfiguration;
+        }
+    }
+
+    private sealed class UnavailableConfigurationManager :
+        IConfigurationManager<OpenIdConnectConfiguration>
+    {
+        public int RequestCount { get; private set; }
+
+        public Task<OpenIdConnectConfiguration> GetConfigurationAsync(
+            CancellationToken cancel)
+        {
+            RequestCount++;
+            return Task.FromException<OpenIdConnectConfiguration>(
+                new IOException("OIDC metadata endpoint is unavailable."));
+        }
+
+        public void RequestRefresh()
+        {
+        }
     }
 }

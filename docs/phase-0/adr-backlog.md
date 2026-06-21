@@ -14,7 +14,7 @@
 | [ADR-0001](../adr/ADR-0001-module-boundaries-and-architecture-tests.md) | 模块边界与架构测试规则 | 当前依赖仅靠人工检查 | 反射架构测试；专用架构测试库；编译边界 | 阶段 1 | Platform Architect | Accepted | RISK-0013 |
 | [ADR-0002](../adr/ADR-0002-migration-host-and-release-flow.md) | 独立 Migration Host 与发布流程 | API/Worker 自动 migration | 独立 Host；CI migration Job；显式 CLI command | 阶段 1 | Platform SRE | Accepted | RISK-0003 |
 | [ADR-0003](../adr/ADR-0003-organization-tenant-cloud-account-model.md) | Organization/Tenant/CloudAccount 模型 | Azure tenant 不等于业务 tenant | 单库共享 schema；schema-per-tenant；database-per-tenant | 阶段 2 | Platform Architect | Accepted | RISK-0002 |
-| ADR-0004 | Entra ID、service identity 与本地身份 | 当前依赖 Azure CLI 用户 | Managed Identity；Workload Identity；受控服务主体 | 阶段 2 | Security Owner | Proposed | RISK-0001、RISK-0018 |
+| [ADR-0004](../adr/ADR-0004-entra-and-development-identity.md) | Entra ID、service identity 与本地身份 | 当前依赖 Azure CLI 用户 | Managed Identity；Workload Identity；受控服务主体 | 阶段 2 | Security Owner | Accepted | RISK-0001、RISK-0018 |
 | ADR-0005 | tenant 隔离与 PostgreSQL RLS | 查询和唯一键无 tenant 条件 | 应用过滤 + RLS；仅应用过滤；物理隔离 | 阶段 2～3 | Security Owner | Proposed | RISK-0002 |
 | ADR-0006 | Raw/Normalized/Derived/Operational 数据分层 | raw JSON、业务表和运行状态混合 | PostgreSQL 分层；对象存储 Raw + DB；事件流分层 | 阶段 3 | Data Owner | Proposed | RISK-0008、RISK-0020、RISK-0021 |
 | ADR-0007 | 资源 full-scan 与 inactive/deleted 语义 | 删除资源仍保留为当前数据 | scan ID + mark inactive；事件增量；双轨 reconciliation | 阶段 3 | Data Owner | Proposed | RISK-0007 |
@@ -46,5 +46,5 @@ ADR-0001、ADR-0002 和 ADR-0018 均已于 2026-06-18 由项目 Owner 接受。
 - build/test；
 - Git 垃圾文件、`tmp/`、`bin/obj`、Terraform state/plan 检查。
 
-ADR-0003 已于 2026-06-19 在 Day 20 接受。ADR-0004～0005 必须在对应身份与
-RLS 实现前完成审批。
+ADR-0003 已于 2026-06-19 在 Day 20 接受。ADR-0004 已于 2026-06-21 在
+Day 26 接受。ADR-0005 必须在 RLS 实现前完成审批。

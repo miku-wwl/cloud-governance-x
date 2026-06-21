@@ -53,16 +53,21 @@ public static class OidcAuthenticationServiceCollectionExtensions
                     RequireSignedTokens = true,
                     ClockSkew = TimeSpan.FromSeconds(settings.ClockSkewSeconds)
                 };
+                options.Events = new JwtBearerEvents
+                {
+                    OnAuthenticationFailed = context =>
+                    {
+                        context.NoResult();
+                        return Task.CompletedTask;
+                    }
+                };
 
                 if (!settings.Enabled)
                 {
-                    options.Events = new JwtBearerEvents
+                    options.Events.OnMessageReceived = context =>
                     {
-                        OnMessageReceived = context =>
-                        {
-                            context.NoResult();
-                            return Task.CompletedTask;
-                        }
+                        context.NoResult();
+                        return Task.CompletedTask;
                     };
                 }
             });
