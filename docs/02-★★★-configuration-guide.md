@@ -178,9 +178,11 @@ MSBuild 会自动把该文件导入当前目录下的所有项目：
   接受外部 OIDC Provider 签发的 token。默认 `false`，关闭时即使收到格式
   正确的 Bearer token 也不会建立认证身份。
 - `Authentication.Oidc.Authority`：OIDC issuer/metadata 根地址。启用认证时
-  必须是绝对 URI；Day 26 才配置真实 Microsoft Entra ID 地址。
+  必须是绝对 URI。开发环境使用 tenant-specific v2 Authority：
+  `https://login.microsoftonline.com/<tenant-id>/v2.0`。
 - `Authentication.Oidc.Audience`：API 接受的 token audience。启用认证时
-  必须显式配置。
+  必须显式配置。Microsoft Entra v2 access token 使用 API Application
+  Client ID 作为 `aud`。
 - `Authentication.Oidc.RequireHttpsMetadata`：是否要求 OIDC metadata 使用
   HTTPS。生产和共享环境必须保持 `true`。
 - `Authentication.Oidc.ClockSkewSeconds`：token 时间验证允许的时钟偏差，
@@ -193,6 +195,12 @@ OIDC 配置不包含 password、client secret、private key 或 token。API 只�
 保留原始 `iss` 和 `sub` Claim，随后由 `HttpTenantContextMiddleware` 验证
 Tenant Membership。health 与根状态端点显式匿名；业务 endpoint 的权限策略和
 全面保护属于 Day 27～28。
+
+Day 26 的本地开发客户端是 public client，通过 Device Code Flow 获取 delegated
+token。它没有 client secret，也不能作为后台服务身份。初始化脚本把 App
+Registration ID 写入 Git 忽略的 `tmp/day26-entra-development.json`；该文件
+不含 token 或 credential。Device Code 和 access token 同样不得提交或写入
+普通日志。
 
 API 不再自动应用 EF Core migration。首次启动或 schema 更新后必须先运行：
 

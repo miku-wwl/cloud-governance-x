@@ -175,19 +175,45 @@ PostgreSQL readiness 会使用 Npgsql 建立真实数据库连接并执行 `SELE
 EF Core migration 负责创建表结构；资源和成本数据由同步服务写入
 `cloud_resources` 与 `cloud_cost_daily`。
 
-Day 25 已接入标准 OIDC JWT Bearer 验证管道。基础配置默认关闭，Day 26
-配置真实 Microsoft Entra ID 前不会联系任何外部身份服务：
+Day 25 已接入标准 OIDC JWT Bearer 验证管道。Day 26 已为开发环境建立两个
+single-tenant Microsoft Entra App Registration：
 
 ```powershell
 $env:Authentication__Oidc__Enabled = "true"
-$env:Authentication__Oidc__Authority = "https://issuer.example"
-$env:Authentication__Oidc__Audience = "api://finops-api"
+$env:Authentication__Oidc__Authority =
+  "https://login.microsoftonline.com/<tenant-id>/v2.0"
+$env:Authentication__Oidc__Audience = "<api-application-client-id>"
 ```
 
 启用后会验证签名、有效期、issuer 和 audience，并保留原始 `iss`、`sub`
 Claims 供 Tenant Membership 校验。`/`、`/health` 和 `/health/live` 明确允许
 匿名访问。Day 25 只建立认证能力；业务 endpoint 的 permission、RBAC 和全面
 授权分别属于 Day 27～28，当前不得据此宣称 API 已完成访问控制。
+
+Day 26 的 Entra 对象可重复初始化：
+
+```powershell
+./scripts/Initialize-DevelopmentEntraIdentity.ps1
+```
+
+本地开发客户端使用 Device Code Flow，不保存 client secret。真实 token 验证：
+
+```powershell
+./scripts/Test-EntraOidcIntegration.ps1 -RequestDeviceCode
+# 按控制台提示在浏览器登录后：
+./scripts/Test-EntraOidcIntegration.ps1
+```
+
+App Registration 是 Entra Tenant 目录对象，不属于 Resource Group，清理必须
+显式执行。清理脚本默认只做 dry-run：
+
+```powershell
+./scripts/Remove-DevelopmentEntraIdentity.ps1 `
+  -ConfirmTenantId <tenant-id>
+```
+
+只有人工确认后才增加 `-Apply`。详细边界见
+[`ADR-0004`](docs/adr/ADR-0004-entra-and-development-identity.md)。
 
 ## 配置
 
