@@ -115,11 +115,12 @@ sample fallback 不能掩盖生产 Provider failure。
 
 项目当前采用 milestone + gate 规划。
 
-Day 编号只作为 review capsule，不作为长期排期表，也不代表成熟度百分比。
+当前权威规划是 M0-M10 共 11 个里程碑，Day 1-148 共 148 个施工单元。Day 编号
+表示可验收施工单元，不等于自然日，也不代表成熟度百分比。
 
 规划规则：
 
-- 只展开当前 milestone 和下一个 milestone；
+- 以 11 个 milestone 管长期方向，以 Day 胶囊管理施工证据；
 - 每个 milestone 用证据关闭，不用乐观判断关闭；
 - 历史计划只保留审计价值，不能覆盖当前事实；
 - review 不通过时修复当前单元，不创建表面上的新 Day；
@@ -167,7 +168,9 @@ Day 编号只作为 review capsule，不作为长期排期表，也不代表成�
 - 本纲领记录原则；
 - current-state 记录当前事实；
 - roadmap 记录里程碑规划；
+- engineering-plan 记录 Day 1-148 施工总表；
 - Day 胶囊记录 review 历史；
 - ADR、risk register 和 production gap register 记录长期决策与开放风险。
 
-旧 100+ Day 路线只保留历史上下文。
+旧 100+ Day 路线只保留历史上下文；当前 Day 总表以
+[construction/engineering-plan.md](construction/engineering-plan.md) 为准。

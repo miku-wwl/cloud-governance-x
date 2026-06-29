@@ -5,7 +5,7 @@
 
 ## 当前入口
 
-- [engineering-plan.md](engineering-plan.md)：工程规划总纲，承接旧 Day8-148 长路线的职责。
+- [engineering-plan.md](engineering-plan.md)：工程规划总纲，记录 M0-M10 和 Day 1-148 施工总表。
 - [current-playbook.md](current-playbook.md)：当前施工手册，只描述正在推进的施工单元。
 
 ## 使用顺序

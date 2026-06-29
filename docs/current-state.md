@@ -2,7 +2,7 @@
 
 最近审视日期：2026-06-29
 状态基线：文档体系整改开始于 `main@b3efe97`，后续已合入文档重组 PR
-当前执行模型：milestone + gate，Day 胶囊只保留回顾历史。
+当前执行模型：11 个 milestone + gate，Day 胶囊记录施工历史和回顾。
 
 ## 1. 项目位置
 
@@ -17,10 +17,11 @@ Cloud Governance X 已经超过最初 Day 1-7 开发基线，也已经通过 Pha
 | 下一施工单元 | Day 27 - 权限与范围 RBAC |
 | 生产可用性 | 尚未生产可用 |
 | 本地测试快照 | `dotnet test FinOpsPlatform.slnx --no-restore`：84 passed，1 skipped |
-| 当前规划方式 | 旧 148-Day 长表已归档，当前按 milestone 和 gate 推进 |
+| 当前规划方式 | M0-M10 共 11 个里程碑，Day 1-148 共 148 个施工单元 |
 
-项目不应再用旧 148-Day 长表作为主事实来源。后续只展开当前 milestone 和下一个
-milestone，其他内容保持里程碑级规划。
+项目不应再用旧 148-Day 长表作为主事实来源。新的 Day 1-148 施工总表已经迁入
+[construction/engineering-plan.md](../construction/engineering-plan.md)，并按 M0-M10
+作为当前权威规划维护。
 
 ## 2. 已完成里程碑
 
@@ -78,10 +79,12 @@ Day 27 不能悄悄吞并 Day 28 端点保护或 Day 29 审计存储。除非 Ow
 1. 生产安全与数据正确性；
 2. [outline.md](../outline.md)；
 3. 本 current-state 文件；
-4. [docs/archive/adr](archive/adr/) 中已接受的 ADR；
-5. [docs/days](days/) 中的 Day 胶囊；
-6. 阶段报告、风险登记和生产差距登记；
-7. 归档施工计划和本地 review transcript。
+4. [docs/roadmap.md](roadmap.md)；
+5. [construction/engineering-plan.md](../construction/engineering-plan.md)；
+6. [docs/archive/adr](archive/adr/) 中已接受的 ADR；
+7. [docs/days](days/) 中的 Day 胶囊；
+8. 阶段报告、风险登记和生产差距登记；
+9. 归档施工计划和本地 review transcript。
 
 `review.txt`、`website-reivew.md` 等本地 ignored 文件是外部 review transcript，可以辅助分析，
 但其中结论只有复制到 tracked docs 后才成为项目事实。

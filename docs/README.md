@@ -5,7 +5,8 @@
 ## 当前事实
 
 - [current-state.md](current-state.md)：项目当前状态和下一步。
-- [roadmap.md](roadmap.md)：里程碑路线和当前规划单元。
+- [roadmap.md](roadmap.md)：11 个里程碑路线和当前规划单元。
+- [../construction/engineering-plan.md](../construction/engineering-plan.md)：Day 1-148 施工总表。
 - [../outline.md](../outline.md)：稳定项目纲领和生产底线。
 
 ## 回顾历史
