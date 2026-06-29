@@ -13,9 +13,6 @@
 
 - [days/README.md](days/README.md)：Day 1-27 回顾胶囊。
 - [phase/README.md](phase/README.md)：Phase 完工报告索引。
-- [reports/README.md](reports/README.md)：跨 Day / Phase 的 QA 与项目管理报告。
-- [reports/day-01-26-qa-report.md](reports/day-01-26-qa-report.md)：Day 1-26 QA 质量审计报告。
-- [reports/day-01-26-project-manager-report.md](reports/day-01-26-project-manager-report.md)：Day 1-26 项目经理报告。
 - [phase/phase-0.md](phase/phase-0.md)：Phase 0 完工报告。
 - [phase/phase-1.md](phase/phase-1.md)：Phase 1 完工报告。
 - [archive/phase-2/](archive/phase-2/)：原 Phase 2 Day 报告。

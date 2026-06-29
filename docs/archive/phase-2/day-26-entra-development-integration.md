@@ -1,7 +1,7 @@
 # Day 26 Microsoft Entra 开发集成评审
 
 日期：2026-06-21
-状态：Validation
+状态：Accepted
 决策来源：[ADR-0004](../adr/ADR-0004-entra-and-development-identity.md)
 
 ## 1. 目标
@@ -59,7 +59,7 @@ tracked report 记录真实 token 证据：
 
 ## 5. Review 结论
 
-Validation。实现已合并，但委托 scope 仍未变成后端授权策略。
+Accepted。Day 1-Day 26 工程交付审计未发现当前范围内的阻断性 Critical 缺陷；Day 26 的真实 Microsoft Entra 开发身份集成可以作为 Day 27 RBAC 的前置输入。委托 scope 仍未变成后端授权策略，该事项属于 Day 27-Day 28 的后续施工范围，不作为 Day 26 阻断缺陷。
 
 ## 6. 遗留风险
 

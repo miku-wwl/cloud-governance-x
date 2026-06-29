@@ -19,7 +19,7 @@
 tracked report 记录真实 token 证据：tenant-specific issuer、API audience、委托 scope、signed JWT `kid` 存在于 Microsoft Entra JWKS、两个 app registration 均无 credentials、Active Membership 前为 403、`iss/sub` membership mapping 后本地 API 接受真实 token 并建立 TenantContext、tenant-aware cost endpoint 返回 200、临时 PostgreSQL 数据库清理完成。当前文档迁移快照还记录 `dotnet test FinOpsPlatform.slnx --no-restore`: 84 passed, 1 skipped。
 
 ## 7. Review 结论
-Validation。实现已合并，源 day report 仍保留 Validation 状态。
+Accepted。Day 1-Day 26 工程交付审计未发现当前范围内的阻断性 Critical 缺陷，Day 26 的真实 Microsoft Entra 开发身份集成可以作为 Day 27 RBAC 的前置输入。
 
 ## 8. 遗留风险
 Day 26 未把委托 scope 强制为授权策略；业务端点在 Day 28 前仍不能视为完整受保护；Azure Provider runtime identity 仍使用本地开发 credential chain。
