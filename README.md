@@ -11,33 +11,25 @@ Day 12～19 的 Phase 1 工程门禁、架构边界、宿主模块拆分、独�
 Host 和初版 CI 已完成；`main` 已要求 `Static verification` 与
 `Database migration` 两个 required checks，并通过受保护 PR 验证阻断与放行
 行为。Phase 1 独立全面 review 已于 2026-06-19 给出 `ACCEPT`，并由 Owner
-确认结束。Phase 2 已开始，Day 20 tenancy 模型与 ADR-0003 已完成。当前包含
+确认结束。Phase 2 已推进到 Day 26 Microsoft Entra development identity；
+下一施工单元是 Day 27 permission + scope RBAC。当前包含
 Web API、后台 Worker、Clean Architecture 基础分层、PostgreSQL 本地环境、
 健康检查、可重复验证的 Azure 资源生命周期，以及通过
 `DefaultAzureCredential` 读取 Azure 订阅、资源清单和成本数据并写入
 PostgreSQL 的能力。
 
-项目指导文件分为三层：
+项目指导文件现在分为五层：
 
-- [`outline.md`](outline.md)：生产级目标、边界和长期原则；
-- [`construction/`](construction/)：阶段计划、逐 Day 施工、验收、review 和学习路线；
-- [`docs/`](docs/)：当前项目事实、配置、Terraform、Azure 集成和数据模型专题。
+- [`outline.md`](outline.md)：稳定项目纲领，只放目标、原则和生产底线；
+- [`docs/current-state.md`](docs/current-state.md)：当前真实状态和下一步；
+- [`docs/roadmap.md`](docs/roadmap.md)：里程碑路线，替代旧 100+ Day 长表作为主计划；
+- [`docs/days/`](docs/days/)：Day 1～27 回顾胶囊；
+- [`construction/current-playbook.md`](construction/current-playbook.md)：当前施工手册。
 
-旧 30 天作品集计划的历史评估保留在
-[`docs/01-★★-project-feasibility-review.md`](docs/01-★★-project-feasibility-review.md)，
-不再作为当前施工依据。
-
-阶段 0 当前能力事实与运行复验见：
-
-- [`docs/phase-0/current-capability-baseline.md`](docs/phase-0/current-capability-baseline.md)；
-- [`docs/phase-0/production-gap-register.md`](docs/phase-0/production-gap-register.md)；
-- [`docs/phase-0/baseline-verification-summary.md`](docs/phase-0/baseline-verification-summary.md)；
-- [`docs/phase-0/current-architecture.md`](docs/phase-0/current-architecture.md)；
-- [`docs/phase-0/risk-register.md`](docs/phase-0/risk-register.md)；
-- [`docs/phase-0/data-classification.md`](docs/phase-0/data-classification.md)；
-- [`docs/phase-0/dependency-license-inventory.md`](docs/phase-0/dependency-license-inventory.md)；
-- [`docs/phase-0/adr-backlog.md`](docs/phase-0/adr-backlog.md)；
-- [`docs/phase-0/stage-0-gate-report.md`](docs/phase-0/stage-0-gate-report.md)。
+历史评估、阶段报告和旧施工路线已经归档到
+[`docs/archive/`](docs/archive/) 与
+[`construction/archive/`](construction/archive/)；它们只作为回顾材料，不再作为
+当前施工依据。
 
 ## 项目结构
 
@@ -54,12 +46,13 @@ terraform/
 └── azure/                   # Day 2 Azure 基础设施
 scripts/                     # 端到端验收脚本
 construction/
-├── 01-★★★-construction-plan.md          # 跨阶段建设计划
-├── 02-★★★-day8-production-roadmap.md    # 全局逐 Day 路线
-├── 03-★★★-manual-review-boundaries.md   # 全仓 Review 与学习地图
-├── 04-★★★-phase-1-independent-review-guide.md # 阶段 1 独立全面审查与签收
-└── phase-0/                              # 阶段 0：Day 8～11
+├── current-playbook.md                   # 当前施工入口
+└── archive/                              # 历史施工手册和旧长路线
 docs/                        # 项目事实、架构与运行专题
+├── current-state.md          # 当前状态
+├── roadmap.md                # 里程碑路线
+├── days/                     # Day 胶囊
+└── archive/                  # 历史阶段报告和旧评审
 ```
 
 依赖方向：
@@ -117,11 +110,11 @@ Actions 会复用同一入口。
 - `Static verification`：统一静态门禁；
 - `Database migration`：空库、幂等、并发、失败退出码和受限数据库身份回归。
 
-PR 约束、责任边界和建议的 required checks 见
-[`docs/phase-1/engineering-governance.md`](docs/phase-1/engineering-governance.md)。
+PR 约束、责任边界和建议的 required checks 见归档的
+[`docs/archive/phase-1/engineering-governance.md`](docs/archive/phase-1/engineering-governance.md)。
 
 架构边界由 `src/FinOps.Tests/Architecture/` 下的测试执行，规则来源于
-[`ADR-0001`](docs/adr/ADR-0001-module-boundaries-and-architecture-tests.md)：
+[`ADR-0001`](docs/archive/adr/ADR-0001-module-boundaries-and-architecture-tests.md)：
 Domain 不反向依赖 Application/Infrastructure/宿主或云 SDK，Application 不依赖
 Infrastructure/宿主/云 SDK，Azure 和 PostgreSQL 实现包只允许出现在
 Infrastructure。
@@ -213,12 +206,12 @@ App Registration 是 Entra Tenant 目录对象，不属于 Resource Group，清�
 ```
 
 只有人工确认后才增加 `-Apply`。详细边界见
-[`ADR-0004`](docs/adr/ADR-0004-entra-and-development-identity.md)。
+[`ADR-0004`](docs/archive/adr/ADR-0004-entra-and-development-identity.md)。
 
 ## 配置
 
 JSON、YAML、SLNX、MSBuild、项目引用、环境变量和 Terraform 配置的逐项作用见
-[`docs/02-★★★-configuration-guide.md`](docs/02-★★★-configuration-guide.md)。JSON 标准本身不
+[`docs/archive/reference/02-★★★-configuration-guide.md`](docs/archive/reference/02-★★★-configuration-guide.md)。JSON 标准本身不
 支持注释，因此 JSON 文件保持严格合法，详细解释集中在该文档；支持注释的配置
 文件已经在原文件中直接标注。
 
@@ -279,7 +272,7 @@ az account show
 
 详细配置和手动命令见
 [`terraform/azure/README.md`](terraform/azure/README.md) 与
-[`docs/03-★★-terraform.md`](docs/03-★★-terraform.md)。
+[`docs/archive/reference/03-★★-terraform.md`](docs/archive/reference/03-★★-terraform.md)。
 
 ## Azure SDK 认证
 
@@ -299,7 +292,7 @@ Invoke-RestMethod http://localhost:5000/api/cloud/azure/subscriptions
 
 Azure SDK 仅由 `FinOps.Infrastructure` 引用；API 通过 Application 层的
 `IAzureSubscriptionReader` 调用，不直接依赖 Azure SDK。详细设计见
-[`docs/04-★★★-azure-integration.md`](docs/04-★★★-azure-integration.md)。
+[`docs/archive/reference/04-★★★-azure-integration.md`](docs/archive/reference/04-★★★-azure-integration.md)。
 
 完整 Day 3 端到端验收：
 
@@ -328,7 +321,7 @@ id, name, type, location, resourceGroup, subscriptionId, tags
 该脚本使用独立的 `finops_day4` 测试数据库，临时创建 Azure 资源，运行两次
 Worker 并验证幂等性，随后销毁 Azure 资源、删除测试数据库和本地 Terraform
 运行产物。数据模型见
-[`docs/05-★★★-data-model.md`](docs/05-★★★-data-model.md)。
+[`docs/archive/reference/05-★★★-data-model.md`](docs/archive/reference/05-★★★-data-model.md)。
 
 ## Azure Resource ETL
 
@@ -421,4 +414,5 @@ Invoke-RestMethod `
 Management 返回的数据；当外部成本数据不可用时，当前默认配置会写入明确标记
 的样例数据。随后脚本通过管理 API 重跑验证幂等性，并交叉核对日趋势、服务和
 资源组 API 总额。Day 9 已在关闭 fallback 的条件下取得 28 行真实成本，结论见
-[`docs/phase-0/baseline-verification-summary.md`](docs/phase-0/baseline-verification-summary.md)。
+归档的
+[`docs/archive/phase-0/baseline-verification-summary.md`](docs/archive/phase-0/baseline-verification-summary.md)。

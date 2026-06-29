@@ -1,5 +1,11 @@
 # 03 ★★★ Day 1～7 人工 Review 与学习路线
 
+> Historical review note, 2026-06-29:
+>
+> This file remains useful for understanding the Day 1-7 baseline, but the
+> current review entrypoint is `docs/days/README.md` plus
+> `docs/current-state.md`.
+
 > 盘点日期：2026-06-14
 >
 > 盘点对象：原 Day 1～7 基线的 108 个 Git 跟踪文件；后续路线文档不计入本稿的

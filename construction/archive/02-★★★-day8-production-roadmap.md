@@ -1,5 +1,13 @@
 # Cloud Governance X Day 8 之后的生产化学习施工计划
 
+> Historical planning note, 2026-06-29:
+>
+> This long Day 8-148 roadmap is retained for context and review history. It is
+> no longer the primary planning source. Current planning uses milestone gates
+> in `docs/roadmap.md`, the active execution playbook in
+> `construction/current-playbook.md`, and day-by-day review capsules in
+> `docs/days/`.
+
 > 文档状态：第一版
 >
 > 起点：已完成原 Day 1～7 开发基线

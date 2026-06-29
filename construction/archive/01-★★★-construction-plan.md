@@ -1,5 +1,11 @@
 # Cloud Governance X 生产级阶段化建设计划
 
+> Historical planning note, 2026-06-29:
+>
+> This file preserves the original phase vocabulary and gate model. Current
+> status now lives in `docs/current-state.md`, milestone planning in
+> `docs/roadmap.md`, and active execution in `construction/current-playbook.md`.
+
 ## 1. 计划原则
 
 本计划不规定固定天数，也不以“按时完成全部功能”为目标。

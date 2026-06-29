@@ -390,10 +390,10 @@ New risks:
 
 Affected long-lived documents:
 
-- `docs/phase-0/adr-backlog.md`
-- `docs/phase-0/risk-register.md`
-- `docs/phase-0/production-gap-register.md`
-- `docs/phase-2/day-20-tenancy-model-review.md`
+- `docs/archive/phase-0/adr-backlog.md`
+- `docs/archive/phase-0/risk-register.md`
+- `docs/archive/phase-0/production-gap-register.md`
+- `docs/archive/phase-2/day-20-tenancy-model-review.md`
 
 ## Verification
 
