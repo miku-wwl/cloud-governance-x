@@ -23,6 +23,7 @@ PostgreSQL 的能力。
 - [`outline.md`](outline.md)：稳定项目纲领，只放目标、原则和生产底线；
 - [`docs/current-state.md`](docs/current-state.md)：当前真实状态和下一步；
 - [`docs/roadmap.md`](docs/roadmap.md)：11 个里程碑路线和当前施工位置；
+- [`docs/phase/`](docs/phase/)：已完工 Phase 的阶段报告；
 - [`docs/days/`](docs/days/)：Day 1～27 回顾胶囊；
 - [`construction/engineering-plan.md`](construction/engineering-plan.md)：Day 1～148 工程规划总纲；
 - [`construction/current-playbook.md`](construction/current-playbook.md)：当前施工手册。

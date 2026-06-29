@@ -28,8 +28,8 @@ Cloud Governance X 已经超过最初 Day 1-7 开发基线，也已经通过 Pha
 | 里程碑 | 范围 | 结果 | 证据 |
 | --- | --- | --- | --- |
 | 开发基线 | Day 1-7 Azure 数据底座 | 本地/开发基线完成 | [Day 胶囊](days/README.md)、[baseline summary](archive/phase-0/baseline-verification-summary.md) |
-| Phase 0 | Day 8-11 基线审计、风险、架构和出关 | Complete | [stage-0-gate-report.md](archive/phase-0/stage-0-gate-report.md) |
-| Phase 1 | Day 12-19 工程治理和 migration 分离 | Accepted | [independent-acceptance-report.md](archive/phase-1/independent-acceptance-report.md) |
+| Phase 0 | Day 8-11 基线审计、风险、架构和出关 | Complete | [phase-0.md](phase/phase-0.md) |
+| Phase 1 | Day 12-19 工程治理和 migration 分离 | Accepted | [phase-1.md](phase/phase-1.md) |
 | Phase 2 partial | Day 20-26 租户、可信上下文、OIDC 和 Entra 开发身份 | 已实现到 Day 26，phase 未关闭 | [Phase 2 Day 胶囊](days/README.md) |
 
 ## 3. 当前能力
