@@ -1,156 +1,72 @@
-# Day 24 Legacy Tenant Backfill
+# Day 24 Legacy Tenant Backfill 评审
 
-Date: 2026-06-19
-Phase: 2 — Identity, tenancy, RBAC and audit
-Status: Validation
+日期：2026-06-20
+状态：Validation
 
-## 1. Outcome
+## 1. 目标
 
-Day 1–7 resource, cost and ETL rows with `tenant_id IS NULL` can now be
-assigned to an explicitly selected development Tenant without deleting or
-recreating those rows.
+为 Day 1-7 遗留的 `tenant_id = NULL` 行提供受控 development-only backfill 路径，避免用直接 SQL 或删除重建方式破坏历史数据。
 
-Backfill is a separate `FinOps.Migrator` operation. It is not part of normal
-schema migration and cannot be invoked by API or Worker.
+## 2. 实现范围
 
-## 2. Safety boundary
+Day 24 完成：
 
-The operation:
+- 独立 Migrator operation；
+- dry-run 默认；
+- 显式 `-Apply`；
+- 必需 Organization ID 和 Tenant ID；
+- writer-stop acknowledgement；
+- NOWAIT lock 和 advisory lock；
+- apply 前后的 row-count confirmation；
+- Provider normalization 和 collision check；
+- 受控创建 ProviderConnection 和 CloudAccount；
+- completion marker；
+- post-backfill NULL-write constraint；
+- production environment rejection。
 
-- runs only when `DOTNET_ENVIRONMENT=Development`;
-- requires explicit Organization and Tenant IDs;
-- requires an acknowledgement that every pre-Day24 writer is stopped;
-- takes `NOWAIT` table locks and fails if a writer is still active;
-- defaults to a transactionally rolled-back dry-run;
-- requires an explicit `-Apply` switch to commit;
-- requires the exact database name and dry-run row counts again on apply;
-- rejects a batch above the configured maximum legacy-row count;
-- refuses to run while schema migrations are pending;
-- uses a database-scoped transaction advisory lock;
-- changes only rows whose `tenant_id` is NULL;
-- preserves all resource, cost and ETL row IDs and row counts;
-- creates only the ProviderConnection and CloudAccount records required by
-  legacy rows;
-- installs database check constraints that reject every future NULL-Tenant
-  write after apply;
-- records completion in the independent
-  `legacy_tenant_backfill_control` table;
-- performs no ownership write when no legacy rows exist.
+Day 24 不做：
 
-The command is:
+- 生产大数据量迁移演练；
+- restore rehearsal；
+- OIDC；
+- RBAC；
+- 端点授权；
+- RLS；
+- 审计。
 
-```powershell
-./scripts/Invoke-DevelopmentTenantBackfill.ps1 `
-  -Database finops `
-  -OrganizationId <approved-development-organization-id> `
-  -TenantId <approved-development-tenant-id> `
-  -AcknowledgeLegacyWritersStopped
-```
+## 3. 关键设计
 
-That command is a dry-run. Repeat it with `-Apply` only after reviewing its
-counts and taking the required database recovery point:
+backfill 默认只 dry-run。真正 apply 时必须显式确认，并要求调用者确认 writer 已停止。
 
-```powershell
-./scripts/Invoke-DevelopmentTenantBackfill.ps1 `
-  -Database finops `
-  -OrganizationId <approved-development-organization-id> `
-  -TenantId <approved-development-tenant-id> `
-  -AcknowledgeLegacyWritersStopped `
-  -Apply `
-  -ConfirmDatabase finops `
-  -ExpectedResourceRows <dry-run-resource-count> `
-  -ExpectedCostRows <dry-run-cost-count> `
-  -ExpectedEtlRunRows <dry-run-etl-count>
-```
+回填必须可重复验证，并在完成后阻止继续写入无 tenant 数据。completion marker 用于防止完成后走危险 down path。
 
-The default maximum is 100,000 total legacy rows. Raising
-`-MaximumLegacyRows` is a reviewed decision, not an automatic retry.
+## 4. 验证证据
 
-## 3. Data reconciliation
+tracked report 记录数据库门禁覆盖：
 
-Before updating any core row, the operation:
+- dry-run；
+- apply；
+- second apply；
+- collision failure；
+- active-writer failure；
+- stale count failure；
+- production environment rejection；
+- post-backfill NULL write rejection；
+- completion marker 后 Down rejection。
 
-1. normalizes legacy Provider values with trim plus lowercase;
-2. rejects resource or cost identities that would collide after normalization;
-3. rejects a Provider/account pair already owned by another Tenant;
-4. creates one development ProviderConnection per legacy Provider;
-5. creates missing CloudAccount rows for every resource/cost account;
-6. verifies every legacy account maps to the selected Tenant.
+相关脚本：
 
-Any failed check rolls back the complete transaction. It does not partially
-assign Tenant IDs.
+- [scripts/Invoke-DevelopmentTenantBackfill.ps1](../../../scripts/Invoke-DevelopmentTenantBackfill.ps1)
 
-## 4. Repeatability evidence
+## 5. Review 结论
 
-The database gate verifies:
+Validation。实现已完成，但源报告保持 Validation。该工具仍是 development-only，不得作为生产迁移方案使用。
 
-- dry-run leaves all rows and ownership records unchanged;
-- apply preserves the original table row counts;
-- all three legacy tables have zero NULL Tenant IDs afterward;
-- Provider casing is normalized;
-- required ownership records are created;
-- a second apply reports zero updated rows;
-- normalization collisions fail and preserve the original NULL rows;
-- active writers fail the operation without waiting;
-- stale dry-run counts, the wrong database name and excessive row counts fail;
-- Production environment execution is rejected;
-- post-backfill NULL writes from old artifacts are rejected by PostgreSQL;
-- schema Down succeeds before backfill but is rejected after the persistent
-  completion marker exists;
-- a rejected Down leaves tenant columns, completion marker and migration
-  history unchanged.
+## 6. 遗留风险
 
-## 5. Upgrade sequence
+EF model 仍保持 nullable 兼容；large-data timing、lock duration、restore rehearsal、OIDC、RBAC、端点授权、RLS 和审计 留给后续 Day。
 
-1. Apply all schema migrations.
-2. Stop and verify absence of every pre-Day24 API and Worker process.
-3. Record table counts and create a database backup/PITR recovery point.
-4. Run backfill without `-Apply` and record all three row counts.
-5. Review collision, ownership and update counts.
-6. Run backfill with `-Apply`, exact database confirmation and those counts.
-7. Run it again and require zero updates.
-8. Start only Day24-or-newer API and Worker artifacts.
-9. Verify the selected Tenant can query the migrated rows.
+## 7. 相关链接
 
-Old writers must not restart after step 6. PostgreSQL check constraints reject
-their tenant-less writes.
-
-## 6. Rollback and recovery
-
-Failure before commit is handled by transaction rollback.
-
-After commit, the preferred response is roll-forward. Provider normalization
-and generated ownership records mean a blind SQL update back to NULL would not
-restore the exact pre-backfill state.
-
-The Day24 control migration owns a completion table that does not depend on the
-three `tenant_id` columns. Its Down method refuses to run after backfill has
-committed. This blocks EF from reaching the Day23 Down path, so PostgreSQL
-cannot silently remove the column-level check constraints.
-
-Removing the completion marker or control table manually is prohibited.
-Downgrading without a database restore would reopen NULL writes and discard the
-reviewed ownership transition.
-
-If application rollback to a pre-Day24 artifact is unavoidable:
-
-1. stop every writer;
-2. restore the database recovery point created before backfill;
-3. deploy the preceding application artifact;
-4. verify row counts and legacy unique indexes;
-5. investigate and correct the backfill conflict before retrying.
-
-Manual deletion of the Tenant or CloudAccount records is prohibited because
-foreign keys and later development data may depend on them.
-
-## 7. Remaining boundary
-
-The EF model remains nullable for expand/contract compatibility, while a
-successfully backfilled database enforces non-NULL writes through check
-constraints. Day38 owns the reviewed model/schema contract migration.
-
-Large-data timing, lock duration and exact restore rehearsal remain Day39
-work. Managed backup and PITR capability remains Day58 work.
-
-OIDC authentication, RBAC, full endpoint authorization and PostgreSQL RLS
-remain Days 25–30 work.
+- [docs/days/day-24.md](../../days/day-24.md)
+- [ADR-0003](../adr/ADR-0003-organization-tenant-cloud-account-model.md)

@@ -1,59 +1,31 @@
-# Day 26 - Microsoft Entra Development Integration
+# Day 26 - Microsoft Entra 开发集成
 
-## Status
+## 1. 目标
+使用真实 Microsoft Entra ID token 调用本地 API，同时保持 API caller identity 与 Azure Provider runtime identity 分离，解决认证链路只停留在内存 token 测试的风险。
 
-Implemented and merged. Source day report remains `Validation`.
+## 2. 前置条件
+依赖 Day 25 OIDC Bearer authentication、Day 22 TenantContext 和 [ADR-0004](../archive/adr/ADR-0004-entra-and-development-identity.md)。
 
-## Commit Evidence
+## 3. 施工范围
+允许新增可重复开发 App Registration 初始化脚本、API 委托 `access_as_user` scope、本地 public client Device Code flow、dry-run 默认 cleanup、真实 token E2E、OIDC metadata/JWKS 证据、signing-key rollover 和 metadata failure regression。不允许把委托 scope 当作已执行授权策略，也不允许改变 Azure Provider runtime identity。
 
-- `2189cde` - `feat: integrate Microsoft Entra development identity`
-- `b3efe97` - `Merge pull request #12 from miku-wwl/feat/day26-entra-development-integration`
+## 4. 设计决策
+开发身份分为 API caller identity 和 Azure Provider identity；Entra App Registration 是目录对象，不随 Resource Group 自动清理；cleanup 必须 dry-run 默认并要求确认 Tenant。
 
-## Goal
+## 5. 实现摘要
+新增 [Initialize-DevelopmentEntraIdentity.ps1](../../scripts/Initialize-DevelopmentEntraIdentity.ps1)、[Test-EntraOidcIntegration.ps1](../../scripts/Test-EntraOidcIntegration.ps1)、[Remove-DevelopmentEntraIdentity.ps1](../../scripts/Remove-DevelopmentEntraIdentity.ps1)、真实 token E2E、JWKS/metadata 验证和回归测试。
 
-Use real Microsoft Entra ID tokens to call the local API in development, while
-keeping API caller identity separate from Azure Provider runtime identity.
+## 6. 验证证据
+tracked report 记录真实 token 证据：tenant-specific issuer、API audience、委托 scope、signed JWT `kid` 存在于 Microsoft Entra JWKS、两个 app registration 均无 credentials、Active Membership 前为 403、`iss/sub` membership mapping 后本地 API 接受真实 token 并建立 TenantContext、tenant-aware cost endpoint 返回 200、临时 PostgreSQL 数据库清理完成。当前文档迁移快照还记录 `dotnet test FinOpsPlatform.slnx --no-restore`: 84 passed, 1 skipped。
 
-## Implemented
+## 7. Review 结论
+Validation。实现已合并，源 day report 仍保留 Validation 状态。
 
-- repeatable development app registration initialization script;
-- API app registration exposing delegated `access_as_user`;
-- public local development client using Device Code flow;
-- cleanup script with dry-run default and exact Tenant confirmation;
-- real-token E2E script;
-- OIDC metadata and JWKS validation evidence;
-- signing-key rollover regression;
-- metadata failure regression.
+## 8. 遗留风险
+Day 26 未把委托 scope 强制为授权策略；业务端点在 Day 28 前仍不能视为完整受保护；Azure Provider runtime identity 仍使用本地开发 credential chain。
 
-## Verification
-
-The tracked report records successful real-token evidence:
-
-- tenant-specific issuer;
-- API audience;
-- delegated scope;
-- signed JWT `kid` present in Microsoft Entra JWKS;
-- no credentials on either app registration;
-- 403 before Active Membership existed;
-- Membership mapping from token `iss/sub`;
-- local API accepted the real token and established TenantContext;
-- tenant-aware cost endpoint returned 200;
-- temporary PostgreSQL database cleanup.
-
-Current local snapshot from this documentation migration:
-
-- `dotnet test FinOpsPlatform.slnx --no-restore`: 84 passed, 1 skipped.
-
-Evidence:
-
+## 9. 相关链接
+- Commit: `2189cde` - `feat: integrate Microsoft Entra development identity`
+- PR: `#12` - `feat/day26-entra-development-integration`
 - [docs/archive/phase-2/day-26-entra-development-integration.md](../archive/phase-2/day-26-entra-development-integration.md)
 - [docs/archive/adr/ADR-0004-entra-and-development-identity.md](../archive/adr/ADR-0004-entra-and-development-identity.md)
-- [scripts/Initialize-DevelopmentEntraIdentity.ps1](../../scripts/Initialize-DevelopmentEntraIdentity.ps1)
-- [scripts/Test-EntraOidcIntegration.ps1](../../scripts/Test-EntraOidcIntegration.ps1)
-- [scripts/Remove-DevelopmentEntraIdentity.ps1](../../scripts/Remove-DevelopmentEntraIdentity.ps1)
-
-## Boundaries
-
-Day 26 did not enforce the delegated scope as an authorization policy. Existing
-business endpoints remain effectively unprotected until Day 28. Azure Provider
-runtime identity still uses the local development credential chain.

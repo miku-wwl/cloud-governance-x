@@ -1,49 +1,44 @@
-# ADR-NNNN: Decision title
+# ADR-NNNN: 决策标题
 
-## Status
+## 状态
 
 Proposed
 
-## Date
+## 日期
 
 YYYY-MM-DD
 
-## Owners
+## Owner
 
-- Decision owner:
-- Reviewers:
+- 决策 Owner：
+- Reviewer：
 
-## Context
+## 背景
 
-Describe the current facts, constraints, trust boundaries, and risks that force
-this decision. Link relevant risk and production-gap IDs.
+描述促成本决策的当前事实、约束、信任边界和风险。链接相关 risk ID 和 production gap ID。
 
-## Decision
+## 决策
 
-State the decision as an enforceable rule. Include scope, identity, data,
-failure, compatibility, deployment, and rollback behavior where relevant.
+用可执行规则描述决策。必要时写清 scope、identity、data、failure、compatibility、deployment 和 rollback 行为。
 
-## Alternatives considered
+## 考虑过的替代方案
 
-### Alternative name
+### 替代方案名称
 
-Explain why it was rejected or deferred.
+说明该方案为什么被拒绝或延期。
 
-## Consequences
+## 后果
 
-List expected benefits, costs, new risks, operational obligations, and future
-work.
+列出预期收益、成本、新风险、运维义务和后续工作。
 
-## Implementation hooks
+## 实施挂钩
 
-List the projects, scripts, migrations, workflows, and documentation that must
-change.
+列出必须修改的项目、脚本、migration、workflow 和文档。
 
-## Verification
+## 验证
 
-Define automated tests, negative tests, integration evidence, and stage-gate
-criteria. A decision is not complete when its verification cannot be repeated.
+定义自动化测试、负向测试、集成证据和阶段门条件。无法重复验证的决策不能视为完成。
 
-## Revisit triggers
+## 重新审视触发条件
 
-List the conditions that require this ADR to be reviewed or superseded.
+列出哪些条件会要求重新审视或替代本 ADR。

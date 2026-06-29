@@ -1,134 +1,57 @@
-# Day 25 OIDC Bearer Authentication
+# Day 25 OIDC Bearer 认证评审
 
-Date: 2026-06-21
-Phase: 2 — Identity, tenancy, RBAC and audit
-Status: Validation
+日期：2026-06-21
+状态：Validation
 
-## 1. Outcome
+## 1. 目标
 
-The API now has a standard ASP.NET Core JWT Bearer authentication boundary for
-tokens issued by an external OIDC Provider.
+为 API 建立 provider-independent JWT Bearer validation 管道，使用标准 OIDC/JWT 机制验证外部 token，而不是自建用户名密码或 token 签发系统。
 
-The implementation validates:
+## 2. 实现范围
 
-- cryptographic signature;
-- expiration and token lifetime;
-- issuer;
-- audience;
-- signed-token and expiration requirements.
+Day 25 完成：
 
-It does not issue tokens, store passwords or implement an identity system.
+- `Authentication:Oidc` 配置；
+- 可选 JWT Bearer authentication；
+- issuer、audience、signature、expiration 和 lifetime validation；
+- 本地默认关闭；
+- 保留原始 OIDC `iss` 和 `sub` claims；
+- root、health、live endpoints 显式 anonymous；
+- 使用 ephemeral RSA key 和 static OIDC metadata 的 in-memory token tests。
 
-## 2. Configuration
+Day 25 不做：
 
-Configuration is under `Authentication:Oidc`:
+- 业务端点授权策略；
+- RBAC；
+- 完整端点保护；
+- 稳定 401/403 契约；
+- 审计。
 
-```json
-{
-  "Authentication": {
-    "Oidc": {
-      "Enabled": false,
-      "Authority": "",
-      "Audience": "",
-      "RequireHttpsMetadata": true,
-      "ClockSkewSeconds": 60
-    }
-  }
-}
-```
+## 3. 关键设计
 
-Authentication is disabled in the committed local default. When disabled, a
-Bearer token cannot establish an authenticated principal even if the remaining
-settings contain valid values.
+API 只验证 identity provider 签发的 token，不签发 token，也不实现密码系统。认证是否启用由配置控制，生产或共享环境必须显式配置 Authority、Audience 和 HTTPS metadata。
 
-When enabled:
+`iss/sub` 是后续 Tenant Membership 映射的稳定输入；email 或显示名称不能作为授权 key。
 
-- Authority must be an absolute URI;
-- Audience must be non-empty;
-- clock skew must be between zero and 300 seconds;
-- OIDC metadata uses HTTPS by default.
+## 4. 验证证据
 
-The configuration contains no client secret, private key or token.
+tracked report 记录：
 
-## 3. Request trust flow
+- local build：0 warning，0 error；
+- tests：82 passed；
+- 1 个 PostgreSQL integration test 因未启用 opt-in database environment 被 skipped；
+- token 负向测试覆盖 issuer、audience、signature、expiration 和 metadata 行为。
 
-The API request pipeline is:
+## 5. Review 结论
 
-```text
-Exception handling
-  -> JWT Bearer authentication
-  -> synthetic E2E identity, only in the E2E environment
-  -> HTTP TenantContext and Membership validation
-  -> authorization middleware
-  -> endpoint
-```
+Validation。实现已合并，但端点授权仍留给 Day 27-28。
 
-`MapInboundClaims` is disabled so the original OIDC `iss` and `sub` Claims
-remain available. `HttpTenantContextMiddleware` then verifies that the subject
-has an Active Membership in the explicitly selected Tenant before creating a
-trusted context.
+## 6. 遗留风险
 
-The E2E identity remains a separate test-only adapter and still fails startup
-when enabled outside the E2E environment.
+业务端点尚未绑定授权策略。RBAC、完整端点保护、稳定 401/403 响应和审计仍未完成。
 
-## 4. Anonymous boundary
+## 7. 相关链接
 
-The following endpoints are explicitly anonymous:
-
-- `/`;
-- `/health`;
-- `/health/live`.
-
-This preserves liveness and readiness access when Day 28 applies authorization
-to the complete endpoint surface.
-
-Day 25 does not attach authorization policies to existing business endpoints.
-Authentication answers who the caller is; Day 27 defines permissions and
-scopes, and Day 28 requires those policies across every endpoint.
-
-## 5. Verification
-
-In-memory integration tests use ephemeral RSA keys and a static OIDC metadata
-configuration. They do not contact Microsoft Entra ID or any other external
-service.
-
-The tests verify:
-
-- a protected endpoint rejects a missing token;
-- a valid signed token succeeds;
-- raw issuer and subject Claims are preserved;
-- expired tokens are rejected;
-- a wrong issuer is rejected;
-- a wrong audience is rejected;
-- an untrusted signature is rejected;
-- disabled authentication rejects an otherwise valid token;
-- health remains anonymous;
-- invalid enabled configuration fails validation;
-- HTTPS metadata configuration rejects an HTTP Authority at startup;
-- a valid token enters Membership validation and establishes the expected
-  trusted TenantContext.
-
-The current local solution run completed with 82 tests passed and one
-PostgreSQL integration test skipped because its opt-in database environment
-was not enabled. Build completed with zero warnings and zero errors.
-
-## 6. Deliberate boundaries
-
-- Day 26 owns real Microsoft Entra ID metadata, token acquisition, development
-  identity policy and key-rotation evidence.
-- Day 27 owns permission and scope policy-based RBAC.
-- Day 28 owns protection of every existing business endpoint, correlation ID
-  and stable authorization errors.
-- No Azure resource or Terraform change is part of Day 25.
-- No database schema, migration, Domain or Repository change is part of Day 25.
-
-## 7. Remaining risk
-
-`RISK-0001` remains open. Token validation exists, but current business
-endpoints are not yet required to authenticate or satisfy an authorization
-policy. The API must remain local and non-public until Days 27–28 close that
-boundary.
-
-Real OIDC metadata availability, Microsoft Entra application configuration and
-signing-key rotation remain Day 26 evidence. Day 25 only proves the provider-
-independent validation boundary.
+- [docs/days/day-25.md](../../days/day-25.md)
+- [src/FinOps.Api/Authentication](../../../src/FinOps.Api/Authentication)
+- [src/FinOps.Tests/Api/OidcBearerAuthenticationTests.cs](../../../src/FinOps.Tests/Api/OidcBearerAuthenticationTests.cs)

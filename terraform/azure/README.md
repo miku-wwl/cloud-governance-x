@@ -1,22 +1,22 @@
-# Azure Day 2 Infrastructure
+# Azure Day 2 基础设施
 
-This Terraform root creates the minimum Azure foundation used by later days:
+此 Terraform root 创建后续 Day 使用的最小 Azure 开发基础设施：
 
 - Resource Group
-- StorageV2 account with Standard LRS replication
-- Basic Service Bus namespace
-- `governance-events` Service Bus queue
-- Optional Log Analytics workspace
-- Mandatory FinOps and governance tags
+- Storage Account
+- Service Bus Namespace
+- Service Bus Queue
 
-Authenticate with Azure CLI before running Terraform:
+## 1. 前置条件
+
+运行 Terraform 前先用 Azure CLI 登录：
 
 ```powershell
 az login
 az account show
 ```
 
-Run manually:
+## 2. 手工运行
 
 ```powershell
 Push-Location terraform/azure
@@ -30,16 +30,22 @@ terraform destroy
 Pop-Location
 ```
 
-For a complete create, verify, and destroy lifecycle from the repository root:
+## 3. 完整生命周期脚本
+
+从仓库根目录执行完整 create、verify、destroy 闭环：
 
 ```powershell
 ./scripts/Test-AzureTerraformLifecycle.ps1
 ```
 
-If the current shell is already inside `terraform/azure`, run the script as
-`../../scripts/Test-AzureTerraformLifecycle.ps1` or return to the repository
-root first.
+首次使用前需要先运行：
 
-Local state, plans, variable overrides, and evidence files are excluded from
-Git. The lifecycle script removes its runtime artifacts after a verified
-destroy unless `-KeepEvidence` is specified.
+```powershell
+terraform -chdir=terraform/azure init
+```
+
+## 4. 文件与状态边界
+
+本地 state、plan、变量覆盖和证据文件不提交 Git。生命周期脚本在验证完成后会删除自身运行产物。
+
+该 Terraform 配置只用于开发和学习闭环。生产或团队环境仍需要远程 state、locking、环境隔离、secret store、变更审批和销毁保护。

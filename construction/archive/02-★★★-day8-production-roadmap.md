@@ -1,12 +1,10 @@
 # Cloud Governance X Day 8 之后的生产化学习施工计划
 
-> Historical planning note, 2026-06-29:
+> 历史规划说明，2026-06-29：
 >
-> This long Day 8-148 roadmap is retained for context and review history. It is
-> no longer the primary planning source. Current planning uses milestone gates
-> in `docs/roadmap.md`, the active execution playbook in
-> `construction/current-playbook.md`, and day-by-day review capsules in
-> `docs/days/`.
+> 这份 Day 8-148 长路线只保留为上下文和 review 历史，不再是当前主规划来源。
+> 当前规划使用 `docs/roadmap.md` 中的 milestone gate，当前执行使用
+> `construction/current-playbook.md`，按 Day 回顾使用 `docs/days/`。
 
 > 文档状态：第一版
 >
@@ -295,9 +293,9 @@ Acceptance，才允许进入 Day 20。
 | Day 24 | 为 Day 1～7 现有数据设计兼容 backfill，迁入受控开发 tenant | 老数据无丢失；backfill 可重复；升级和回退路径有记录 | 学习 expand/contract 和历史数据迁移；禁止直接删除旧数据重来 |
 | Day 25 | 接入 API Bearer Token 验证和可测试的 OIDC 配置 | 无 token、过期、issuer、audience、签名错误测试；health 匿名边界明确 | 学习 OAuth 2.0/OIDC 与 JWT 验证；避免自己实现密码系统 |
 | Day 26 | 完成 Microsoft Entra ID 开发环境集成和本地开发身份策略 | 真实 Entra token 调用；key rotation 行为；配置不含 secret | 学习 app registration、scope、role 和 metadata；重点审查 redirect/audience |
-| Day 27 | 实现 permission + scope 的 policy-based RBAC | admin、operator、analyst、auditor、owner 的允许与拒绝矩阵测试 | 学习角色与权限分离；重点审查只在 UI 隐藏而后端未授权的问题 |
+| Day 27 | 实现 权限与范围的策略式 RBAC | admin、operator、analyst、auditor、owner 的允许与拒绝矩阵测试 | 学习角色与权限分离；重点审查只在 UI 隐藏而后端未授权的问题 |
 | Day 28 | 保护现有管理和查询 API；增加 correlation ID 与授权失败的稳定错误 | 所有 endpoint 有 auth policy 或显式 anonymous 理由；管理操作不可匿名执行 | 学习 API trust boundary；重点审查 `/api/admin` 和跨 scope 操作 |
-| Day 29 | 实现 append-only audit 模型，记录 actor、tenant、action、target、result 和 correlation | 高权限操作成功与失败都有审计；普通业务身份不能修改审计 | 学习审计与普通日志的区别；重点审查敏感 before/after 数据 |
+| Day 29 | 实现 追加式审计 模型，记录 actor、tenant、action、target、result 和 correlation | 高权限操作成功与失败都有审计；普通业务身份不能修改审计 | 学习审计与普通日志的区别；重点审查敏感 before/after 数据 |
 | Day 30 | 执行 tenant escape、IDOR、后台 tenant 丢失、RBAC 和审计 E2E；阶段 2 出关 | tenant A 无法访问 tenant B；越权测试全绿；真实 Entra 闭环；风险已更新 | 本日只做安全门禁；任何隔离缺陷都阻止进入数据模型阶段 |
 
 ## 10. Day 31～40：阶段 3 数据模型与迁移生产化

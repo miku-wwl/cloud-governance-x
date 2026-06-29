@@ -1,109 +1,59 @@
-# Day 23 Tenant-Aware Repositories
+# Day 23 Tenant-aware Repository 评审
 
-Date: 2026-06-19
-Phase: 2 — Identity, tenancy, RBAC and audit
-Status: Accepted
+日期：2026-06-20
+状态：Accepted
 
-## 1. Outcome
+## 1. 目标
 
-Resource, cost and ETL persistence now requires a trusted TenantContext for
-every read and write path.
+让资源、成本和 ETL 持久化路径依赖 可信 TenantContext 和租户所属 CloudAccount，降低跨租户读写和 IDOR 风险。
 
-The three existing core tables gain nullable `tenant_id` columns:
+## 2. 实现范围
 
-- `cloud_resources`
-- `cloud_cost_daily`
-- `etl_job_runs`
+Day 23 完成：
 
-The columns are nullable only for expand/contract compatibility with rows
-created before tenancy existed. New Domain objects require a non-empty tenant,
-and every Repository calls `ITenantContext.RequireCurrent()` before accessing
-the database.
+- resources、costs、ETL runs 上新增 nullable expand-only `tenant_id`；
+- repository read/write 要求 TenantContext；
+- tenant-aware unique index；
+- resource 和 cost row 的 CloudAccount composite foreign key；
+- tenant-scoped ETL ID update；
+- E2E Tenant、ProviderConnection、CloudAccount fixture；
+- PostgreSQL Tenant A/B repository integration。
 
-## 2. Isolation rules
+Day 23 不做：
 
-- resource upsert lookup includes `tenant_id`;
-- cost upsert lookup and all cost aggregations include `tenant_id`;
-- ETL create, list, complete and fail operations include `tenant_id`;
-- an ETL run ID owned by another Tenant is reported as not found;
-- tenant-owned resource and cost unique indexes include `tenant_id`;
-- Provider values are normalized to lowercase before identity comparison;
-- missing TenantContext fails before an empty write or database query.
+- historical NULL-row backfill；
+- OIDC；
+- RBAC；
+- 更细 account 范围；
+- PostgreSQL RLS。
 
-Rows with `tenant_id IS NULL` are preserved but invisible through the
-Repositories. Day 24 owns their controlled backfill. That backfill must also
-normalize legacy Provider casing and reconcile every legacy account ID to an
-onboarded CloudAccount before `tenant_id` can become non-nullable.
+## 3. 关键设计
 
-## 3. Cloud-account ownership
+schema 保持 expand-only，以兼容遗留 NULL 行；新的 repository 路径必须在 TenantContext 下执行。
 
-Writing a tenant ID beside an arbitrary Provider account ID is insufficient.
-Resource and cost rows therefore use database composite foreign keys:
+CloudAccount composite foreign key 负责保证 resource/cost row 属于当前 Tenant 的 account。tenant-aware unique index 避免不同 Tenant 的业务数据互相冲突。
 
-```text
-(tenant_id, provider, account_id)
-    →
-CloudAccount(tenant_id, provider, external_account_id)
-```
+## 4. 验证证据
 
-This rejects:
+tracked report 记录 `Status: Accepted`。本地 closeout 记录：
 
-- an account belonging to another Tenant;
-- an account that was never onboarded;
-- a Provider/account combination inconsistent with CloudAccount.
+- static verification：通过；
+- build：通过；
+- tests：69 passed；
+- migration Up/Down/reapply：通过；
+- Tenant A/B integration：通过；
+- cross-tenant CloudAccount rejection：通过；
+- cleanup：通过。
 
-Test and E2E fixtures create an explicit Organization, Tenant,
-ProviderConnection and CloudAccount. No default production Tenant is added.
+## 5. Review 结论
 
-## 4. Migration and compatibility
+Accepted。核心 repository 已经 tenant-aware。
 
-`AddTenantAwareCoreData` is expand-only for existing rows:
+## 6. 遗留风险
 
-- existing data is not changed or deleted;
-- `tenant_id` is added nullable;
-- tenant-aware resource/cost indexes protect new writes;
-- filtered legacy indexes preserve the old uniqueness contract while
-  `tenant_id IS NULL`, so an older application instance cannot create
-  duplicates during a rolling deployment;
-- CloudAccount composite uniqueness is represented once by the alternate key
-  required by the resource/cost foreign keys;
-- tenancy and CloudAccount foreign keys are added;
-- immediate Down and reapply are verified.
+历史 NULL-row backfill 留给 Day 24。OIDC、RBAC、更细 account 范围和 RLS 留给后续工作。
 
-Rollback limitation:
+## 7. 相关链接
 
-After two Tenants have legally stored values that collide under the old global
-unique indexes, the Down migration cannot recreate those indexes without data
-reconciliation. Production rollback after tenant traffic therefore requires a
-reviewed reconciliation/roll-forward plan, not blind schema downgrade.
-
-## 5. Verification
-
-Automated tests prove:
-
-- all four Repository implementations fail without TenantContext;
-- Tenant A and Tenant B can store and query isolated data;
-- Tenant B cannot list or complete Tenant A's ETL run;
-- the same resource identity can exist in separate Tenant scopes;
-- a cross-tenant CloudAccount write is rejected by PostgreSQL;
-- unique indexes and foreign keys include tenant scope;
-- PostgreSQL rejects duplicate legacy NULL-tenant resource and cost rows;
-- the PostgreSQL integration test is explicitly skipped when its connection
-  string is absent instead of being counted as passed;
-- migration Up, immediate Down and reapply succeed;
-- API and Worker still start with a DDL-restricted runtime role.
-
-Azure API E2E scripts select the fixture Tenant explicitly. Their synthetic
-issuer/subject identity is disabled by default and can only be enabled when
-the API runs in the dedicated `E2E` environment; production authentication
-remains Day 25 scope.
-
-## 6. Deliberate boundaries
-
-- Day 24 assigns existing NULL rows to a controlled development Tenant.
-- Day 25 supplies production HTTP bearer authentication.
-- Day 27 adds permission and narrower scope decisions.
-- PostgreSQL RLS remains ADR-0005 defense-in-depth work.
-
-Until Day 24, historical pre-tenancy rows are intentionally unavailable through
-tenant-aware APIs and jobs.
+- [docs/days/day-23.md](../../days/day-23.md)
+- [ADR-0003](../adr/ADR-0003-organization-tenant-cloud-account-model.md)

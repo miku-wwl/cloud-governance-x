@@ -1,19 +1,25 @@
-# Construction Docs
+# Construction 施工入口
 
-`construction/` now has one active purpose: describe how to execute the current
-milestone safely.
+`construction/` 只放当前仍有执行价值的施工文档。历史施工手册和旧长路线已经放入
+[archive/](archive/)，只作为回顾材料。
 
-## Active Entry
+## 当前入口
 
-- [current-playbook.md](current-playbook.md)
+- [engineering-plan.md](engineering-plan.md)：工程规划总纲，承接旧 Day8-148 长路线的职责。
+- [current-playbook.md](current-playbook.md)：当前施工手册，只描述正在推进的施工单元。
 
-Use this when asking Codex to continue implementation.
+## 使用顺序
 
-## Historical References
+继续施工时按以下顺序阅读：
 
-Historical construction manuals are in [archive/](archive/). They are retained
-for context only and are no longer the primary project management model.
+1. [../outline.md](../outline.md)
+2. [../docs/current-state.md](../docs/current-state.md)
+3. [../docs/roadmap.md](../docs/roadmap.md)
+4. [engineering-plan.md](engineering-plan.md)
+5. [current-playbook.md](current-playbook.md)
+6. 对应的 [../docs/days/](../docs/days/) Day 胶囊
 
-For day-by-day review history, use:
+## 历史材料
 
-- [../docs/days/README.md](../docs/days/README.md)
+- [archive/](archive/)：旧施工手册、旧 Day8-148 路线和 Phase 0 施工资料。
+- [../docs/days/README.md](../docs/days/README.md)：按 Day 回顾项目历史。

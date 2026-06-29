@@ -1,10 +1,9 @@
 # 03 ★★★ Day 1～7 人工 Review 与学习路线
 
-> Historical review note, 2026-06-29:
+> 历史 review 说明，2026-06-29：
 >
-> This file remains useful for understanding the Day 1-7 baseline, but the
-> current review entrypoint is `docs/days/README.md` plus
-> `docs/current-state.md`.
+> 本文件仍可用于理解 Day 1-7 基线，但当前 review 入口是
+> `docs/days/README.md` 和 `docs/current-state.md`。
 
 > 盘点日期：2026-06-14
 >

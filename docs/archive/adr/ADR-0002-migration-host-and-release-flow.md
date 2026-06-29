@@ -1,83 +1,69 @@
-# ADR-0002: Migration Host and Release Flow
+# ADR-0002: Migration Host 与发布流程
 
-## Status
+## 状态
 
-Accepted - approved by the project Owner on 2026-06-18.
+Accepted - 项目 Owner 于 2026-06-18 批准。
 
-## Context
+## 背景
 
-Before Day 18, the API and Worker called `MigrateAsync` during startup. This was
-useful for the local learning baseline, but it was not suitable for production:
+Day 18 之前，API 和 Worker 在 startup 时调用 `MigrateAsync`。这对本地学习基线有用，但不适合生产：
 
-- multiple API or Worker instances can race on schema changes;
-- runtime identities need DDL permissions;
-- failed application startup becomes coupled to migration behavior;
-- there is no explicit migration approval, evidence, or rollback path.
+- 多个 API 或 Worker 实例可能竞争执行 schema change；
+- runtime identity 需要 DDL 权限；
+- application startup failure 会和 migration 行为耦合；
+- 没有明确的 migration approval、证据或 rollback path。
 
-Relevant risks:
+相关风险：
 
-- RISK-0003: API/Worker automatic migration.
-- RISK-0012: No staging and artifact promotion chain.
-- RISK-0013: No CI/CD automated gates.
+- RISK-0003：API/Worker 自动 migration。
+- RISK-0012：无 staging 和 artifact promotion chain。
+- RISK-0013：无 CI/CD 自动门禁。
 
-## Decision
+## 决策
 
-Stage 1 removes automatic migrations from API and Worker startup and adds a
-dedicated migration executable path.
+Stage 1 移除 API 和 Worker startup 中的自动 migration，并增加专用 migration executable path。
 
-The implementation is a small `FinOps.Migrator` console project that:
+实现是一个小型 `FinOps.Migrator` console project，必须：
 
-1. references `FinOps.Infrastructure`;
-2. loads the same PostgreSQL configuration shape as API and Worker;
-3. acquires a target-database PostgreSQL advisory lock;
-4. applies EF Core migrations once, then exits;
-5. returns `0` on success and `1` on migration failure;
-6. logs the database target, pending migration count, applied migration names,
-   and elapsed time without logging connection strings or passwords.
+1. 引用 `FinOps.Infrastructure`；
+2. 使用与 API/Worker 相同形状的 PostgreSQL 配置；
+3. 获取目标数据库的 PostgreSQL advisory lock；
+4. 应用 EF Core migrations 后退出；
+5. 成功返回 `0`，migration 失败返回 `1`；
+6. 记录数据库目标、pending migration 数量、已应用 migration 名称和耗时，但不记录 connection string 或 password。
 
-Local development may run the migrator manually or through a script before API
-or Worker startup. Future CI/CD will run the same migrator as a release step
-before deploying application instances.
+本地开发可以在 API 或 Worker startup 前手工运行 migrator，或通过脚本运行。未来 CI/CD 会在部署应用实例前，将同一个 migrator 作为 release step 执行。
 
-## Alternatives Considered
+## 考虑过的替代方案
 
-### Keep automatic startup migration for all environments
+### 所有环境继续使用 startup migration
 
-Rejected. It keeps local setup simple but does not close RISK-0003 and forces
-application runtime identities to retain schema-change permissions.
+Rejected。它能简化本地启动，但无法关闭 RISK-0003，并迫使应用 runtime identity 保留 schema-change 权限。
 
-### Use only `dotnet ef database update`
+### 只使用 `dotnet ef database update`
 
-Rejected as the primary release path. It is useful for development, but a
-project-owned migrator gives the release pipeline a stable executable and lets
-the project add logging, validation, and environment checks.
+Rejected as primary release path。它适合开发，但项目自有 migrator 给 release pipeline 一个稳定 executable，并允许项目加入 logging、validation 和 environment checks。
 
-### Run migrations only inside CI without a migrator
+### 只在 CI 中运行 migration，不创建 migrator
 
-Deferred. CI/CD does not exist yet. The migrator creates the reusable unit that
-CI/CD can later orchestrate.
+Deferred。当时 CI/CD 尚未存在。migrator 先创建可复用单元，未来 CI/CD 可以编排它。
 
-## Consequences
+## 后果
 
-- API and Worker startup become simpler and safer.
-- Local setup gains one explicit migration step.
-- Stage 1 must update scripts and documentation so an empty database can still
-  be prepared repeatably.
-- Production-like deployments can use different database identities: migrator
-  gets DDL permissions; API and Worker get only required runtime permissions.
-- Concurrent FinOps migrators for the same database fail before applying schema
-  changes; deployment concurrency controls remain the outer release guard.
-- Migration rollback remains a controlled release concern; EF `Down` methods
-  are not automatically executed in production.
+- API 和 Worker startup 更简单、更安全。
+- 本地 setup 增加一个显式 migration step。
+- Stage 1 必须更新脚本和文档，使空数据库仍可重复准备。
+- 类生产部署可以使用不同数据库 identity：migrator 拥有 DDL 权限，API/Worker 只拥有运行所需权限。
+- 同一数据库的并发 FinOps migrator 会在应用 schema change 前失败；部署并发控制仍由外层 release guard 负责。
+- Migration rollback 仍是受控 release concern；生产中不会自动执行 EF `Down`。
 
-## Stage 1 Implementation Hooks
+## Stage 1 实施挂钩
 
-- Day 18 owns the implementation.
-- Add `src/FinOps.Migrator/FinOps.Migrator.csproj`.
-- Add the project to `FinOpsPlatform.slnx`.
-- Remove `MigrateAsync` calls from `src/FinOps.Api/Program.cs` and
-  `src/FinOps.Worker/Worker.cs`.
-- Add or update scripts so local verification can run:
+- Day 18 负责实现。
+- 新增 `src/FinOps.Migrator/FinOps.Migrator.csproj`。
+- 将项目加入 `FinOpsPlatform.slnx`。
+- 从 `src/FinOps.Api/Program.cs` 和 `src/FinOps.Worker/Worker.cs` 移除 `MigrateAsync` 调用。
+- 新增或更新脚本，使本地验证可以执行：
 
 ```powershell
 dotnet run --project src/FinOps.Migrator
@@ -86,15 +72,14 @@ $env:Etl__Job = "Resources"
 dotnet run --project src/FinOps.Worker
 ```
 
-## Verification
+## 验证
 
-Stage 1 is not complete until:
+Stage 1 未满足以下条件前不能视为完成：
 
-- An empty local database can be migrated by `FinOps.Migrator`.
-- Re-running `FinOps.Migrator` is idempotent.
-- Two concurrent FinOps migrators cannot both apply migrations to the same
-  database.
-- API and Worker start successfully after migration.
-- API and Worker do not call `Database.MigrateAsync`.
-- A migration failure returns a non-zero exit code.
-- Documentation states that production migration is a separate release step.
+- 空本地数据库可由 `FinOps.Migrator` 完成 migration。
+- 重复运行 `FinOps.Migrator` 是幂等的。
+- 两个并发 FinOps migrator 不能同时对同一数据库应用 migration。
+- API 和 Worker 在 migration 后可成功启动。
+- API 和 Worker 不调用 `Database.MigrateAsync`。
+- migration 失败返回非零退出码。
+- 文档明确说明生产 migration 是独立 release step。

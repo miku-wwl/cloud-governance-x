@@ -403,7 +403,7 @@ rg -n "ICloud.*Provider|IAzureSubscriptionReader" src/FinOps.Application
 - **Capability baseline**：在某个 Commit 上能够被证据证明的能力集合；
 - **Target state**：系统未来要达到的状态，不代表当前已有；
 - **Gap**：当前状态与目标状态之间可描述、可安排的差距；
-- **Evidence**：可以重复检查的测试、脚本、数据或运行结果；
+- **证据**：可以重复检查的测试、脚本、数据或运行结果；
 - **Production prohibition**：即使本地可用，也不能原样进入生产的行为。
 
 ### 8.2 自测问题

@@ -1,31 +1,27 @@
-## Summary
+## 摘要
 
-Describe the behavior, architecture, documentation, or governance change.
+说明本 PR 改变了哪些行为、架构、文档或治理规则。
 
-## Scope
+## 范围
 
-- [ ] The change has one clear purpose.
-- [ ] Unrelated formatting or generated-file churn is excluded.
-- [ ] Runtime behavior changes are called out explicitly.
+- [ ] 本次变更只有一个清晰目的。
+- [ ] 已排除无关格式化或生成文件噪声。
+- [ ] 已明确标出运行时行为变化。
 
-## Verification
+## 验证
 
 - [ ] `./scripts/Test-RepositoryStatic.ps1`
-- [ ] `./scripts/Test-DatabaseMigration.ps1` when database startup, persistence,
-      migration, API composition, or Worker composition changes
-- [ ] Relevant manual or external E2E evidence is attached when required
-- [ ] A deliberate negative check was run for any new or changed gate
+- [ ] 如变更数据库启动、持久化、迁移、API 组合或 Worker 组合，已运行
+      `./scripts/Test-DatabaseMigration.ps1`
+- [ ] 如需要，已附上相关手工验证或外部 E2E 证据
+- [ ] 新增或修改门禁时，已执行一次刻意失败的反向验证
 
-## Risk and operations
+## 风险与运行
 
-- [ ] Security, data, migration, compatibility, deployment, and rollback impacts
-      have been considered.
-- [ ] No credentials, connection strings, state, plans, logs, `tmp/`, `bin/`,
-      `obj/`, or other generated evidence are committed.
-- [ ] Risk register, production gaps, ADRs, README, and operating documentation
-      are updated when facts or decisions change.
+- [ ] 已评估安全、数据、迁移、兼容性、部署和回滚影响。
+- [ ] 未提交凭据、连接串、state、plan、日志、`tmp/`、`bin/`、`obj/` 或其他生成证据。
+- [ ] 当事实或决策变化时，已同步风险登记册、生产差距、ADR、README 和运行文档。
 
-## Reviewer focus
+## 审查重点
 
-List the files, invariants, failure paths, and assumptions that need the most
-attention.
+列出最需要 reviewer 关注的文件、不变量、失败路径和假设。

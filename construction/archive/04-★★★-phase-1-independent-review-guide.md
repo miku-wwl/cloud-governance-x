@@ -1,13 +1,12 @@
 # 04 ★★★ 阶段 1 独立全面 Review 与 ChatGPT 网页版执行指南
 
-> Historical review note, 2026-06-29:
+> 历史 review 说明，2026-06-29：
 >
-> Phase 1 has already been accepted. This guide is preserved as the historical
-> review method for that gate, not as the active planning entrypoint.
+> Phase 1 已经接受。本指南仅保留为该 gate 的历史 review 方法，不再作为当前规划入口。
 
-> 适用范围：Day 1～19 当前仓库，重点审查 Day 12～19 阶段 1  
-> 审查目的：在进入 Day 20 之前，独立复核阶段 1 的代码、门禁、证据和剩余风险  
-> 执行环境：ChatGPT 网页版，优先使用 Project；也可使用一个专用长会话  
+> 适用范围：Day 1～19 当前仓库，重点审查 Day 12～19 阶段 1
+> 审查目的：在进入 Day 20 之前，独立复核阶段 1 的代码、门禁、证据和剩余风险
+> 执行环境：ChatGPT 网页版，优先使用 Project；也可使用一个专用长会话
 > 最终决策：由项目 Owner 作出，ChatGPT 只能提交审查意见，不能代替 Owner 签收
 
 ## 0. 这份指南的法律地位
@@ -64,7 +63,7 @@ Independent Acceptance
 - 登录、OIDC、Bearer Token；
 - tenant isolation；
 - RBAC；
-- append-only audit；
+- 追加式审计；
 - 生产 scheduler、queue、lease、retry；
 - staging、CD、deployment approval；
 - backup、PITR、DR；
@@ -252,23 +251,23 @@ Finding 状态：
 
 每一轮都要求模型追加以下表格，不要改变列名：
 
-| ID | Domain | Severity | Confidence | Evidence | Location | Finding | Impact | Required action | Verification | Status |
+| ID | 领域 | 严重度 | 置信度 | 证据 | 位置 | 发现 | 影响 | 必要动作 | 验证方式 | 状态 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 
 字段约束：
 
 - `ID`：使用 `P1-001` 连续编号；
-- `Domain`：Scope、Toolchain、StaticGate、Architecture、API、DI、Worker、
+- `领域`：范围、工具链、静态门禁、架构、API、DI、Worker、
   Migration、CI、Governance、Regression、Documentation；
-- `Severity`：Critical/High/Medium/Low/Note；
-- `Confidence`：High/Medium/Low；
-- `Evidence`：E0～E4，可组合，例如 `E2+E3`；
-- `Location`：文件路径和符号；
-- `Finding`：只陈述一个问题；
-- `Impact`：描述真实失败方式；
-- `Required action`：最小必要动作；
-- `Verification`：如何证明修复有效，必须含 negative path；
-- `Status`：初始通常为 Open 或 Needs evidence。
+- `严重度`：Critical/High/Medium/Low/Note；
+- `置信度`：High/Medium/Low；
+- `证据`：E0～E4，可组合，例如 `E2+E3`；
+- `位置`：文件路径和符号；
+- `发现`：只陈述一个问题；
+- `影响`：描述真实失败方式；
+- `必要动作`：最小必要动作；
+- `验证方式`：如何证明修复有效，必须含 negative path；
+- `状态`：初始通常为 Open 或 Needs evidence。
 
 ### 4.1 Finding 质量示例
 
@@ -377,7 +376,7 @@ finding；最后列出本轮实际读取的文件。
 提示词：
 
 ```text
-执行第 1 轮：Scope and Claims Review。
+执行第 1 轮：范围与声明 Review。
 
 检查：
 
@@ -419,7 +418,7 @@ finding；最后列出本轮实际读取的文件。
 提示词：
 
 ```text
-执行第 2 轮：Toolchain and Compiler Policy Review。
+执行第 2 轮：工具链与编译策略 Review。
 
 逐项验证：
 
@@ -456,7 +455,7 @@ finding；最后列出本轮实际读取的文件。
 提示词：
 
 ```text
-执行第 3 轮：Static Gate Adversarial Review。
+执行第 3 轮：静态门禁对抗性 Review。
 
 不要只描述脚本步骤。把脚本当成安全边界，寻找绕过。
 
@@ -509,7 +508,7 @@ finding；最后列出本轮实际读取的文件。
 提示词：
 
 ```text
-执行第 4 轮：Architecture Enforcement Review。
+执行第 4 轮：架构强制执行 Review。
 
 建立期望依赖图和实际依赖图，然后逐条回答：
 
@@ -554,7 +553,7 @@ finding；最后列出本轮实际读取的文件。
 提示词：
 
 ```text
-执行第 5 轮：API Composition and Route Compatibility Review。
+执行第 5 轮：API 组合与路由兼容性 Review。
 
 检查重构前后应保持的契约：
 
@@ -588,7 +587,7 @@ Method | Path | Module | Application dependency | Auth state | Test evidence
 提示词：
 
 ```text
-执行第 6 轮：Dependency Injection and Lifetime Review。
+执行第 6 轮：依赖注入与生命周期 Review。
 
 为每个关键服务列出：
 
@@ -623,7 +622,7 @@ Service | Implementation | Lifetime | Host consumers | External resource held
 提示词：
 
 ```text
-执行第 7 轮：Worker Dispatch and Process Lifecycle Review。
+执行第 7 轮：Worker 调度与进程生命周期 Review。
 
 检查：
 
@@ -660,7 +659,7 @@ Start → Resolve Job → Execute → Success/Cancel/Failure → Exit code → H
 提示词：
 
 ```text
-执行第 8 轮：Migration Ownership and Database Permission Review。
+执行第 8 轮：Migration 所有权与数据库权限 Review。
 
 必须逐场景审查：
 
@@ -712,7 +711,7 @@ Start → Resolve Job → Execute → Success/Cancel/Failure → Exit code → H
 提示词：
 
 ```text
-执行第 9 轮：CI and Merge Contract Review。
+执行第 9 轮：CI 与合并契约 Review。
 
 检查：
 
@@ -733,9 +732,9 @@ Start → Resolve Job → Execute → Success/Cancel/Failure → Exit code → H
 
 区分：
 
-- Workflow configuration evidence；
-- Branch protection external evidence；
-- Reported historical evidence；
+- workflow 配置证据；
+- branch protection 外部证据；
+- 报告中的历史证据；
 - 仅凭源码无法重新证明的 GitHub 设置。
 
 无法从上传文件验证的 branch protection 必须标记 NEED_MORE_EVIDENCE，要求 Owner
@@ -760,7 +759,7 @@ Start → Resolve Job → Execute → Success/Cancel/Failure → Exit code → H
 提示词：
 
 ```text
-执行第 10 轮：Day 1-7 Regression Review after Phase 1 Refactoring。
+执行第 10 轮：Phase 1 重构后的 Day 1～7 回归 Review。
 
 沿真实数据流审查：
 
@@ -808,11 +807,11 @@ Entry → Application service → Provider/Repository → Domain/DTO → Persist
 提示词：
 
 ```text
-执行第 11 轮：Documentation and Evidence Consistency Review。
+执行第 11 轮：文档与证据一致性 Review。
 
-建立 Claim-Evidence Matrix：
+建立“声明-证据矩阵”：
 
-Claim | Source document | Code evidence | Test/CI evidence | Contradiction | Verdict
+声明 | 来源文档 | 代码证据 | 测试/CI 证据 | 是否矛盾 | 结论
 
 至少覆盖：
 
@@ -890,18 +889,18 @@ migration 契约存在实质疑问；或报告结论与代码冲突。
 
 最终报告必须包含：
 
-1. Executive decision
-2. Reviewed baseline
-3. Files actually reviewed
-4. Files not reviewed
-5. Phase 1 requirement matrix
-6. Final Review Ledger
-7. Negative-test matrix
-8. Residual risks
-9. Required fixes before Day 20
-10. Conditional backlog
-11. Owner sign-off block
-12. Machine-review limitations
+1. 执行决策
+2. 已审查基线
+3. 实际审查文件
+4. 未审查文件
+5. Phase 1 要求矩阵
+6. 最终 Review Ledger
+7. 反向测试矩阵
+8. 遗留风险
+9. Day 20 前必须修复项
+10. 条件性 backlog
+11. Owner 签收区块
+12. 机器审查限制
 
 禁止使用“总体不错”“基本可以”“建议继续完善”作为最终结论。
 ```
@@ -910,7 +909,7 @@ migration 契约存在实质疑问；或报告结论与代码冲突。
 
 最终 reviewer 必须填完，不允许空白：
 
-| Day | Requirement | Code evidence | Automated evidence | Negative evidence | Residual risk | Verdict |
+| Day | 要求 | 代码证据 | 自动化证据 | 反向证据 | 遗留风险 | 结论 |
 | --- | --- | --- | --- | --- | --- | --- |
 | 12 | analyzer、format、统一编译策略 |  |  |  |  |  |
 | 13 | 单一静态门禁、失败非零、跨平台 |  |  |  |  |  |
@@ -921,7 +920,7 @@ migration 契约存在实质疑问；或报告结论与代码冲突。
 | 18 | 独立 migration、并发、权限、清理 |  |  |  |  |  |
 | 19 | CI、PR、ADR、责任边界、合并阻断 |  |  |  |  |  |
 
-Verdict 只允许：
+结论只允许：
 
 - Verified
 - Partially verified
@@ -1024,17 +1023,17 @@ ZIP 通常缺少：
 结构地粘贴进去：
 
 ```text
-Evidence request ID:
-Question being answered:
-Source:
+证据请求 ID:
+要回答的问题:
+来源:
 Commit SHA:
-Command or GitHub URL:
-Started at:
-Finished at:
-Exit code / conclusion:
-Relevant excerpt:
-Cleanup evidence:
-Sensitive values removed: yes/no
+命令或 GitHub URL:
+开始时间:
+结束时间:
+退出码 / 结论:
+相关摘录:
+清理证据:
+敏感值是否已移除: yes/no
 ```
 
 不要上传完整环境变量、token、connection string 或未脱敏日志。
@@ -1081,43 +1080,43 @@ Sensitive values removed: yes/no
 `CONDITIONAL_ACCEPT`，才填写：
 
 ```text
-# Phase 1 Independent Acceptance
+# Phase 1 独立验收
 
-Repository:
-Branch:
+仓库:
+分支:
 Commit SHA:
-Review started:
-Review completed:
+审查开始:
+审查完成:
 Reviewer surface/model:
-Review guide version:
+审查指南版本:
 
-Decision:
+决策:
 ACCEPT / CONDITIONAL_ACCEPT / REJECT
 
-Critical open:
-High open:
-Medium open:
-Low open:
+Critical 未关闭:
+High 未关闭:
+Medium 未关闭:
+Low 未关闭:
 
-Required checks:
+必需检查:
 - Static verification:
 - Database migration:
 
-Independent review report:
+独立审查报告:
 <保存位置或链接>
 
-Accepted residual risks:
+已接受遗留风险:
 - ID:
   Owner:
-  Target Day:
-  Expiry/revisit trigger:
+  目标 Day:
+  到期/复查触发条件:
 
-Owner decision:
+Owner 决策:
 
 Owner:
-Date:
+日期:
 
-Authorization:
+授权:
 - [ ] Phase 1 accepted
 - [ ] Day 20 may start
 ```

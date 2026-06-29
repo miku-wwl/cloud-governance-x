@@ -1,39 +1,29 @@
-# Day 14 - Architecture Boundary Tests
+# Day 14 - 架构边界测试
 
-## Status
+## 1. 目标
+把 Clean Architecture 和基础设施所有权规则转成可执行测试，解决模块边界只能人工 review、容易被引用漂移破坏的风险。
 
-Verified by Phase 1 independent acceptance.
+## 2. 前置条件
+依赖 Day 12 工程质量基线和 [ADR-0001](../archive/adr/ADR-0001-module-boundaries-and-architecture-tests.md)。
 
-## Commit Evidence
+## 3. 施工范围
+允许新增项目/程序集依赖边界测试、Domain/Application 禁止依赖 Infrastructure 或云 SDK 的规则、Azure/PostgreSQL 包归属检查和 migration ownership 检查。不允许用测试替代所有架构设计 review。
 
-- `5679eb3` - `test: add architecture boundary tests`
+## 4. 设计决策
+以可执行测试保护当前编译边界；新增模块职责仍需人工判断，测试负责拦截明确违规引用。
 
-## Goal
+## 5. 实现摘要
+新增 layer dependency tests、package ownership tests、metadata/IL migration ownership checks，并在后续 Phase 1 remediation 中加固 alias 和 reflection fixture 覆盖。
 
-Turn Clean Architecture and infrastructure ownership rules into executable
-tests.
+## 6. 验证证据
+Phase 1 final acceptance 验证项目、程序集、包和 metadata/IL migration ownership 检查通过。证据包括 [LayerDependencyTests.cs](../../src/FinOps.Tests/Architecture/LayerDependencyTests.cs)、[independent-acceptance-report.md](../archive/phase-1/independent-acceptance-report.md) 和 [ADR-0001](../archive/adr/ADR-0001-module-boundaries-and-architecture-tests.md)。
 
-## Implemented
+## 7. Review 结论
+Accepted。Phase 1 独立验收确认架构边界测试有效。
 
-- project and assembly dependency boundary tests;
-- restrictions preventing Domain/Application from depending on Infrastructure
-  or cloud SDKs;
-- checks that Azure/PostgreSQL implementation packages remain in
-  Infrastructure;
-- migration ownership checks hardened during later Phase 1 remediation.
+## 8. 遗留风险
+测试只覆盖当前编译边界；新增模块职责、部署边界和运行时边界仍需要人工架构 review。
 
-## Verification
-
-Phase 1 final acceptance verified project, assembly, package and metadata/IL
-migration ownership checks, including alias and reflection fixtures.
-
-Evidence:
-
-- [src/FinOps.Tests/Architecture/LayerDependencyTests.cs](../../src/FinOps.Tests/Architecture/LayerDependencyTests.cs)
-- [docs/archive/phase-1/independent-acceptance-report.md](../archive/phase-1/independent-acceptance-report.md)
+## 9. 相关链接
+- Commit: `5679eb3` - `test: add architecture boundary tests`
 - [docs/archive/adr/ADR-0001-module-boundaries-and-architecture-tests.md](../archive/adr/ADR-0001-module-boundaries-and-architecture-tests.md)
-
-## Boundaries
-
-Architecture tests cover current compiled boundaries. They do not replace human
-architecture review for new module responsibilities.
