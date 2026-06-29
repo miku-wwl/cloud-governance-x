@@ -10,7 +10,7 @@
 
 - 当前历史 Phase：**Phase 2 - 身份、租户、RBAC 与审计**；
 - 当前权威里程碑：**M4 - RBAC、端点保护与审计**；
-- 最新已实现 Day：**Day 26 - Microsoft Entra 开发集成**；
+- 最新已实现并接受 Day：**Day 26 - Microsoft Entra 开发集成**；
 - 当前施工单元：**Day 27 - 权限与范围 RBAC**；
 - Phase 2 要到 **Day 30 安全门禁** 后才判断是否出关；
 - 下一里程碑是 **M5 - 生产数据模型**，从 **Day 31** 开始；
@@ -41,7 +41,7 @@ review 时，优先修复当前 Day，不用创建新 Day 掩盖阻断问题。
 | M0 开发基线 | Day 1-7 | Complete | 建立本地 Azure、PostgreSQL、API、Worker 数据底座 |
 | M1 基线治理 | Day 8-11 | Complete | 建立事实基线、风险、架构和 Phase 0 gate |
 | M2 工程基础 | Day 12-19 | Accepted | 建立静态门禁、架构测试、模块化和独立 Migration Host |
-| M3 身份与租户基础 | Day 20-26 | Implemented, phase open | 建立 Tenant、TenantContext、租户感知 repository、OIDC 和 Entra 开发集成 |
+| M3 身份与租户基础 | Day 20-26 | Accepted, phase open | 建立 Tenant、TenantContext、租户感知 repository、OIDC 和 Entra 开发集成 |
 | M4 RBAC、端点保护与审计 | Day 27-30 | Active | 关闭“已认证但未授权”和缺失审计的 Phase 2 核心风险 |
 | M5 生产数据模型 | Day 31-40 | Next | 建立 lineage、资源生命周期、成本语义、数据质量和 migration 演练 |
 | M6 可靠 ETL 平台 | Day 41-50 | Not started | 调度、lease、retry、checkpoint、backfill 和运维控制 |
