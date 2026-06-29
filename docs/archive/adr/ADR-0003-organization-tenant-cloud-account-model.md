@@ -1,46 +1,44 @@
-# ADR-0003: Organization, Tenant, CloudAccount and scope model
+# ADR-0003: Organization、Tenant、CloudAccount 与范围模型
 
-## Status
+## 状态
 
 Accepted
 
-## Date
+## 日期
 
 2026-06-19
 
-## Owners
+## Owner
 
-- Decision owner: Platform Architect
-- Reviewers: Security Owner, Data Owner, Application Owner, Platform SRE
+- 决策 Owner：Platform Architect
+- Reviewer：Security Owner、Data Owner、Application Owner、Platform SRE
 
-## Context
+## 背景
 
-Cloud Governance X currently stores Azure resource, cost and ETL data without a
-business tenant boundary. Azure SDK objects expose an Azure tenant ID, but that
-identifier describes a Microsoft Entra directory and is not the platform's
-customer, organization or data-isolation boundary.
+Cloud Governance X 当前保存 Azure resource、cost 和 ETL 数据时，没有业务 tenant 边界。
+Azure SDK 对象会暴露 Azure tenant ID，但该标识描述的是 Microsoft Entra directory，
+不是平台的客户、组织或数据隔离边界。
 
-Phase 2 must establish a stable model before adding schema, trusted tenant
-context, OIDC, RBAC and audit. The decision must support:
+Phase 2 必须先建立稳定模型，再添加 schema、trusted tenant context、OIDC、RBAC 和 audit。
+该决策必须支持：
 
-- one organization with one or more isolated workspaces;
-- Azure subscriptions and future AWS accounts;
-- multiple Provider credentials or workload identities;
-- human and service identities;
-- tenant, account and future resource-level authorization scope;
-- background jobs that cannot infer tenant from ambient HTTP state;
-- an explicitly controlled platform-administrator path;
-- future RLS or stronger physical isolation without changing business identity.
+- 一个 organization 下有一个或多个隔离 workspace；
+- Azure subscriptions 和未来 AWS accounts；
+- 多个 Provider credential 或 workload identity；
+- human 和 service identity；
+- tenant、account 和未来 resource-level authorization scope；
+- 无法从 ambient HTTP state 推断 tenant 的后台 job；
+- 明确受控的 platform-administrator 路径；
+- 未来 RLS 或更强物理隔离，不改变业务 identity。
 
-This decision addresses RISK-0001, RISK-0002 and RISK-0018, and GAP-001,
-GAP-002 and GAP-005. It does not close them; implementation and isolation tests
-remain required through Day 30.
+本决策关联 RISK-0001、RISK-0002、RISK-0018，以及 GAP-001、GAP-002、GAP-005。
+它本身不关闭这些风险；实现和隔离测试仍需持续到 Day 30。
 
-## Decision
+## 决策
 
-### Business hierarchy
+### 业务层级
 
-The canonical hierarchy is:
+标准层级为：
 
 ```text
 Organization
@@ -48,24 +46,21 @@ Organization
           ├── Membership
           ├── ProviderConnection
           └── CloudAccount
-                └── narrower authorization scopes
+                └── 更细授权 scope
 ```
 
-All internal identifiers are opaque UUIDs. Display names and external Provider
-identifiers are attributes, never authorization keys.
+所有内部标识符都是 opaque UUID。显示名称和外部 Provider 标识只是属性，不能作为授权 key。
 
 ### Organization
 
-`Organization` represents the customer, legal or administrative umbrella that
-owns one or more platform tenants.
+`Organization` 表示拥有一个或多个 platform tenant 的客户、法人或管理实体。
 
-- An Organization may contain multiple Tenants.
-- Organization is not the normal row-level data isolation key.
-- Organization-wide access is never implied by membership in one Tenant.
-- Initial deployments may create one Organization and one Tenant, but code and
-  schema must not special-case that cardinality.
+- 一个 Organization 可以包含多个 Tenant。
+- Organization 不是常规 row-level data isolation key。
+- 加入某个 Tenant 不会隐含获得 organization-wide access。
+- 初始部署可以只有一个 Organization 和一个 Tenant，但代码和 schema 不能特殊处理这个基数。
 
-Minimum planned attributes:
+最小计划属性：
 
 - `id`
 - `display_name`
@@ -75,20 +70,17 @@ Minimum planned attributes:
 
 ### Tenant
 
-`Tenant` is the primary security, authorization and data-isolation boundary.
-Every operational or business row that belongs to a customer workspace must
-eventually carry `tenant_id`, directly or through a tenant-bound aggregate with
-a composite foreign key.
+`Tenant` 是主要 security、authorization 和 data-isolation boundary。
+每个属于客户 workspace 的 operational 或 business row 最终都必须直接携带 `tenant_id`，
+或通过 tenant-bound aggregate 和 composite foreign key 间接携带。
 
-- A Tenant belongs to exactly one Organization.
-- A Tenant cannot contain another Tenant.
-- Tenant identity never comes from a query string, route value, arbitrary
-  header, Azure tenant ID or cloud account ID.
-- Suspension denies new business operations while preserving data for audit
-  and controlled recovery.
-- Decommissioning is an explicit lifecycle, not a hard cascade delete.
+- 一个 Tenant 只属于一个 Organization。
+- Tenant 不能包含另一个 Tenant。
+- Tenant identity 绝不能来自 query string、route value、任意 header、Azure tenant ID 或 cloud account ID。
+- Suspension 拒绝新的 business operation，同时保留数据用于 audit 和受控恢复。
+- Decommissioning 是显式生命周期，不是 hard cascade delete。
 
-Minimum planned attributes:
+最小计划属性：
 
 - `id`
 - `organization_id`
@@ -98,34 +90,31 @@ Minimum planned attributes:
 - `created_at`
 - `updated_at`
 
-The tenant slug is unique within an Organization. Authorization and joins use
-the UUID, not the slug.
+tenant slug 在 Organization 内唯一。授权和 join 使用 UUID，不使用 slug。
 
 ### CloudAccount
 
-`CloudAccount` is the platform's normalized account boundary for a Provider:
+`CloudAccount` 是平台归一化后的 Provider account 边界：
 
-- Azure: one Subscription;
-- AWS: one AWS Account;
-- future Providers: their equivalent billable/resource ownership account.
+- Azure：一个 Subscription；
+- AWS：一个 AWS Account；
+- 未来 Provider：等价的 billable/resource ownership account。
 
-An Azure tenant/directory is Provider metadata and may be recorded as
-`provider_directory_id`; it is not `tenant_id`.
+Azure tenant/directory 是 Provider metadata，可以记录为 `provider_directory_id`，但它不是 `tenant_id`。
 
-A CloudAccount:
+CloudAccount 必须：
 
-- belongs to exactly one business Tenant at a time;
-- has a Provider and an immutable normalized external account ID;
-- references the ProviderConnection used to access it;
-- carries onboarding and operational status;
-- does not contain credentials;
-- cannot be silently reassigned to another Tenant.
+- 同一时刻只属于一个业务 Tenant；
+- 拥有 Provider 和不可变的 normalized external account ID；
+- 引用用于访问它的 ProviderConnection；
+- 携带 onboarding 和 operational status；
+- 不包含 credential；
+- 不能被静默转移给另一个 Tenant。
 
-Moving an account between Tenants requires a future explicit offboard/transfer
-workflow with authorization, audit and data reconciliation. Day 21 must not
-implement transfer as an unrestricted `tenant_id` update.
+账号在 Tenant 间移动需要未来显式 offboard/transfer workflow，并具备授权、审计和数据 reconciliation。
+Day 21 不得把 transfer 实现为不受限制的 `tenant_id` update。
 
-Minimum planned attributes:
+最小计划属性：
 
 - `id`
 - `tenant_id`
@@ -139,23 +128,20 @@ Minimum planned attributes:
 - `created_at`
 - `updated_at`
 
-The active identity is unique by `(provider, external_account_id)`. Every
-tenant-owned foreign key and uniqueness rule must also preserve the tenant
-boundary.
+活动 identity 由 `(provider, external_account_id)` 全局唯一标识。每个 tenant-owned foreign key
+和 uniqueness rule 也必须保留 tenant boundary。
 
 ### ProviderConnection
 
-`ProviderConnection` represents the configuration and identity binding used to
-access one Provider.
+`ProviderConnection` 表示访问某个 Provider 所需的配置和 identity binding。
 
-- It belongs to exactly one Tenant.
-- It may serve one or more CloudAccounts in that Tenant.
-- It stores non-secret metadata, capability state and a secret/workload
-  identity reference.
-- It never stores an access token, client secret or raw credential.
-- A CloudAccount cannot reference a ProviderConnection from another Tenant.
+- 它只属于一个 Tenant。
+- 它可以服务该 Tenant 下的一个或多个 CloudAccount。
+- 它保存非 secret metadata、capability state 和 secret/workload identity reference。
+- 它绝不保存 access token、client secret 或 raw credential。
+- CloudAccount 不能引用另一个 Tenant 的 ProviderConnection。
 
-Minimum planned attributes:
+最小计划属性：
 
 - `id`
 - `tenant_id`
@@ -167,29 +153,26 @@ Minimum planned attributes:
 - `created_at`
 - `updated_at`
 
-`credential_reference` is an opaque locator for a future secret store or
-workload identity configuration. Local Azure CLI identity remains a development
-adapter and must not become persisted tenant identity.
+`credential_reference` 是未来 secret store 或 workload identity 配置的不透明定位符。
+本地 Azure CLI identity 仍是 development adapter，不能变成持久化 tenant identity。
 
-### Membership and identity subjects
+### Membership 和 identity subject
 
-`Membership` grants an external identity subject access to one Tenant.
+`Membership` 授予外部 identity subject 对某个 Tenant 的访问关联。
 
-The stable external subject key is:
+稳定外部 subject key 是：
 
 ```text
 issuer + subject
 ```
 
-Email, display name and Entra object display attributes are mutable profile
-data and cannot be authorization keys.
+Email、display name 和 Entra object display attribute 都是可变 profile data，不能作为 authorization key。
 
-Membership supports human and service subjects. It establishes tenant
-association and lifecycle only; Day 27 will define role and permission
-assignments. A user may have Memberships in multiple Tenants, but each request
-or job executes against one explicit effective Tenant.
+Membership 支持 human 和 service subject。它只建立 tenant association 和 lifecycle；
+Day 27 将定义 role 和 permission assignment。一个 user 可以拥有多个 Tenant 的 Membership，
+但每个 request 或 job 只针对一个显式 effective Tenant 执行。
 
-Minimum planned attributes:
+最小计划属性：
 
 - `id`
 - `tenant_id`
@@ -201,92 +184,81 @@ Minimum planned attributes:
 - `created_at`
 - `updated_at`
 
-The active identity is unique by `(tenant_id, issuer, subject)`.
+活动 identity 由 `(tenant_id, issuer, subject)` 唯一标识。
 
-### Scope model
+### 范围模型
 
-Authorization scope is a typed reference, not an arbitrary string prefix.
+授权范围是带类型的引用，不是任意 string prefix。
 
-The initial hierarchy is:
+初始层级为：
 
 ```text
 Tenant
     └── CloudAccount
-          └── Provider-specific resource scope (future)
+          └── Provider-specific resource scope（未来）
 ```
 
-The canonical scope representation is:
+标准 scope 表示包含：
 
 - `scope_type`
 - `tenant_id`
-- optional `scope_id`
+- 可选 `scope_id`
 
-Rules:
+规则：
 
-- every non-platform scope includes `tenant_id`;
-- a CloudAccount scope must resolve to an account in the same Tenant;
-- narrower scopes cannot grant access outside their parent;
-- Provider-native resource IDs are targets or metadata, not trusted scope by
-  themselves;
-- wildcard scope is not represented by null tenant;
-- absence of a trusted scope is an authorization failure.
+- 每个非 平台范围 都包含 `tenant_id`；
+- CloudAccount scope 必须解析到同一 Tenant 中的 account；
+- 更窄 scope 不能授予父级之外的访问；
+- Provider-native resource ID 只是 target 或 metadata，不能单独作为可信 scope；
+- wildcard scope 不能用 null tenant 表示；
+- 缺少 trusted scope 是 authorization failure。
 
-Day 27 may add permission assignments to these typed scopes without changing
-the tenant identity model.
+Day 27 可以在不改变 tenant identity model 的前提下，把 permission assignment 加到这些 typed scope 上。
 
-### Trusted identity and tenant selection
+### 可信 identity 与 tenant selection
 
-Human HTTP requests will obtain identity from a validated OIDC token. The
-effective tenant must be selected from the authenticated subject's active
-Memberships and validated server-side.
+human HTTP request 从已验证 OIDC token 获取 identity。effective tenant 必须从 authenticated subject 的 active
+Membership 中选择，并在服务端验证。
 
-The client may request a tenant selection only by an opaque tenant identifier;
-the server must verify membership or platform-level authority. A route, query,
-header or body value never creates authority.
+客户端只能用 opaque tenant identifier 请求选择 tenant；服务端必须验证 membership 或 platform-level authority。
+route、query、header 或 body 中的值绝不能自行产生 authority。
 
-Background work has no ambient user identity. Each job definition/message must
-carry a server-created tenant and account scope. The Worker must reject missing
-or inconsistent tenant context before resolving a Repository or Provider.
+background work 没有 ambient user identity。每个 job definition/message 必须携带服务端创建的 tenant 和 account
+scope。Worker 在解析 Repository 或 Provider 前，必须拒绝缺失或不一致的 tenant context。
 
-### Platform administrator path
+### Platform administrator 路径
 
-Cross-tenant platform administration is a separate platform-level grant, not a
-Tenant Membership and not an implicit wildcard.
+cross-tenant platform administration 是单独的 platform-level grant，不是 Tenant Membership，也不是隐式 wildcard。
 
-Every cross-tenant operation must:
+每个 cross-tenant operation 必须：
 
-1. authenticate a platform subject;
-2. require a dedicated platform permission;
-3. name one explicit target Tenant;
-4. record reason, correlation ID and operation result;
-5. pass normal tenant-bound Repository and Provider checks for that target;
-6. emit append-only audit evidence.
+1. 认证 platform subject；
+2. 要求专用 platform permission；
+3. 指定一个明确 target Tenant；
+4. 记录 reason、correlation ID 和 operation result；
+5. 对该 target 仍通过正常 tenant-bound Repository 和 Provider 检查；
+6. 产生 追加式审计证据。
 
-Routine data queries must not execute with platform-wide scope. Break-glass
-access, when introduced, requires separate approval, short duration and audit.
+常规数据查询不得使用 platform-wide scope。未来引入 break-glass access 时，需要单独 approval、短时长和 audit。
 
-### Isolation strategy
+### 隔离策略
 
-The initial implementation uses one PostgreSQL database and shared schema with
-explicit `tenant_id`.
+初始实现使用单 PostgreSQL database 和 shared schema，并显式携带 `tenant_id`。
 
-Required invariants:
+强制不变量：
 
-- tenant-owned primary lookup paths include `tenant_id`;
-- tenant-owned unique indexes include `tenant_id` unless a documented global
-  Provider identity requires an additional global constraint;
-- tenant-owned relationships use composite keys or equivalent validation that
-  prevents cross-tenant references;
-- Application and Repository contracts require tenant context;
-- cache keys, job messages, object paths and audit records include tenant;
-- no default or empty Tenant exists in production execution.
+- tenant-owned primary lookup path 包含 `tenant_id`；
+- tenant-owned unique index 包含 `tenant_id`，除非有文档说明的全局 Provider identity 需要额外全局约束；
+- tenant-owned relationship 使用 composite key 或等价 validation，防止 cross-tenant reference；
+- Application 和 Repository contract 要求 tenant context；
+- cache key、job message、object path 和 audit record 包含 tenant；
+- 生产执行中不存在 default 或 empty Tenant。
 
-PostgreSQL Row Level Security is deferred to ADR-0005 as defense in depth. RLS
-must not replace explicit Application and Repository tenant boundaries.
+PostgreSQL Row Level Security 推迟到 ADR-0005，作为 defense in depth。RLS 不能替代显式 Application 和 Repository tenant boundary。
 
-### Lifecycle
+### 生命周期
 
-Planned lifecycle values are intentionally small:
+计划的生命周期状态刻意保持很小：
 
 | Aggregate | States |
 | --- | --- |
@@ -296,136 +268,122 @@ Planned lifecycle values are intentionally small:
 | ProviderConnection | Pending, Active, Degraded, Revoked |
 | Membership | Invited, Active, Suspended, Revoked |
 
-State transitions will be implemented and tested in the owning Day. Hard delete
-is not the normal lifecycle operation for tenant-owned operational data.
+状态迁移由对应 Day 实现和测试。hard delete 不是 tenant-owned operational data 的常规生命周期操作。
 
-## Alternatives considered
+## 考虑过的替代方案
 
-### Treat Azure tenant as the business Tenant
+### 把 Azure tenant 当作业务 Tenant
 
-Rejected. One business customer may use multiple Entra directories, and one
-directory may contain subscriptions belonging to different business
-workspaces. It also does not support AWS.
+Rejected。一个业务客户可能使用多个 Entra directory，一个 directory 也可能包含属于不同业务 workspace 的 subscription。
+该方案也不支持 AWS。
 
-### Use CloudAccount as the only tenant boundary
+### 只用 CloudAccount 作为 tenant boundary
 
-Rejected. Membership, organization-wide policy, audit, shared cost allocation
-and multi-account views require a stable business workspace above Provider
-accounts.
+Rejected。Membership、organization-wide policy、audit、shared cost allocation 和 multi-account view 都需要 Provider account
+之上的稳定业务 workspace。
 
-### Schema per Tenant
+### 每个 Tenant 一个 schema
 
-Deferred. It increases migration, connection and operational complexity before
-the domain model is stable. The logical model must remain compatible with this
-option for stronger isolation tiers.
+Deferred。在 domain model 稳定前，这会增加 migration、connection 和运维复杂度。逻辑模型必须保持与该选项兼容，以便未来支持更强隔离层级。
 
-### Database per Tenant
+### 每个 Tenant 一个 database
 
-Deferred. It provides stronger isolation but adds provisioning, migration,
-backup and cross-tenant operations overhead. It may be introduced for large or
-regulated customers without changing public business identifiers.
+Deferred。它提供更强隔离，但会增加 provisioning、migration、backup 和 cross-tenant operation 成本。未来可为大型或受监管客户引入，而不改变公开业务标识。
 
-### Store role directly on Membership
+### 直接把 role 存在 Membership 上
 
-Deferred to Day 27. A single role column cannot express platform permissions,
-account scope, future custom roles or separate service permissions.
+Deferred to Day 27。单个 role column 无法表达 platform permission、account scope、未来 custom role 或独立 service permission。
 
-### Trust an `X-Tenant-Id` header
+### 信任 `X-Tenant-Id` header
 
-Rejected. Client-controlled tenant context creates a direct tenant-escape
-path. Any tenant selector is only a request to use authority already proven by
-the server.
+Rejected。client-controlled tenant context 会直接形成 tenant-escape 路径。任何 tenant selector 都只是请求使用服务端已经验证过的 authority。
 
-## Consequences
+## 后果
 
-Benefits:
+收益：
 
-- business tenancy is Provider-neutral;
-- Azure and AWS accounts share one stable model;
-- tenant escape has explicit schema, Application and authorization controls;
-- OIDC, background jobs, RBAC and audit have a common subject/scope language;
-- stronger isolation tiers remain possible.
+- 业务 tenancy 与 Provider 解耦；
+- Azure 和 AWS account 共享一个稳定模型；
+- tenant escape 有明确 schema、Application 和 authorization control；
+- OIDC、background jobs、RBAC 和 audit 共享 subject/scope 语言；
+- 未来仍可引入更强隔离层级。
 
-Costs and obligations:
+成本和义务：
 
-- every existing core table and Repository must become tenant-aware;
-- Day 24 must backfill current data into a controlled development Tenant;
-- account onboarding and transfer need explicit workflows;
-- cross-tenant support operations require dedicated audit and authorization;
-- shared-schema isolation requires extensive negative testing and later RLS
-  evaluation.
+- 每个现有 core table 和 Repository 都必须 tenant-aware；
+- Day 24 必须把当前数据 backfill 到受控 development Tenant；
+- account onboarding 和 transfer 需要显式 workflow；
+- cross-tenant support operation 需要专用 audit 和 authorization；
+- shared-schema isolation 需要大量 negative testing 和后续 RLS 评估。
 
-New risks:
+新风险：
 
-- missing tenant predicates can expose data until all repositories are migrated;
-- incorrect account-to-connection validation can cross credentials or scope;
-- platform administrator privileges can become an ambient bypass if not kept
-  separate and audited.
+- 所有 repository 迁移完成前，遗漏 tenant predicate 可能暴露数据；
+- 错误 account-to-connection validation 可能串用 credential 或 scope；
+- platform administrator privilege 如果不保持隔离和审计，可能变成 ambient bypass。
 
-## Implementation hooks
+## 实施挂钩
 
-- Day 21:
-  - add Organization, Tenant, CloudAccount, ProviderConnection and Membership
-    Domain models;
-  - add EF configurations and expand-only migration;
-  - add tenant-aware composite keys and relationship tests.
-- Day 22:
-  - add trusted HTTP and background `TenantContext`;
-  - reject missing, forged and inconsistent tenant selection.
-- Day 23:
-  - require tenant in all Repository contracts and queries;
-  - add tenant A/B isolation and IDOR tests.
-- Day 24:
-  - create one explicit development Organization/Tenant;
-  - backfill existing rows without deleting or silently reclassifying data.
-- Day 25～28:
-  - bind OIDC subjects to Membership;
-  - implement typed permission/scope checks;
-  - protect every endpoint.
-- Day 29:
-  - add append-only audit for membership, connection, account and
-    cross-tenant administration.
-- Day 30:
-  - execute tenant escape, RBAC, service identity and audit E2E.
+- Day 21：
+  - 新增 Organization、Tenant、CloudAccount、ProviderConnection 和 Membership Domain models；
+  - 新增 EF configuration 和 expand-only migration；
+  - 新增 tenant-aware composite key 和 relationship tests。
+- Day 22：
+  - 新增可信 HTTP 和后台 `TenantContext`；
+  - 拒绝缺失、伪造和不一致的 tenant selection。
+- Day 23：
+  - 所有 Repository contract 和 query 都要求 tenant；
+  - 新增 tenant A/B isolation 和 IDOR tests。
+- Day 24：
+  - 创建一个明确的 development Organization/Tenant；
+  - backfill 现有行，不删除或静默重分类数据。
+- Day 25-28：
+  - 将 OIDC subject 绑定到 Membership；
+  - 实现 typed 权限/范围检查；
+  - 保护每个 endpoint。
+- Day 29：
+  - 为 membership、connection、account 和 cross-tenant administration 增加 追加式审计。
+- Day 30：
+  - 执行 tenant escape、RBAC、service identity 和 audit E2E。
 
-Affected long-lived documents:
+长期文档影响：
 
 - `docs/archive/phase-0/adr-backlog.md`
 - `docs/archive/phase-0/risk-register.md`
 - `docs/archive/phase-0/production-gap-register.md`
 - `docs/archive/phase-2/day-20-tenancy-model-review.md`
 
-## Verification
+## 验证
 
-Day 20 verification:
+Day 20 验证：
 
-- the six required concepts have explicit ownership and cardinality;
-- Azure tenant and business Tenant are distinguished;
-- human, service and background identity sources are identified;
-- account and tenant scope rules are enforceable;
-- platform administration is explicit, target-bound and auditable;
-- future implementation and negative tests are mapped to Day 21～30.
+- 六个必需概念都有明确 ownership 和 cardinality；
+- Azure tenant 和业务 Tenant 已区分；
+- human、service 和 background identity source 已识别；
+- account 和 tenant scope rule 可执行；
+- platform administration 是显式、target-bound 且可审计的；
+- 未来实现和 negative tests 已映射到 Day 21-30。
 
-Required later negative tests:
+后续必需 negative tests：
 
-- a client-supplied tenant without Membership is rejected;
-- missing TenantContext fails closed;
-- tenant A cannot reference tenant B's CloudAccount or ProviderConnection;
-- duplicate Provider account onboarding is rejected;
-- background jobs cannot start without tenant/account scope;
-- a normal Tenant administrator cannot use platform scope;
-- a platform administrator must name and audit one target Tenant;
-- cross-tenant foreign keys and unique identities cannot be created;
-- suspended/revoked Membership and ProviderConnection cannot be used.
+- 没有 Membership 的 client-supplied tenant 被拒绝；
+- 缺失 TenantContext 时 fail closed；
+- tenant A 不能引用 tenant B 的 CloudAccount 或 ProviderConnection；
+- 重复 Provider account onboarding 被拒绝；
+- background job 没有 tenant/account scope 时不能启动；
+- 普通 Tenant administrator 不能使用 平台范围；
+- platform administrator 必须指定并审计一个 target Tenant；
+- 不能创建 cross-tenant foreign key 或 unique identity；
+- suspended/revoked Membership 和 ProviderConnection 不能被使用。
 
-## Revisit triggers
+## 重新审视触发条件
 
-Review or supersede this ADR when:
+以下情况需要 review 或替代本 ADR：
 
-- schema-per-tenant or database-per-tenant is required;
-- a customer needs regional/data-residency isolation;
-- CloudAccount transfer between Tenants is implemented;
-- a Provider does not map cleanly to the account model;
-- delegated administration requires organization-level policy inheritance;
-- PostgreSQL RLS design changes the enforcement model;
-- platform administration becomes a separate service or control plane.
+- 需要 schema-per-tenant 或 database-per-tenant；
+- 客户需要 region/data-residency isolation；
+- 实现 CloudAccount 在 Tenant 间 transfer；
+- 某个 Provider 无法自然映射到 account model；
+- delegated administration 需要 organization-level policy inheritance；
+- PostgreSQL RLS 设计改变 enforcement model；
+- platform administration 变成独立 service 或 control plane。

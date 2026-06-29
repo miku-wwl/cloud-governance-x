@@ -11,8 +11,8 @@ Day 12～19 的 Phase 1 工程门禁、架构边界、宿主模块拆分、独�
 Host 和初版 CI 已完成；`main` 已要求 `Static verification` 与
 `Database migration` 两个 required checks，并通过受保护 PR 验证阻断与放行
 行为。Phase 1 独立全面 review 已于 2026-06-19 给出 `ACCEPT`，并由 Owner
-确认结束。Phase 2 已推进到 Day 26 Microsoft Entra development identity；
-下一施工单元是 Day 27 permission + scope RBAC。当前包含
+确认结束。Phase 2 已推进到 Day 26 Microsoft Entra 开发身份；
+下一施工单元是 Day 27 权限与范围 RBAC。当前包含
 Web API、后台 Worker、Clean Architecture 基础分层、PostgreSQL 本地环境、
 健康检查、可重复验证的 Azure 资源生命周期，以及通过
 `DefaultAzureCredential` 读取 Azure 订阅、资源清单和成本数据并写入
@@ -22,8 +22,11 @@ PostgreSQL 的能力。
 
 - [`outline.md`](outline.md)：稳定项目纲领，只放目标、原则和生产底线；
 - [`docs/current-state.md`](docs/current-state.md)：当前真实状态和下一步；
-- [`docs/roadmap.md`](docs/roadmap.md)：里程碑路线，替代旧 100+ Day 长表作为主计划；
+- [`docs/roadmap.md`](docs/roadmap.md)：11 个里程碑路线和当前施工位置；
+- [`docs/phase/`](docs/phase/)：已完工 Phase 的阶段报告；
+- [`docs/reports/`](docs/reports/)：跨 Day / Phase 的 QA 与项目管理报告；
 - [`docs/days/`](docs/days/)：Day 1～27 回顾胶囊；
+- [`construction/engineering-plan.md`](construction/engineering-plan.md)：Day 1～148 工程规划总纲；
 - [`construction/current-playbook.md`](construction/current-playbook.md)：当前施工手册。
 
 历史评估、阶段报告和旧施工路线已经归档到
@@ -46,11 +49,14 @@ terraform/
 └── azure/                   # Day 2 Azure 基础设施
 scripts/                     # 端到端验收脚本
 construction/
-├── current-playbook.md                   # 当前施工入口
-└── archive/                              # 历史施工手册和旧长路线
+├── engineering-plan.md      # 工程规划总纲
+├── current-playbook.md      # 当前施工入口
+└── archive/                 # 历史施工手册和旧长路线
 docs/                        # 项目事实、架构与运行专题
 ├── current-state.md          # 当前状态
 ├── roadmap.md                # 里程碑路线
+├── phase/                    # Phase 完工报告
+├── reports/                  # QA 与项目经理报告
 ├── days/                     # Day 胶囊
 └── archive/                  # 历史阶段报告和旧评审
 ```
@@ -180,8 +186,8 @@ $env:Authentication__Oidc__Audience = "<api-application-client-id>"
 
 启用后会验证签名、有效期、issuer 和 audience，并保留原始 `iss`、`sub`
 Claims 供 Tenant Membership 校验。`/`、`/health` 和 `/health/live` 明确允许
-匿名访问。Day 25 只建立认证能力；业务 endpoint 的 permission、RBAC 和全面
-授权分别属于 Day 27～28，当前不得据此宣称 API 已完成访问控制。
+匿名访问。Day 25 只建立认证能力；业务端点的权限、RBAC 和全面授权分别属于
+Day 27～28，当前不得据此宣称 API 已完成访问控制。
 
 Day 26 的 Entra 对象可重复初始化：
 
@@ -367,7 +373,7 @@ Invoke-RestMethod `
   -Method Post
 ```
 
-成本 API 需要当前身份在订阅 scope 具备 Cost Management 读取权限。账单为空、
+成本 API 需要当前身份在订阅范围具备 Cost Management 读取权限。账单为空、
 学生订阅不支持或 API 暂时不可用时，默认生成明确标记为 `source=sample` 的
 7 天样例数据，保证本地演示不会卡死。样例数据不会伪装为真实账单，可通过
 `raw_json` 追溯来源。该 fallback 只允许用于本地学习和演示，生产环境禁止启用。

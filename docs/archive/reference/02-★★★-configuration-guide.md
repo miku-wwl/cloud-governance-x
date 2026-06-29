@@ -194,7 +194,7 @@ MSBuild 会自动把该文件导入当前目录下的所有项目：
 OIDC 配置不包含 password、client secret、private key 或 token。API 只验证
 身份提供方签发的 token，不实现用户名密码登录或 token 签发。JWT handler
 保留原始 `iss` 和 `sub` Claim，随后由 `HttpTenantContextMiddleware` 验证
-Tenant Membership。health 与根状态端点显式匿名；业务 endpoint 的权限策略和
+Tenant Membership。health 与根状态端点显式匿名；业务端点 的权限策略和
 全面保护属于 Day 27～28。
 
 Day 26 的本地开发客户端是 public client，通过 Device Code Flow 获取 delegated

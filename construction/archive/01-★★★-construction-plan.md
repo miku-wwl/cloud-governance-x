@@ -1,10 +1,10 @@
 # Cloud Governance X 生产级阶段化建设计划
 
-> Historical planning note, 2026-06-29:
+> 历史规划说明，2026-06-29：
 >
-> This file preserves the original phase vocabulary and gate model. Current
-> status now lives in `docs/current-state.md`, milestone planning in
-> `docs/roadmap.md`, and active execution in `construction/current-playbook.md`.
+> 本文件保留原始 phase 词汇和 gate 模型。当前状态见
+> `docs/current-state.md`，里程碑规划见 `docs/roadmap.md`，当前执行入口见
+> `construction/current-playbook.md`。
 
 ## 1. 计划原则
 
@@ -480,7 +480,7 @@ Blocked
 - API bearer token；
 - React PKCE；
 - service-to-service workload identity；
-- local development identity；
+- local 开发身份；
 - token validation 和 key rotation。
 
 #### 9.3 授权
@@ -493,7 +493,7 @@ Blocked
 
 #### 9.4 审计
 
-- append-only audit model；
+- 追加式审计模型；
 - privileged API audit；
 - provider connection audit；
 - rule、finding、waiver 和 remediation audit；
@@ -1082,7 +1082,7 @@ Blocked
 - `/api/v1`；
 - OpenAPI；
 - OIDC；
-- authorization policies；
+- 授权策略；
 - Problem Details；
 - correlation ID；
 - pagination；

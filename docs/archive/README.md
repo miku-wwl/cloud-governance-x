@@ -1,25 +1,25 @@
-# Archive
+# 归档索引
 
-This directory is for historical planning or review material that is useful for
-audit and learning but is no longer a current fact source.
+本目录保存历史规划、评审和专题参考材料。这些文件仍可用于审计和学习，但不再是当前事实来源。
 
-Contents:
+内容：
 
-- [adr/](adr/) - accepted and proposed architecture decisions
-- [reference/](reference/) - legacy configuration, Terraform, Azure and data model guides
-- [phase-0/](phase-0/) - Phase 0 reports and baseline evidence summaries
-- [phase-1/](phase-1/) - Phase 1 gate, remediation and acceptance reports
-- [phase-2/](phase-2/) - original Day 20-26 reports
-- [reviews/](reviews/) - early feasibility and external review notes
+- [adr/](adr/)：已接受和拟议中的架构决策。
+- [reference/](reference/)：旧配置、Terraform、Azure 和数据模型专题手册。
+- [phase-0/](phase-0/)：Phase 0 报告和基线证据摘要。
+- [phase-1/](phase-1/)：Phase 1 出关、整改和验收报告。
+- [phase-2/](phase-2/)：原 Day 20-26 报告。
+- [reviews/](reviews/)：早期可行性和外部 review 记录。
 
-Current state lives in:
+当前状态见：
 
 - [../current-state.md](../current-state.md)
 
-Current planning lives in:
+当前工程规划见：
 
+- [../../construction/engineering-plan.md](../../construction/engineering-plan.md)
 - [../../construction/current-playbook.md](../../construction/current-playbook.md)
 
-Day-by-day review history lives in:
+按 Day 回顾历史见：
 
 - [../days/README.md](../days/README.md)

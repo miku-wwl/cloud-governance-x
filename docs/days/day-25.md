@@ -1,43 +1,30 @@
-# Day 25 - OIDC Bearer Authentication
+# Day 25 - OIDC Bearer 认证
 
-## Status
+## 1. 目标
+接入 provider-independent ASP.NET Core JWT Bearer 验证，解决 API 缺少标准认证管道、TenantContext 无法绑定真实身份的风险。
 
-Implemented and merged. Source day report remains `Validation`.
+## 2. 前置条件
+依赖 Day 20-24 tenancy foundation，特别是 Membership 与 TenantContext。关联 Phase 2 identity 工作。
 
-## Commit Evidence
+## 3. 施工范围
+允许新增 `Authentication:Oidc` 配置、可选 JWT Bearer authentication、issuer/audience/signature/expiration/lifetime validation、默认关闭的本地配置、保留原始 OIDC `iss`/`sub` claims、匿名 root/health endpoints 和内存 token tests。不允许给业务端点绑定授权策略或实现 RBAC/审计。
 
-- `c405220` - `feat: add OIDC bearer authentication`
-- `ad59306` - `Merge pull request #11 from miku-wwl/feat/day25-oidc-bearer-authentication`
+## 4. 设计决策
+使用标准 JWT Bearer 验证，不自建 identity system；认证能力默认关闭，本地和测试可显式启用；`iss`/`sub` 原始 claim 保留给 Tenant Membership 校验。
 
-## Goal
+## 5. 实现摘要
+新增 OIDC authentication options、JWT Bearer pipeline、claim preservation、anonymous endpoint rules、ephemeral RSA key token tests 和 static OIDC metadata tests。
 
-Add provider-independent ASP.NET Core JWT Bearer validation without implementing
-a custom identity system.
+## 6. 验证证据
+tracked report 记录本地 build 0 warning/0 error，82 tests passed，1 个 PostgreSQL integration test 因 opt-in database 环境未启用被 skipped。证据包括 [day-25-oidc-bearer-authentication.md](../archive/phase-2/day-25-oidc-bearer-authentication.md)、[src/FinOps.Api/Authentication](../../src/FinOps.Api/Authentication) 和 [OidcBearerAuthenticationTests.cs](../../src/FinOps.Tests/Api/OidcBearerAuthenticationTests.cs)。
 
-## Implemented
+## 7. Review 结论
+Validation。实现已合并，源 day report 仍保留 Validation 状态。
 
-- `Authentication:Oidc` configuration;
-- optional JWT Bearer authentication;
-- issuer, audience, signature, expiration and lifetime validation;
-- disabled-by-default local configuration;
-- preservation of raw OIDC `iss` and `sub` claims;
-- anonymous root and health endpoints;
-- in-memory token tests with ephemeral RSA keys and static OIDC metadata.
+## 8. 遗留风险
+业务端点尚未绑定授权策略；RBAC、完整端点保护、稳定 401/403 契约和审计留给 Day 27-29。
 
-## Verification
-
-The tracked report records local build with zero warnings and errors, 82 tests
-passed and one PostgreSQL integration test skipped because its opt-in database
-environment was not enabled.
-
-Evidence:
-
+## 9. 相关链接
+- Commit: `c405220` - `feat: add OIDC bearer authentication`
+- PR: `#11` - `feat/day25-oidc-bearer-authentication`
 - [docs/archive/phase-2/day-25-oidc-bearer-authentication.md](../archive/phase-2/day-25-oidc-bearer-authentication.md)
-- [src/FinOps.Api/Authentication](../../src/FinOps.Api/Authentication)
-- [src/FinOps.Tests/Api/OidcBearerAuthenticationTests.cs](../../src/FinOps.Tests/Api/OidcBearerAuthenticationTests.cs)
-
-## Boundaries
-
-Day 25 did not attach authorization policies to business endpoints. RBAC,
-complete endpoint protection, stable 401/403 contracts and audit remained
-Days 27-29 work.

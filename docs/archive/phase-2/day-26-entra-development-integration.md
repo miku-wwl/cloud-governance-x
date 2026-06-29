@@ -1,132 +1,74 @@
-# Day 26 Microsoft Entra Development Integration
+# Day 26 Microsoft Entra 开发集成评审
 
-Date: 2026-06-21
-Phase: 2 — Identity, tenancy, RBAC and audit
-Status: Validation
+日期：2026-06-21
+状态：Validation
+决策来源：[ADR-0004](../adr/ADR-0004-entra-and-development-identity.md)
 
-## 1. Outcome
+## 1. 目标
 
-The development environment now uses real Microsoft Entra ID tokens to call
-the local FinOps API.
+使用真实 Microsoft Entra ID token 调用本地 API，同时保持 API caller identity 与 Azure Provider runtime identity 分离。
 
-Two single-tenant directory applications were created:
+## 2. 实现范围
 
-- `cloud-governance-x-api-dev`, which exposes the delegated
-  `access_as_user` scope;
-- `cloud-governance-x-local-dev-client`, a public client that uses Device Code
-  flow.
+Day 26 完成：
 
-Neither registration contains a password credential, client secret or
-certificate. They are Entra Tenant directory objects, not Azure subscription or
-Resource Group resources.
+- 可重复的 development App Registration 初始化脚本；
+- API App Registration 暴露 delegated `access_as_user`；
+- public local development client 使用 Device Code Flow；
+- cleanup 脚本默认 dry-run，并要求精确 Tenant 确认；
+- 真实 token E2E 脚本；
+- OIDC metadata 和 JWKS 证据；
+- signing-key rollover regression；
+- metadata failure regression。
 
-## 2. Accepted identity boundary
+Day 26 不做：
 
-ADR-0004 separates four identities:
+- 将委托 scope 强制为授权策略；
+- 业务端点全面保护；
+- Azure Provider runtime identity 替换；
+- staging/production identity 方案；
+- 审计。
 
-1. the human Microsoft Entra user;
-2. the local public client requesting a delegated token;
-3. the FinOps API resource and audience;
-4. the Azure Provider credential used by backend Azure SDK calls.
+## 3. 关键设计
 
-Day 26 changes the first three. It does not replace the Azure Provider's
-development `DefaultAzureCredential`; production workload identity remains a
-later Azure Provider stage.
+开发身份分为：
 
-The local public client cannot keep a secret and cannot silently authenticate
-as a background service. Staging, production and the future React SPA must use
-separate registrations.
+- API caller identity：使用 Entra public client + Device Code Flow 获取 delegated access token；
+- Azure Provider runtime identity：仍使用本地 `DefaultAzureCredential` 和 Azure CLI 开发身份。
 
-## 3. Repeatable Entra lifecycle
+App Registration 是 Entra directory object，不属于 Resource Group。清理必须通过显式脚本完成，且默认 dry-run。
 
-The initialization script:
+## 4. 验证证据
 
-```powershell
-./scripts/Initialize-DevelopmentEntraIdentity.ps1
-```
+tracked report 记录真实 token 证据：
 
-- verifies the active Tenant and signed-in user;
-- creates or verifies both app registrations;
-- creates their Service Principals;
-- sets the signed-in user as owner;
-- creates only the delegated permission grant required by the current user;
-- validates existing objects instead of silently replacing incompatible ones;
-- writes non-secret IDs to the Git-ignored
-  `tmp/day26-entra-development.json`.
+- tenant-specific issuer；
+- API audience；
+- 委托 scope；
+- signed JWT `kid` 存在于 Microsoft Entra JWKS；
+- 两个 App Registration 均无 credential；
+- Active Membership 存在前返回 403；
+- token `iss/sub` 成功映射 Membership；
+- 本地 API 接受真实 token 并建立 TenantContext；
+- tenant-aware cost endpoint 返回 200；
+- 临时 PostgreSQL 数据库清理完成。
 
-The cleanup script is dry-run by default:
+当前文档迁移期间的本地快照：
 
-```powershell
-./scripts/Remove-DevelopmentEntraIdentity.ps1 `
-  -ConfirmTenantId <tenant-id>
-```
+- `dotnet test FinOpsPlatform.slnx --no-restore`：84 passed，1 skipped。
 
-Deletion requires both the exact Tenant ID and `-Apply`. Resource Group
-deletion cannot remove these objects.
+## 5. Review 结论
 
-## 4. Real-token verification
+Validation。实现已合并，但委托 scope 仍未变成后端授权策略。
 
-The real E2E uses OAuth 2.0 Device Code flow:
+## 6. 遗留风险
 
-```powershell
-./scripts/Test-EntraOidcIntegration.ps1 -RequestDeviceCode
-./scripts/Test-EntraOidcIntegration.ps1
-```
+业务端点在 Day 28 前仍不能视为完整受保护；Day 27 需要实现 RBAC，Day 28 需要把 policy 应用到端点。Azure Provider runtime identity 仍使用本地开发 credential chain。
 
-The first command prints a short-lived, one-time user code. It is not a
-password, secret or token. The second command exchanges the approved device
-request without printing the access or refresh token. Expired, declined or
-invalid pending Device Code state is removed and must be explicitly restarted.
+## 7. 相关链接
 
-The successful evidence verified:
-
-- tenant-specific Microsoft identity platform v2 issuer;
-- API Application Client ID audience;
-- delegated `access_as_user` scope;
-- a signed JWT with a `kid` present in current Microsoft Entra JWKS;
-- no credentials on either app registration;
-- the same real token received HTTP 403 before an Active Membership existed;
-- token `iss/sub` mapped to an Active Membership;
-- the local API accepted the real token and established TenantContext;
-- the tenant-aware cost endpoint returned HTTP 200;
-- the temporary PostgreSQL database was removed afterward.
-
-## 5. Metadata and key rotation
-
-The tenant-specific OIDC metadata endpoint returned a matching issuer, token
-endpoint and JWKS URI. Current signing keys use RS256.
-
-An automated configuration-manager regression verifies rollover behavior:
-
-1. a token signed with an unknown `kid` is rejected;
-2. the JWT handler requests OIDC configuration refresh;
-3. the next request succeeds after the refreshed signing key is available.
-
-This deliberately accepts a brief 401 window during key discovery instead of
-weakening signature validation or accepting an unknown key.
-
-An additional regression makes the OIDC configuration manager fail while
-retrieving metadata/JWKS. A correctly formed and signed token still receives
-HTTP 401; metadata failure never bypasses issuer or signing-key validation.
-
-## 6. Deliberate boundaries
-
-- Day 27 defines permission and scope policy-based RBAC.
-- Day 28 protects every business endpoint and stabilizes 401/403 contracts.
-- Day 29 adds append-only audit.
-- Day 30 performs the Phase 2 tenant escape and authorization gate.
-- Azure Provider workload identity is not part of Day 26.
-- No Azure subscription resource, Resource Group or Terraform resource was
-  created.
-- No database schema or migration changed.
-
-## 7. Remaining risk
-
-The real caller identity is proven, but the business endpoint surface remains
-anonymous until Day 28. The new delegated scope is evidence inside the token;
-it is not yet enforced by a Day 27 authorization policy.
-
-The development app registrations survive Resource Group deletion. They must
-remain owner-tracked and be explicitly deleted when this development
-environment is retired. The real E2E also invokes the cleanup script with a
-different Tenant ID and requires rejection before any Graph lookup or delete.
+- [docs/days/day-26.md](../../days/day-26.md)
+- [ADR-0004](../adr/ADR-0004-entra-and-development-identity.md)
+- [scripts/Initialize-DevelopmentEntraIdentity.ps1](../../../scripts/Initialize-DevelopmentEntraIdentity.ps1)
+- [scripts/Test-EntraOidcIntegration.ps1](../../../scripts/Test-EntraOidcIntegration.ps1)
+- [scripts/Remove-DevelopmentEntraIdentity.ps1](../../../scripts/Remove-DevelopmentEntraIdentity.ps1)

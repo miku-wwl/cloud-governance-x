@@ -1,132 +1,115 @@
-# Phase 1 Stage Gate Report
+# Phase 1 阶段门禁报告
 
-Date: 2026-06-18
-Scope: Day 12～19
-Status: EngineeringGatePassed
-Independent acceptance: ACCEPT
+日期：2026-06-18
+范围：Day 12～19
+状态：`EngineeringGatePassed`
+独立验收：`ACCEPT`
 
-The independent end-to-end review completed on 2026-06-19 against
-`main@2062b0fe835bf30888ad412e68bd35092f25d9b7`. It found no open Phase 1
-Critical, High, Medium or Low findings. The formal decision and residual-risk
-boundary are recorded in
-[`independent-acceptance-report.md`](independent-acceptance-report.md).
+2026-06-19，独立端到端审查基于
+`main@2062b0fe835bf30888ad412e68bd35092f25d9b7` 完成。审查未发现仍打开的
+Phase 1 Critical、High、Medium 或 Low finding。正式决策和遗留风险边界记录在
+[`independent-acceptance-report.md`](independent-acceptance-report.md)。
 
-This report preserves evidence for the commits and workflow runs named below.
-Historical counts such as 37 and 39 are intentionally not rewritten when the
-test suite grows. The current working baseline has 44 executable tests; a new
-commit still requires its own two CI results and current branch-protection
-evidence before independent acceptance.
+本报告保存下列 commit 和 workflow run 的证据。37、39 等历史测试数量绑定当时
+的 workflow run，测试套件增长后不回写这些历史数字。当前工作基线有 44 个可执行
+测试；新的 commit 仍必须拥有自己的两项 CI 结果和当前 branch protection 证据，
+才能进入独立验收。
 
-On 2026-06-19, the repository protection API was rechecked: `main` still
-requires `Static verification` and `Database migration`, strict mode and
-administrator enforcement are enabled, and force pushes and branch deletion
-are disabled. This confirms the current repository setting, but it does not
-replace the required CI run for the next commit.
+2026-06-19 重新检查 repository protection API：`main` 仍要求
+`Static verification` 和 `Database migration`，strict mode 与 administrator
+enforcement 已启用，force push 与 branch deletion 已禁用。这确认了当时的仓库
+设置，但不能替代下一个 commit 所需的 CI run。
 
-## Implemented controls
+## 已实现控制
 
-- shared analyzer, formatting, and compilation baseline;
-- one repository static-verification entry point;
-- executable architecture and infrastructure-package boundaries;
-- modular API endpoint, DI, and Worker Job composition;
-- dedicated database Migrator with advisory locking;
-- repeatable database migration and restricted-role regression;
-- GitHub Actions CI, pull-request template, ADR template, CODEOWNERS, and
-  responsibility boundaries.
+- 共享 analyzer、formatting 和 compilation baseline；
+- 单一仓库静态验证入口；
+- 可执行 architecture 与 infrastructure package 边界；
+- 模块化 API endpoint、DI 和 Worker Job 组合；
+- 带 advisory lock 的专用数据库 Migrator；
+- 可重复 database migration 与 restricted-role 回归；
+- GitHub Actions CI、pull-request template、ADR template、CODEOWNERS 和责任边界。
 
-## Required evidence
+## 必需证据
 
-The Phase 1 engineering gate is complete only when:
+Phase 1 工程门禁只有在以下条件满足时才算完成：
 
-- `Static verification` passes on a clean GitHub-hosted runner;
-- `Database migration` passes on a clean GitHub-hosted runner;
-- a formatting, architecture, test, or migration failure makes its job fail;
-- actionlint accepts the committed workflow;
-- local and CI verification leave no repository artifacts;
-- `main` branch protection requires both CI checks before merge;
-- ADR-0001, ADR-0002, and ADR-0018 are accepted;
-- risk, gap, baseline, README, and configuration documentation match the final
-  repository state.
+- `Static verification` 在干净 GitHub-hosted runner 上通过；
+- `Database migration` 在干净 GitHub-hosted runner 上通过；
+- format、architecture、test 或 migration 故障会让对应 job 失败；
+- actionlint 接受已提交 workflow；
+- 本地与 CI 验证不会留下仓库 artifact；
+- `main` branch protection 要求合并前通过两个 CI check；
+- ADR-0001、ADR-0002 和 ADR-0018 已接受；
+- risk、gap、baseline、README 和 configuration 文档与最终仓库状态一致。
 
-## GitHub-hosted evidence
+## GitHub 托管证据
 
-The first two workflow runs exposed real cross-platform and offline-execution
-defects instead of completing the gate:
+前两个 workflow run 暴露了真实跨平台与离线执行缺陷，而不是直接完成门禁：
 
-- run `27747051177` for commit `029b048` failed both jobs. The failures proved
-  that the workflow blocked invalid PowerShell path assumptions and a
-  Linux-specific architecture-test path mismatch;
-- run `27747251543` for commit `c52f9f5` passed `Static verification`, including
-  build and all 37 tests, on `ubuntu-24.04`;
-- the same run cancelled `Database migration` at its 20-minute timeout. Empty,
-  repeat, concurrent, failure-exit, and restricted-role API checks had passed,
-  but the restricted-role Costs Worker waited for Azure authentication even
-  though `AzureCost__ForceSampleData=true`.
+- run `27747051177` 在 commit `029b048` 上两个 job 均失败。失败证明 workflow
+  会阻断无效 PowerShell 路径假设和 Linux-specific architecture-test 路径不匹配；
+- run `27747251543` 在 commit `c52f9f5` 上通过 `Static verification`，包括 build
+  和当时全部 37 个测试，运行环境为 `ubuntu-24.04`；
+- 同一 run 的 `Database migration` 在 20 分钟超时处被取消。空库、重复运行、并发、
+  failure-exit 和 restricted-role API 检查已经通过，但 restricted-role Costs Worker
+  在 `AzureCost__ForceSampleData=true` 时仍等待 Azure authentication。
 
-The cancellation root cause was that `AzureCostProvider` enumerated Azure
-subscriptions before honoring forced sample mode. The remediation now returns
-forced sample data before constructing any Azure request path, and a regression
-test uses a credential that fails if it is touched.
+取消的根因是 `AzureCostProvider` 在尊重 forced sample mode 前先枚举 Azure
+subscriptions。整改后，forced sample data 会在构造任何 Azure request path 之前返回；
+回归测试使用一个“只要被触碰就失败”的 credential。
 
-The first remediation run then exposed a second Linux-only process-boundary
-defect: `Start-Process dotnet run` stopped its wrapper process while leaving the
-actual API child process alive, so the migration script waited indefinitely.
-The gate now runs the built API and Worker DLLs directly.
+第一次整改 run 又暴露了第二个 Linux-only process-boundary 缺陷：
+`Start-Process dotnet run` 会停止 wrapper process，却留下实际 API child process，
+导致 migration script 无限等待。门禁现在直接运行已构建的 API 与 Worker DLL。
 
-Pull request `#2` proved the complete merge contract:
+Pull request `#2` 证明了完整 merge contract：
 
-- before the required checks completed, GitHub reported the PR as `BLOCKED`;
-- workflow run `27750735956` passed `Static verification` and
-  `Database migration` on commit `ecf9bba`;
-- the same run passed all 39 tests, formatting, build, actionlint, dependency,
-  Terraform, migration, concurrency, failure-exit, and restricted-role checks;
-- after both required checks succeeded, GitHub changed the PR state to `CLEAN`;
-- PR `#2` merged as commit `a7d09f5`.
+- required checks 完成前，GitHub 将 PR 标记为 `BLOCKED`；
+- workflow run `27750735956` 在 commit `ecf9bba` 上通过 `Static verification` 和
+  `Database migration`；
+- 同一 run 通过全部 39 个测试、formatting、build、actionlint、dependency、
+  Terraform、migration、concurrency、failure-exit 和 restricted-role checks；
+- 两个 required checks 成功后，GitHub 将 PR 状态改为 `CLEAN`；
+- PR `#2` 以 commit `a7d09f5` 合并。
 
-## Local remediation evidence
+## 本地整改证据
 
-After the cancelled workflow:
+被取消的 workflow 后，本地验证结果如下：
 
-- `Test-RepositoryStatic.ps1` passed;
-- actionlint 1.7.12 accepted the workflow;
-- an invalid runner-label probe made actionlint fail as expected;
-- build completed with 0 warnings and 0 errors;
-- the forced-sample offline regression tests passed;
-- all 39 tests passed;
-- `Test-DatabaseMigration.ps1 -NoBuild` passed in 22 seconds after the direct
-  host-process fix, including the
-  restricted-role Costs Worker scenario that timed out in GitHub Actions;
-- Terraform fmt/init/validate passed without changing Git status;
-- all migration test databases, roles, processes, and temporary logs were
-  removed.
+- `Test-RepositoryStatic.ps1` 通过；
+- actionlint 1.7.12 接受 workflow；
+- 非法 runner-label probe 按预期使 actionlint 失败；
+- build 以 0 warnings、0 errors 完成；
+- forced-sample offline 回归测试通过；
+- 全部 39 个测试通过；
+- direct host-process 修复后，`Test-DatabaseMigration.ps1 -NoBuild` 在 22 秒内通过，
+  包括 GitHub Actions 中超时的 restricted-role Costs Worker 场景；
+- Terraform fmt/init/validate 通过，且不改变 Git status；
+- 所有 migration 测试数据库、角色、进程和临时日志均已清理。
 
-Earlier Day 12～18 closeout evidence also records deliberate formatting,
-architecture, route, DI, migration, and test failures returning non-zero
-results. Those local files are intentionally excluded by `.gitignore`; this
-report is the committed stage summary.
+Day 12～18 的早期 closeout 证据也记录了 format、architecture、route、DI、
+migration 和 test 的刻意失败路径均返回非零结果。这些本地文件按 `.gitignore`
+排除；本报告是提交到仓库的阶段摘要。
 
-## Closure confirmation
+## 关闭确认
 
-The Phase 1 engineering gate closed on 2026-06-18:
+Phase 1 工程门禁于 2026-06-18 关闭：
 
-- `main` branch protection requires `Static verification` and
-  `Database migration`;
-- required checks use strict/up-to-date mode;
-- administrators cannot bypass the protection;
-- force pushes and branch deletion are disabled;
-- the protected PR was blocked while checks were pending and became mergeable
-  only after both checks passed;
-- the GitHub-hosted and local gates left no tracked repository artifacts.
+- `main` branch protection 要求 `Static verification` 和 `Database migration`；
+- required checks 使用 strict/up-to-date mode；
+- administrators 不能绕过 protection；
+- force push 和 branch deletion 已禁用；
+- 受保护 PR 在 checks pending 时被阻止，只有两个 checks 均通过后才可合并；
+- GitHub-hosted 与本地门禁都没有留下 tracked repository artifact。
 
-Final Owner acceptance is intentionally separate. Before Day 20 starts, the
-fixed `main` commit must complete the independent review defined in
-`construction/04-★★★-phase-1-independent-review-guide.md`. The review must
-produce a complete ledger, resolve all Critical/High findings, disposition
-Medium findings, and record the Owner decision.
+最终 Owner acceptance 与工程门禁分离。Day 20 启动前，固定的 `main` commit
+必须完成 `construction/04-★★★-phase-1-independent-review-guide.md` 定义的独立审查。
+审查必须产生完整 ledger，关闭所有 Critical/High finding，处理 Medium finding，
+并记录 Owner 决策。
 
-## Remaining risk
+## 剩余风险
 
-A green Phase 1 gate does not provide authentication, tenant isolation,
-production identities, deployment approval, backup, PITR, reliable scheduling,
-staging, SLOs, container scanning, SBOM, or provenance. Those controls remain
-assigned to later phases.
+绿色 Phase 1 gate 不提供 authentication、tenant isolation、production identities、
+deployment approval、backup、PITR、reliable scheduling、staging、SLO、container
+scanning、SBOM 或 provenance。这些控制仍分配给后续阶段。

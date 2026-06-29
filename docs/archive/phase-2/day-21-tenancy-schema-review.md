@@ -1,107 +1,69 @@
-# Day 21 Tenancy Domain and Schema Review
+# Day 21 租户领域模型与 Schema 评审
 
-Date: 2026-06-19
-Phase: 2 — Identity, tenancy, RBAC and audit
-Decision source: ADR-0003
-Status: Validation
+日期：2026-06-19
+决策来源：ADR-0003
+状态：Validation
 
-## 1. Implemented scope
+## 1. 目标
 
-Day 21 adds the expand-only tenancy foundation without changing or backfilling
-the existing resource, cost or ETL tables:
+按 ADR-0003 实现 expand-only tenancy foundation，加入 Organization、Tenant、ProviderConnection、CloudAccount 和 Membership 的领域模型、EF 配置和数据库 schema。
 
-- `Organization`
-- `Tenant`
-- `ProviderConnection`
-- `CloudAccount`
-- `Membership`
+## 2. 实现范围
 
-Each aggregate has an opaque UUID, explicit lifecycle status and timestamps.
-Azure directory identity remains `provider_directory_id` metadata and is not
-the business `tenant_id`.
+Day 21 完成：
 
-## 2. Database invariants
+- 新增租户相关 Domain model；
+- 新增 EF Core configuration；
+- 新增 expand-only PostgreSQL migration；
+- 建立 tenant-owned uniqueness 和 relationship invariant；
+- 区分业务 Tenant 与 Azure directory tenant；
+- 增加 schema 和 model 负向测试。
 
-The migration creates `organizations`, `tenants`, `provider_connections`,
-`cloud_accounts` and `memberships`.
+Day 21 不做：
 
-The following constraints are enforced by PostgreSQL:
+- legacy data backfill；
+- 可信 TenantContext；
+- 租户感知 repository；
+- OIDC；
+- RBAC；
+- 审计；
+- PostgreSQL RLS。
 
-- a Tenant belongs to an existing Organization;
-- tenant-owned relationships use `ON DELETE RESTRICT`;
-- a CloudAccount connection foreign key includes tenant, connection and
-  Provider, preventing cross-tenant or cross-Provider references;
-- tenant-owned uniqueness includes the tenant boundary;
-- CloudAccount Provider identity also has the ADR-required global
-  `(provider, external_account_id)` uniqueness;
-- the migration can be rolled back to the preceding migration and reapplied.
+## 3. 关键设计
 
-ProviderConnection stores only an opaque `credential_reference`. It does not
-store an access token, client secret or raw credential.
+本 Day 使用 expand-only migration，先引入新的租户结构，不直接修改 Day 1-7 遗留数据。
 
-## 3. Compatibility boundary
+关键约束：
 
-This is an expand-only migration:
+- `Tenant` 属于 `Organization`；
+- `ProviderConnection` 属于 `Tenant`；
+- `CloudAccount` 同时属于 `Tenant` 和 `ProviderConnection`；
+- `Membership` 使用 `(tenant_id, issuer, subject)` 唯一标识 active identity；
+- `CloudAccount` 的 `(provider, external_account_id)` 保持全局 active identity；
+- composite key 或等价约束必须阻止跨 tenant relationship。
 
-- existing `cloud_resources`, `cloud_cost_daily` and `etl_job_runs` remain
-  unchanged;
-- no default or fabricated Tenant is assigned;
-- API and Worker behavior remains compatible with the Day 1–19 baseline;
-- Day 22 owns trusted TenantContext;
-- Day 23 owns tenant-aware repositories;
-- Day 24 owns repeatable legacy-data backfill.
+## 4. 验证证据
 
-Until Days 22–24 are complete, the new tables do not establish end-to-end
-tenant isolation and RISK-0002 remains open.
+本地 closeout 记录：
 
-## 4. Verification
+- `scripts/Test-RepositoryStatic.ps1 -SkipTerraformInit`：通过；
+- build：0 warning，0 error；
+- tests：52 passed；
+- `scripts/Test-DatabaseMigration.ps1`：通过；
+- PostgreSQL negative constraints 覆盖 cross-tenant reference、Provider mismatch、duplicate membership、global Provider account identity 和 restricted delete。
 
-Automated model tests verify:
+## 5. Review 结论
 
-- slug and Provider normalization;
-- business Tenant and Azure directory separation;
-- tenant-aware unique index definitions;
-- composite CloudAccount-to-ProviderConnection scope;
-- restricted cascade deletion.
+实现已合并，但源报告保持 `Validation`。后续 Day 22-24 已继续在该基础上实现 TenantContext、租户感知 repository 和 legacy backfill。
 
-The real PostgreSQL migration verification additionally proves:
+## 6. 遗留风险
 
-- empty database upgrade and idempotent rerun;
-- migration advisory-lock behavior across same and different databases;
-- latest migration Down and reapply;
-- cross-tenant ProviderConnection references are rejected;
-- cross-Provider connection references are rejected;
-- duplicate tenant membership identity is rejected;
-- the same external subject may belong to different Tenants;
-- duplicate global Provider account identity is rejected across Tenants;
-- deleting a Tenant with owned rows is rejected;
-- API and Worker still run with a schema-restricted runtime role.
+- 可信 TenantContext 留给 Day 22；
+- 租户感知 repository 留给 Day 23；
+- legacy backfill 留给 Day 24；
+- OIDC、RBAC、审计和 RLS 留给后续 Day。
 
-## 5. Self-review outcome
+## 7. 相关链接
 
-The implementation was reviewed again after the initial automated acceptance:
-
-- six trivial status/type files were consolidated into `TenancyEnums.cs`;
-- generated migration and snapshot files remain separate because EF owns them;
-- per-aggregate EF configurations remain separate because each owns materially
-  different keys and relationships;
-- PostgreSQL rejection tests now match stable constraint names rather than
-  localized error prose;
-- Membership rejects undefined `SubjectType` values before persistence;
-- tenant-scoped and global uniqueness semantics are both exercised against
-  PostgreSQL.
-
-No Day 22 TenantContext or Day 23 repository behavior was pulled into this
-change.
-
-## 6. Review focus
-
-Human review should confirm:
-
-1. no existing core row was silently assigned to a Tenant;
-2. every tenant-owned uniqueness rule includes `tenant_id`, except the
-   documented additional global CloudAccount identity;
-3. account and connection tenant/Provider consistency is enforced in the
-   database, not only in application code;
-4. hard cascade delete is unavailable for the tenancy hierarchy;
-5. no secret material is represented by the new schema.
+- [ADR-0003](../adr/ADR-0003-organization-tenant-cloud-account-model.md)
+- [docs/days/day-21.md](../../days/day-21.md)

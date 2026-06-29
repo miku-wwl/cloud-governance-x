@@ -100,7 +100,7 @@ NuGet 包和 Terraform CLI 已有可用更新，已登记为 RISK-0027。阶段�
 | 自动化测试 | `VerifiedBaseline` | Day 26 增加 OIDC signing-key refresh 回归，并完成真实 Entra token、JWKS、Membership 和本地 API E2E；其余测试覆盖领域、tenant、API route、DI、架构边界、migration 所有权和 Worker Job 行为 | 数据库 migration 仍由独立 PowerShell 集成脚本验证；尚无完整 RBAC、负载和生产规模测试 | 受限 | 阶段 1～4 |
 | E2E 脚本 | `VerifiedBaseline` | Day 9 串行执行 6 个 Azure/Terraform 脚本；Day 18 增加不访问 Azure 的数据库 migration/权限回归脚本 | Azure E2E 仍是本地开发身份和单订阅规模 | 受限 | 阶段 1～15 |
 | CI、staging、SLO、备份 | `ImplementedLimited` | Day 19 初版 GitHub Actions 执行静态和数据库 migration 门禁；2026-06-18 的保护规则证据记录在阶段报告；staging、SLO 和备份仍在施工计划中 | 外部保护规则和每个新 SHA 的通过状态必须重新取证；无 artifact promotion、部署或恢复证据 | 禁止生产 | Release A、阶段 11～15 |
-| OIDC、RBAC、tenant、audit | `ImplementedLimited` | Day 20～24 已建立 tenant schema、可信上下文、tenant-aware Repository 和 legacy backfill；Day 25～26 已接入标准 JWT Bearer 和真实 Entra development identity | 尚无 permission/scope RBAC、全 endpoint 授权和 append-only audit | 禁止生产 | 阶段 2～3 |
+| OIDC、RBAC、tenant、audit | `ImplementedLimited` | Day 20～24 已建立 tenant schema、可信上下文、tenant-aware Repository 和 legacy backfill；Day 25～26 已接入标准 JWT Bearer 和真实 Entra 开发身份 | 尚无 权限/范围 RBAC、全端点 授权和 追加式审计 | 禁止生产 | 阶段 2～3 |
 | Policy、Monitor、finding、waiver | `Planned` | 只有 compliance DTO/interface，无 Provider 和持久化实现 | 不能声称合规治理能力 | 未实现 | 阶段 7、9 |
 | React 前端、AWS、多云统一 | `Planned` | 当前仓库没有前端项目或 AWS SDK/Provider | “多云”仅是目标 | 未实现 | 阶段 8、13 |
 | outbox/inbox、通知 | `Planned` | 当前没有事件可靠投递模型 | 无可靠异步治理流程 | 未实现 | 阶段 10 |
