@@ -3,11 +3,9 @@
 > **历史评估，不是当前施工依据。**
 >
 > 本文评估的是已经被替换的 30 天作品集计划，保留用于理解项目为什么转向
-> 生产级分阶段建设。当前项目纲领以 `outline.md` 为准，阶段计划以
-> `construction/01-★★★-construction-plan.md` 为准，逐日安排以
-> `construction/02-★★★-day8-production-roadmap.md` 为准。当前能力事实和
-> 生产差距分别以 `docs/phase-0/current-capability-baseline.md` 与
-> `docs/phase-0/production-gap-register.md` 为准。
+> 生产级分阶段建设。当前项目纲领以 `outline.md` 为准，当前状态以
+> `docs/current-state.md` 为准，里程碑路线以 `docs/roadmap.md` 为准，
+> Day 回顾以 `docs/days/README.md` 为准。
 
 ## 1. 评估范围
 

@@ -1,5 +1,10 @@
 # 04 ★★★ 阶段 1 独立全面 Review 与 ChatGPT 网页版执行指南
 
+> Historical review note, 2026-06-29:
+>
+> Phase 1 has already been accepted. This guide is preserved as the historical
+> review method for that gate, not as the active planning entrypoint.
+
 > 适用范围：Day 1～19 当前仓库，重点审查 Day 12～19 阶段 1  
 > 审查目的：在进入 Day 20 之前，独立复核阶段 1 的代码、门禁、证据和剩余风险  
 > 执行环境：ChatGPT 网页版，优先使用 Project；也可使用一个专用长会话  
