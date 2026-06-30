@@ -1,10 +1,10 @@
 # 当前施工手册
 
 - 当前里程碑：M5 - 生产数据模型
-- 当前位置：M4 / 历史 Phase 2 已 Accepted，Day 30 Accepted 之后
+- 当前位置：M4 已正式签发；`M4 - RBAC、端点保护与审计：ACCEPT`
 - 当前施工单元：Day 31 - 数据分层 ADR
 
-本文只描述当前施工单元。工程总规划见
+M4 签发后，项目已授权进入 M5 / Day31。本文只描述当前施工单元。工程总规划见
 [engineering-plan.md](engineering-plan.md)。
 
 ## 1. 开工规则

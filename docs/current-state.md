@@ -1,6 +1,6 @@
 # 当前状态
 
-最近审视日期：2026-06-30
+最近审视日期：2026-07-01
 状态基线：文档体系整改开始于 `main@b3efe97`，后续已合入文档重组 PR
 当前执行模型：11 个 milestone + gate，Day 胶囊记录施工历史和回顾。
 
@@ -15,6 +15,7 @@ Cloud Governance X 已经超过最初 Day 1-7 开发基线，也已经通过 Pha
 | 当前 Milestone | M5 - 生产数据模型 |
 | 最新已实现 Day | Day 30 - M4 安全门禁 |
 | 最新已接受 Day | Day 30 - M4 安全门禁 |
+| 最近签发结论 | M4 - RBAC、端点保护与审计：ACCEPT。授权进入 M5 - 生产数据模型 / Day31 |
 | 下一施工单元 | Day 31 - 数据分层 ADR |
 | 生产可用性 | 尚未生产可用 |
 | 本地测试快照 | `dotnet test FinOpsPlatform.slnx --no-restore`：113 passed，1 skipped |
@@ -32,7 +33,7 @@ Cloud Governance X 已经超过最初 Day 1-7 开发基线，也已经通过 Pha
 | M1 / 历史 Phase 0 | Day 8-11 基线审计、风险、架构和出关 | Complete | [milestone-1.md](milestones/milestone-1.md) |
 | M2 / 历史 Phase 1 | Day 12-19 工程治理和 migration 分离 | Accepted | [milestone-2.md](milestones/milestone-2.md) |
 | M3 / 历史 Phase 2 partial | Day 20-26 身份与租户基础 | Accepted | [milestone-3.md](milestones/milestone-3.md) |
-| M4 / 历史 Phase 2 partial | Day 27-30 RBAC、端点保护、授权审计和安全门禁 | Accepted | [milestone-4.md](milestones/milestone-4.md) |
+| M4 / 历史 Phase 2 partial | Day 27-30 RBAC、端点保护、授权审计和安全门禁 | Accepted / 2026-07-01 正式签发 | [milestone-4.md](milestones/milestone-4.md) |
 
 ## 3. 当前能力
 
@@ -69,7 +70,7 @@ Cloud Governance X 已经超过最初 Day 1-7 开发基线，也已经通过 Pha
 
 ## 5. 立即下一步
 
-Day 31 应启动 M5 - 生产数据模型，从 Raw / Normalized / Derived / Operational 数据分层 ADR 开始。
+M4 已正式签发。Day 31 已获授权启动 M5 - 生产数据模型，从 Raw / Normalized / Derived / Operational 数据分层 ADR 开始。
 
 当前工程规划和施工手册：
 
