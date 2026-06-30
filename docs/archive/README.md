@@ -8,7 +8,6 @@
 - [reference/](reference/)：旧配置、Terraform、Azure 和数据模型专题手册。
 - [phase-0/](phase-0/)：Phase 0 报告和基线证据摘要。
 - [phase-1/](phase-1/)：Phase 1 出关、整改和验收报告。
-- [phase-2/](phase-2/)：原 Day 20-26 报告。
 - [reviews/](reviews/)：早期可行性和外部 review 记录。
 
 当前状态见：

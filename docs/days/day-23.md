@@ -16,7 +16,7 @@
 新增 租户感知 repository 行为、tenant-aware unique indexes、CloudAccount composite foreign keys、ETL 租户范围 更新、E2E fixture 和 PostgreSQL Tenant A/B 集成测试。
 
 ## 6. 验证证据
-tracked report 记录 `Status: Accepted`。本地 closeout 记录 static verification、build、69 tests、migration Up/Down/reapply、Tenant A/B integration、cross-tenant CloudAccount rejection 和 cleanup 均通过。证据包括 [day-23-tenant-aware-repositories.md](../archive/phase-2/day-23-tenant-aware-repositories.md) 和 `tmp/day23-closeout-report.md`。
+tracked report 记录 `Status: Accepted`。本地 closeout 记录 static verification、build、69 tests、migration Up/Down/reapply、Tenant A/B integration、cross-tenant CloudAccount rejection 和 cleanup 均通过。证据包括本文和 `tmp/day23-closeout-report.md`。
 
 ## 7. Review 结论
 Accepted。核心 repository 已租户感知。
@@ -26,4 +26,3 @@ Accepted。核心 repository 已租户感知。
 
 ## 9. 相关链接
 - Commit: `f1840f8` - `feat: make core repositories tenant aware`
-- [docs/archive/phase-2/day-23-tenant-aware-repositories.md](../archive/phase-2/day-23-tenant-aware-repositories.md)

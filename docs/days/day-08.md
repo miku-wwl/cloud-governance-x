@@ -16,7 +16,7 @@
 新增 current capability baseline、production-prohibited behavior list、Day 1-7 evidence entrypoints，以及 implemented/planned 能力分界。
 
 ## 6. 验证证据
-Day 8 输出后来被 Phase 0 gate 接受。证据包括 [current-capability-baseline.md](../archive/phase-0/current-capability-baseline.md)、[01-★★★-day8-capability-baseline.md](../../construction/archive/phase-0/01-★★★-day8-capability-baseline.md) 和 [stage-0-gate-report.md](../archive/phase-0/stage-0-gate-report.md)。
+Day 8 输出后来被 Phase 0 gate 接受。证据包括 [current-capability-baseline.md](../archive/phase-0/current-capability-baseline.md) 和 [stage-0-gate-report.md](../archive/phase-0/stage-0-gate-report.md)。
 
 ## 7. Review 结论
 Accepted。Phase 0 接受该能力基线作为后续治理基础。
@@ -27,4 +27,3 @@ Accepted。Phase 0 接受该能力基线作为后续治理基础。
 ## 9. 相关链接
 - Commit: `6ce8e25` - `docs: complete day 8 capability baseline`
 - [docs/archive/phase-0/current-capability-baseline.md](../archive/phase-0/current-capability-baseline.md)
-- [construction/archive/phase-0/01-★★★-day8-capability-baseline.md](../../construction/archive/phase-0/01-★★★-day8-capability-baseline.md)

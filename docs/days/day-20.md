@@ -16,7 +16,7 @@
 新增 Phase 2 tenancy model 文档、ADR-0003 决策、身份来源分类、范围层级、shared schema 隔离要求和后续 Day 实现地图。
 
 ## 6. 验证证据
-closeout report 记录 `Status: Complete`，44 tests passed，static verification 在修正 whitespace 后通过。证据包括 [day-20-tenancy-model-review.md](../archive/phase-2/day-20-tenancy-model-review.md)、[ADR-0003](../archive/adr/ADR-0003-organization-tenant-cloud-account-model.md) 和忽略文件 `tmp/day20-closeout-report.md`。
+closeout report 记录 `Status: Complete`，44 tests passed，static verification 在修正 whitespace 后通过。证据包括本文、[ADR-0003](../archive/adr/ADR-0003-organization-tenant-cloud-account-model.md) 和忽略文件 `tmp/day20-closeout-report.md`。
 
 ## 7. Review 结论
 Accepted。ADR-0003 已接受，Day 21 可以开始实现 tenancy foundation。
@@ -27,5 +27,4 @@ Domain entities、EF configuration、migration、TenantContext、OIDC、RBAC、�
 ## 9. 相关链接
 - Commit: `5f32751` - `docs: define phase 2 tenancy model`
 - PR: `#8` - `docs/day20-tenancy-decision`
-- [docs/archive/phase-2/day-20-tenancy-model-review.md](../archive/phase-2/day-20-tenancy-model-review.md)
 - [docs/archive/adr/ADR-0003-organization-tenant-cloud-account-model.md](../archive/adr/ADR-0003-organization-tenant-cloud-account-model.md)

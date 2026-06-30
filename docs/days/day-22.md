@@ -16,7 +16,7 @@ TenantContext 必须 fail-closed；HTTP tenant selection 不能信任任意请�
 新增 scoped TenantContext、read/init 接口、HTTP membership selection、Worker tenant validation 和 E2E tenant fixture 更新。
 
 ## 6. 验证证据
-Day report 记录 final decision `ACCEPT`。本地 closeout 记录 static verification、build、62 tests、Terraform validation、database/Worker process verification 均通过。证据包括 [day-22-trusted-tenant-context.md](../archive/phase-2/day-22-trusted-tenant-context.md) 和 `tmp/day22-closeout-report.md`。
+Day report 记录 final decision `ACCEPT`。本地 closeout 记录 static verification、build、62 tests、Terraform validation、database/Worker process verification 均通过。证据包括本文和 `tmp/day22-closeout-report.md`。
 
 ## 7. Review 结论
 Accepted。可信 TenantContext 建立完成。
@@ -27,4 +27,3 @@ Repository tenant filtering、legacy-data backfill、OIDC validation、RBAC 和�
 ## 9. 相关链接
 - Commit: `eb9006d` - `feat: establish trusted tenant context`
 - PR: `#10` - `feat/day22-trusted-tenant-context`
-- [docs/archive/phase-2/day-22-trusted-tenant-context.md](../archive/phase-2/day-22-trusted-tenant-context.md)

@@ -16,7 +16,7 @@
 新增风险登记、生产缺口登记、数据分类、依赖许可证清单、ADR backlog 和 Phase 0 stage gate report。
 
 ## 6. 验证证据
-Owner 于 2026-06-18 将 Phase 0 签为 `Complete`，允许 Phase 1 / Day 12 启动。证据包括 [stage-0-gate-report.md](../archive/phase-0/stage-0-gate-report.md)、[risk-register.md](../archive/phase-0/risk-register.md)、[production-gap-register.md](../archive/phase-0/production-gap-register.md)、[data-classification.md](../archive/phase-0/data-classification.md)、[dependency-license-inventory.md](../archive/phase-0/dependency-license-inventory.md)、[adr-backlog.md](../archive/phase-0/adr-backlog.md) 和 [04-★★★-day11-risk-and-stage-gate.md](../../construction/archive/phase-0/04-★★★-day11-risk-and-stage-gate.md)。
+Owner 于 2026-06-18 将 Phase 0 签为 `Complete`，允许 Phase 1 / Day 12 启动。证据包括 [stage-0-gate-report.md](../archive/phase-0/stage-0-gate-report.md)、[risk-register.md](../archive/phase-0/risk-register.md)、[production-gap-register.md](../archive/phase-0/production-gap-register.md)、[data-classification.md](../archive/phase-0/data-classification.md)、[dependency-license-inventory.md](../archive/phase-0/dependency-license-inventory.md) 和 [adr-backlog.md](../archive/phase-0/adr-backlog.md)。
 
 ## 7. Review 结论
 Accepted。Phase 0 完成，授权进入 Phase 1。

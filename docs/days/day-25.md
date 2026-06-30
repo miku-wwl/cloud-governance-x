@@ -16,7 +16,7 @@
 新增 OIDC authentication options、JWT Bearer pipeline、claim preservation、anonymous endpoint rules、ephemeral RSA key token tests 和 static OIDC metadata tests。
 
 ## 6. 验证证据
-tracked report 记录本地 build 0 warning/0 error，82 tests passed，1 个 PostgreSQL integration test 因 opt-in database 环境未启用被 skipped。证据包括 [day-25-oidc-bearer-authentication.md](../archive/phase-2/day-25-oidc-bearer-authentication.md)、[src/FinOps.Api/Authentication](../../src/FinOps.Api/Authentication) 和 [OidcBearerAuthenticationTests.cs](../../src/FinOps.Tests/Api/OidcBearerAuthenticationTests.cs)。
+tracked report 记录本地 build 0 warning/0 error，82 tests passed，1 个 PostgreSQL integration test 因 opt-in database 环境未启用被 skipped。证据包括本文、[src/FinOps.Api/Authentication](../../src/FinOps.Api/Authentication) 和 [OidcBearerAuthenticationTests.cs](../../src/FinOps.Tests/Api/OidcBearerAuthenticationTests.cs)。
 
 ## 7. Review 结论
 Validation。实现已合并，源 day report 仍保留 Validation 状态。
@@ -27,4 +27,3 @@ Validation。实现已合并，源 day report 仍保留 Validation 状态。
 ## 9. 相关链接
 - Commit: `c405220` - `feat: add OIDC bearer authentication`
 - PR: `#11` - `feat/day25-oidc-bearer-authentication`
-- [docs/archive/phase-2/day-25-oidc-bearer-authentication.md](../archive/phase-2/day-25-oidc-bearer-authentication.md)

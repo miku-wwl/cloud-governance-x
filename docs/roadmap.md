@@ -9,7 +9,7 @@
 
 - **M0-M10 共 11 个里程碑**；
 - **Day 1-148 共 148 个施工单元**；
-- 当前处于 **Phase 2 / M4**；
+- 当前处于 **M5**；
 - 最新已实现 **Day 30**，最新已接受 **Day 30**；
 - 当前施工单元是 **Day 31**；
 - M4 / 历史 Phase 2 已出关；
@@ -49,7 +49,7 @@ Day 编号用于施工和回顾，不等于自然日，也不代表生产成熟�
 | M9 多云能力 | Day 128-136 | AWS Provider 与 Azure/AWS 统一契约 | 未开始 |
 | M10 系统加固与上线 | Day 137-148 | 安全、供应链、性能、韧性、DR、Go/No-Go、canary 和运营接管 | 未开始 |
 
-## 4. 当前里程碑 M4
+## 4. 最近完成里程碑 M4
 
 | Day | 目标 |
 | --- | --- |
@@ -63,10 +63,7 @@ Day 编号用于施工和回顾，不等于自然日，也不代表生产成熟�
 - [construction/engineering-plan.md](../construction/engineering-plan.md)
 - [construction/current-playbook.md](../construction/current-playbook.md)
 
-## 5. 旧路线状态
+## 5. 当前施工入口
 
-旧 Day 8-148 路线保留为历史上下文：
-
-- [construction/archive/02-★★★-day8-production-roadmap.md](../construction/archive/02-★★★-day8-production-roadmap.md)
-
-如果旧文档与本文、current-state 或 engineering-plan 冲突，以当前文档为准。
+旧 Day 8-148 路线已经由当前工程规划替代，不再保留为正式资产。
+如果历史材料与本文、current-state 或 engineering-plan 冲突，以当前文档为准。

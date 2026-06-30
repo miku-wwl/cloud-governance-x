@@ -11,8 +11,8 @@ Day 12～19 的 Phase 1 工程门禁、架构边界、宿主模块拆分、独�
 Host 和初版 CI 已完成；`main` 已要求 `Static verification` 与
 `Database migration` 两个 required checks，并通过受保护 PR 验证阻断与放行
 行为。Phase 1 独立全面 review 已于 2026-06-19 给出 `ACCEPT`，并由 Owner
-确认结束。Day 1～28 工程交付已接受；Phase 2 已推进到 Day 29 追加式审计；
-下一施工单元是 Day 29 追加式审计。当前包含
+确认结束。Day 1～30 工程交付已接受；M4 / 历史 Phase 2 已出关；
+下一施工单元是 M5 / Day31 数据分层 ADR。当前包含
 Web API、后台 Worker、Clean Architecture 基础分层、PostgreSQL 本地环境、
 健康检查、可重复验证的 Azure 资源生命周期，以及通过
 `DefaultAzureCredential` 读取 Azure 订阅、资源清单和成本数据并写入
@@ -26,14 +26,12 @@ Day 29 已实现授权成功/失败的追加式审计；Day 30 已完成 M4 安�
 - [`docs/current-state.md`](docs/current-state.md)：当前真实状态和下一步；
 - [`docs/roadmap.md`](docs/roadmap.md)：11 个里程碑路线和当前施工位置；
 - [`docs/milestones/`](docs/milestones/)：已完工 Milestone 的正式报告；
-- [`docs/days/`](docs/days/)：Day 1～28 回顾胶囊；
+- [`docs/days/`](docs/days/)：Day 1～30 回顾胶囊；
 - [`construction/engineering-plan.md`](construction/engineering-plan.md)：Day 1～148 工程规划总纲；
 - [`construction/current-playbook.md`](construction/current-playbook.md)：当前施工手册。
 
-历史评估、阶段报告和旧施工路线已经归档到
-[`docs/archive/`](docs/archive/) 与
-[`construction/archive/`](construction/archive/)；它们只作为回顾材料，不再作为
-当前施工依据。
+历史评估、阶段报告和专题参考已经归档到
+[`docs/archive/`](docs/archive/)；它们只作为回顾材料，不再作为当前施工依据。
 
 ## 项目结构
 
@@ -51,8 +49,7 @@ terraform/
 scripts/                     # 端到端验收脚本
 construction/
 ├── engineering-plan.md      # 工程规划总纲
-├── current-playbook.md      # 当前施工入口
-└── archive/                 # 历史施工手册和旧长路线
+└── current-playbook.md      # 当前施工入口
 docs/                        # 项目事实、架构与运行专题
 ├── current-state.md          # 当前状态
 ├── roadmap.md                # 里程碑路线

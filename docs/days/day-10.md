@@ -16,7 +16,7 @@
 新增当前架构说明、组件/部署/数据流图、信任边界说明和未来阶段能力清单。
 
 ## 6. 验证证据
-图和源码事实在 Phase 0 中被机械交叉检查，并由 Phase 0 gate 接受。证据包括 [current-architecture.md](../archive/phase-0/current-architecture.md)、[03-★★★-day10-architecture-data-flow.md](../../construction/archive/phase-0/03-★★★-day10-architecture-data-flow.md) 和 [stage-0-gate-report.md](../archive/phase-0/stage-0-gate-report.md)。
+图和源码事实在 Phase 0 中被机械交叉检查，并由 Phase 0 gate 接受。证据包括 [current-architecture.md](../archive/phase-0/current-architecture.md) 和 [stage-0-gate-report.md](../archive/phase-0/stage-0-gate-report.md)。
 
 ## 7. Review 结论
 Accepted。Phase 0 接受该架构快照。
@@ -27,4 +27,3 @@ Accepted。Phase 0 接受该架构快照。
 ## 9. 相关链接
 - Commit: `d3d760e` - `docs: complete day 10 architecture review`
 - [docs/archive/phase-0/current-architecture.md](../archive/phase-0/current-architecture.md)
-- [construction/archive/phase-0/03-★★★-day10-architecture-data-flow.md](../../construction/archive/phase-0/03-★★★-day10-architecture-data-flow.md)

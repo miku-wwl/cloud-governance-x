@@ -16,7 +16,7 @@
 新增 Migrator legacy backfill operation、[Invoke-DevelopmentTenantBackfill.ps1](../../scripts/Invoke-DevelopmentTenantBackfill.ps1)、锁定和碰撞检查、受控 Provider/CloudAccount 创建、完成标记和 post-backfill constraints。
 
 ## 6. 验证证据
-tracked report 记录覆盖 dry-run、apply、second apply、collision failure、active-writer failure、stale count failure、production environment rejection、post-backfill NULL write rejection 和 completion marker 后 Down rejection。证据包括 [day-24-legacy-tenant-backfill.md](../archive/phase-2/day-24-legacy-tenant-backfill.md) 和 [Invoke-DevelopmentTenantBackfill.ps1](../../scripts/Invoke-DevelopmentTenantBackfill.ps1)。
+tracked report 记录覆盖 dry-run、apply、second apply、collision failure、active-writer failure、stale count failure、production environment rejection、post-backfill NULL write rejection 和 completion marker 后 Down rejection。证据包括本文和 [Invoke-DevelopmentTenantBackfill.ps1](../../scripts/Invoke-DevelopmentTenantBackfill.ps1)。
 
 ## 7. Review 结论
 Validation。实现已完成，源 day report 仍保留 Validation 状态。
@@ -26,5 +26,4 @@ EF model 仍保持 nullable 兼容；大数据 timing、lock duration、restore 
 
 ## 9. 相关链接
 - Commit: `0d5f98f` - `feat: add controlled legacy tenant backfill`
-- [docs/archive/phase-2/day-24-legacy-tenant-backfill.md](../archive/phase-2/day-24-legacy-tenant-backfill.md)
 - [scripts/Invoke-DevelopmentTenantBackfill.ps1](../../scripts/Invoke-DevelopmentTenantBackfill.ps1)
