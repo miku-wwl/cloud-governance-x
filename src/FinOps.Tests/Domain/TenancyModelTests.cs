@@ -81,7 +81,27 @@ public sealed class TenancyModelTests
 
         Assert.Equal("subject-id", membership.Subject);
         Assert.Equal(SubjectType.Human, membership.SubjectType);
+        Assert.Equal(MembershipRole.Auditor, membership.Role);
         Assert.Equal(MembershipStatus.Invited, membership.Status);
+    }
+
+    [Fact]
+    public void Membership_can_be_created_with_explicit_role_and_activated()
+    {
+        var membership = Membership.Create(
+            Guid.NewGuid(),
+            "https://issuer.example",
+            "subject-id",
+            SubjectType.Human,
+            "Operator",
+            Now,
+            MembershipRole.Operator);
+
+        membership.Activate(Now.AddMinutes(1));
+
+        Assert.Equal(MembershipRole.Operator, membership.Role);
+        Assert.Equal(MembershipStatus.Active, membership.Status);
+        Assert.Equal(Now.AddMinutes(1), membership.UpdatedAt);
     }
 
     [Fact]
@@ -95,5 +115,19 @@ public sealed class TenancyModelTests
                 (SubjectType)999,
                 "Unknown Subject",
                 Now));
+    }
+
+    [Fact]
+    public void Membership_rejects_unknown_role()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            Membership.Create(
+                Guid.NewGuid(),
+                "https://issuer.example",
+                "subject-id",
+                SubjectType.Human,
+                "Unknown Role",
+                Now,
+                (MembershipRole)999));
     }
 }

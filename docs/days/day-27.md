@@ -13,16 +13,44 @@
 RBAC 必须以可信 TenantContext 和认证身份为输入，区分 tenant、CloudAccount 和平台范围。Day 27 的重点是权限模型和范围评估，不把 Day 28 端点保护或 Day 29 审计存储偷偷合并进来。
 
 ## 5. 实现摘要
-Planned。尚未开始代码实现；预期会涉及授权模型、策略/服务、测试矩阵、必要 migration 或 seed 数据，以及文档状态更新。
+已实现 Day 27 RBAC 核心模型：
+
+- 在 Domain 层新增 `MembershipRole`，覆盖 `Owner`、`Administrator`、`Operator`、`Analyst`、`Auditor`；
+- 为 `Membership` 增加 `Role` 和 `Activate` 行为；
+- 新增 migration `20260629085216_AddMembershipRoles`，为 `memberships` 增加 `role` 字段，既有记录默认 `Auditor`；
+- 在 Application 层新增 `FinOpsPermission`、`FinOpsAuthorizationScope`、`FinOpsAuthorizationDecision` 和 `IFinOpsAuthorizationService`；
+- 授权范围明确区分 tenant、CloudAccount 和 platform；
+- `HttpTenantContextMiddleware` 通过 active Membership 解析真实 role，并写入可信 TenantContext；
+- `TenantMembershipResolver` 支持 active membership role 查询和 active CloudAccount scope 校验；
+- 测试覆盖角色权限矩阵、tenant scope、CloudAccount scope、platform scope、缺失 TenantContext、inactive/unknown Membership、跨 tenant target 和 BackgroundJob 不绕过 RBAC；
+- 修正 `Test-DatabaseMigration.ps1` 的 migration 定位逻辑，避免 Day27 新 migration 破坏 Day24 backfill rollback 回归。
 
 ## 6. 验证证据
-Planned。验收至少需要本地静态门禁、授权 allow/deny 矩阵测试、负向授权路径验证，以及与真实/测试认证身份和 TenantContext 的集成证据。
+已完成验证：
+
+- `dotnet build FinOpsPlatform.slnx`：成功，0 warning，0 error；
+- `dotnet test FinOpsPlatform.slnx --no-restore`：101 passed，1 skipped；
+- `./scripts/Test-RepositoryStatic.ps1 -SkipTerraformInit -SkipDependencyOutdated`：通过，包含 whitespace、secret scan、JSON/XML/YAML、workflow、PowerShell、Markdown links、restore、vulnerable/deprecated package report、format、build、test、Terraform fmt/validate；
+- `./scripts/Test-DatabaseMigration.ps1`：通过，覆盖空库 migration、幂等重跑、并发 migration 拒绝、不同数据库隔离、Day24 backfill Down/reapply、tenant-aware core Down/reapply、backfill 控制、API/Worker migration ownership 和失败路径。
+
+验证过程说明：
+
+- 第一次数据库迁移回归因 Docker Desktop 未运行失败；启动 Docker daemon 后重跑；
+- 第二次发现 Day24 脚本按“最新 migration”推导 rollback 的旧假设，被 Day27 新 migration 打破；
+- 修复脚本为按 migration 名称和 history index 定位后，最终端到端通过。
 
 ## 7. Review 结论
-Validation。Day 27 应保持 Validation，直到负向授权路径被 review 并接受。它本身不关闭 Phase 2。
+Accepted。Day 27 的代码施工和端到端验证已完成，RBAC 模型、范围评估、allow/deny matrix 和负向路径已有自动化证据；Owner 已批准进入 Day 28。Day 27 不关闭 Phase 2。
 
 ## 8. 遗留风险
-完整端点保护、稳定 401/403 契约、追加式审计、PostgreSQL RLS、前端授权和生产身份治理仍留给后续 Day。
+Day 27 只完成 RBAC 模型和授权评估服务，不宣称所有业务端点已经绑定授权 policy。
+
+明确留给后续 Day：
+
+- Day 28：把现有业务端点绑定授权 policy，稳定 401/403 契约；
+- Day 29：追加式审计模型和高权限 action record；
+- Day 30：tenant escape、IDOR、RBAC、端点保护和审计 gate；
+- 后续阶段：PostgreSQL RLS、前端授权、生产 Provider identity 和生产运行治理。
 
 ## 9. 相关链接
 - [construction/current-playbook.md](../../construction/current-playbook.md)

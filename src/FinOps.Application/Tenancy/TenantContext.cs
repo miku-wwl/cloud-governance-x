@@ -1,3 +1,5 @@
+using FinOps.Domain.Tenancy;
+
 namespace FinOps.Application.Tenancy;
 
 public enum TenantContextSource
@@ -12,12 +14,14 @@ public sealed record TrustedTenantContext
         Guid tenantId,
         TenantContextSource source,
         string? issuer,
-        string? subject)
+        string? subject,
+        MembershipRole? role)
     {
         TenantId = tenantId;
         Source = source;
         Issuer = issuer;
         Subject = subject;
+        Role = role;
     }
 
     public Guid TenantId { get; }
@@ -28,20 +32,31 @@ public sealed record TrustedTenantContext
 
     public string? Subject { get; }
 
+    public MembershipRole? Role { get; }
+
     public static TrustedTenantContext ForHttpUser(
         Guid tenantId,
         string issuer,
-        string subject)
+        string subject,
+        MembershipRole role = MembershipRole.Auditor)
     {
         ArgumentOutOfRangeException.ThrowIfEqual(tenantId, Guid.Empty);
         ArgumentException.ThrowIfNullOrWhiteSpace(issuer);
         ArgumentException.ThrowIfNullOrWhiteSpace(subject);
+        if (!Enum.IsDefined(role))
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(role),
+                role,
+                "Membership role is not supported.");
+        }
 
         return new TrustedTenantContext(
             tenantId,
             TenantContextSource.HttpUser,
             issuer.Trim(),
-            subject.Trim());
+            subject.Trim(),
+            role);
     }
 
     public static TrustedTenantContext ForBackgroundJob(Guid tenantId)
@@ -51,7 +66,8 @@ public sealed record TrustedTenantContext
             tenantId,
             TenantContextSource.BackgroundJob,
             issuer: null,
-            subject: null);
+            subject: null,
+            role: null);
     }
 }
 

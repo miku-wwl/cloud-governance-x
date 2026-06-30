@@ -38,6 +38,15 @@ public enum MembershipStatus
     Revoked
 }
 
+public enum MembershipRole
+{
+    Owner,
+    Administrator,
+    Operator,
+    Analyst,
+    Auditor
+}
+
 public enum SubjectType
 {
     Human,

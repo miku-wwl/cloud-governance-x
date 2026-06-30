@@ -1,5 +1,6 @@
 using FinOps.Application.Cloud;
 using FinOps.Application.Tenancy;
+using FinOps.Domain.Tenancy;
 using FinOps.Worker;
 using FinOps.Worker.Jobs;
 using Microsoft.Extensions.DependencyInjection;
@@ -285,6 +286,19 @@ public sealed class WorkerJobTests
             Guid tenantId,
             string issuer,
             string subject,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult(false);
+
+        public Task<TenantMembership?> ResolveActiveMembershipAsync(
+            Guid tenantId,
+            string issuer,
+            string subject,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult<TenantMembership?>(null);
+
+        public Task<bool> IsActiveCloudAccountAsync(
+            Guid tenantId,
+            Guid cloudAccountId,
             CancellationToken cancellationToken = default) =>
             Task.FromResult(false);
     }

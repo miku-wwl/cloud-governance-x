@@ -13,11 +13,11 @@ Cloud Governance X 已经超过最初 Day 1-7 开发基线，也已经通过 Pha
 | 维度 | 状态 |
 | --- | --- |
 | 当前 phase | Phase 2 - 身份、租户、RBAC 与审计 |
-| 最新已实现 Day | Day 26 - Microsoft Entra 开发集成 |
-| 最新已接受 Day | Day 26 - Microsoft Entra 开发集成 |
-| 下一施工单元 | Day 27 - 权限与范围 RBAC |
+| 最新已实现 Day | Day 27 - 权限与范围 RBAC |
+| 最新已接受 Day | Day 27 - 权限与范围 RBAC |
+| 下一施工单元 | Day 28 - 端点保护与授权错误契约 |
 | 生产可用性 | 尚未生产可用 |
-| 本地测试快照 | `dotnet test FinOpsPlatform.slnx --no-restore`：84 passed，1 skipped |
+| 本地测试快照 | `dotnet test FinOpsPlatform.slnx --no-restore`：101 passed，1 skipped |
 | 当前规划方式 | M0-M10 共 11 个里程碑，Day 1-148 共 148 个施工单元 |
 
 项目不应再用旧 148-Day 长表作为主事实来源。新的 Day 1-148 施工总表已经迁入
@@ -31,7 +31,7 @@ Cloud Governance X 已经超过最初 Day 1-7 开发基线，也已经通过 Pha
 | 开发基线 | Day 1-7 Azure 数据底座 | 本地/开发基线完成 | [Day 胶囊](days/README.md)、[baseline summary](archive/phase-0/baseline-verification-summary.md) |
 | Phase 0 | Day 8-11 基线审计、风险、架构和出关 | Complete | [phase-0.md](phase/phase-0.md) |
 | Phase 1 | Day 12-19 工程治理和 migration 分离 | Accepted | [phase-1.md](phase/phase-1.md) |
-| Phase 2 partial / M3 | Day 20-26 租户、可信上下文、OIDC 和 Entra 开发身份 | Day 1-Day 26 工程交付 Accepted，Phase 2 未关闭 | [Phase 2 Day 胶囊](days/README.md) |
+| Phase 2 partial / M3-M4 | Day 20-27 租户、可信上下文、OIDC、Entra 开发身份和 RBAC 模型 | Day 27 Accepted，Phase 2 未关闭 | [Phase 2 Day 胶囊](days/README.md) |
 
 ## 3. 当前能力
 
@@ -46,7 +46,8 @@ Cloud Governance X 已经超过最初 Day 1-7 开发基线，也已经通过 Pha
 - 业务 Tenant 模型、可信 TenantContext 和租户感知 repository；
 - 受控 legacy tenant backfill 工具；
 - OIDC JWT Bearer 验证；
-- 可重复的 Microsoft Entra 开发 App Registration 和真实 token E2E 验证。
+- 可重复的 Microsoft Entra 开发 App Registration 和真实 token E2E 验证；
+- Membership role、tenant/CloudAccount/platform scope 和 RBAC 授权评估服务。
 
 这些能力仍是开发和治理基础，不授权公开或生产部署。
 
@@ -56,6 +57,7 @@ Cloud Governance X 已经超过最初 Day 1-7 开发基线，也已经通过 Pha
 
 - 暴露没有授权策略的业务端点；
 - 把 Day 26 委托 scope 当作已经执行的授权条件；
+- 把 Day 27 RBAC 模型当作现有端点已经全面受保护；
 - 使用本地 Azure CLI identity 作为 Azure Provider runtime identity；
 - 在生产环境启用 cost sample fallback；
 - 使用本地 Terraform state 管理团队或生产基础设施；
@@ -63,15 +65,15 @@ Cloud Governance X 已经超过最初 Day 1-7 开发基线，也已经通过 Pha
 
 ## 5. 立即下一步
 
-Day 27 应实现权限与范围 RBAC。
+Day 28 应把现有业务端点绑定授权 policy，并稳定授权错误契约。
 
 当前工程规划和施工手册：
 
 - [construction/engineering-plan.md](../construction/engineering-plan.md)
 - [construction/current-playbook.md](../construction/current-playbook.md)
 
-Day 27 不能悄悄吞并 Day 28 端点保护或 Day 29 审计存储。除非 Owner
-明确改变里程碑范围，否则这些仍是独立 gate。
+Day 28 不能悄悄吞并 Day 29 审计存储或 Day 30 安全门禁。除非 Owner 明确改变
+里程碑范围，否则这些仍是独立 gate。
 
 ## 6. 文档权威顺序
 

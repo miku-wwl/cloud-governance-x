@@ -39,12 +39,12 @@ public sealed class HttpTenantContextMiddleware(RequestDelegate next)
             return;
         }
 
-        var isMember = await membershipResolver.HasActiveMembershipAsync(
+        var membership = await membershipResolver.ResolveActiveMembershipAsync(
             tenantId,
             issuer,
             subject,
             httpContext.RequestAborted);
-        if (!isMember)
+        if (membership is null)
         {
             httpContext.Response.StatusCode = StatusCodes.Status403Forbidden;
             return;
@@ -53,7 +53,8 @@ public sealed class HttpTenantContextMiddleware(RequestDelegate next)
         tenantContextInitializer.Initialize(TrustedTenantContext.ForHttpUser(
             tenantId,
             issuer,
-            subject));
+            subject,
+            membership.Role));
 
         await next(httpContext);
     }
