@@ -89,7 +89,7 @@ public sealed class EndpointRouteTests
         using var document = JsonDocument.Parse(response.Body);
         Assert.True(document.RootElement.TryGetProperty("jobRunId", out _));
         Assert.True(document.RootElement.TryGetProperty("retrieved", out _));
-        Assert.True(document.RootElement.TryGetProperty("usedSampleData", out _));
+        Assert.False(document.RootElement.TryGetProperty("usedSampleData", out _));
     }
 
     [Fact]
@@ -310,8 +310,7 @@ public sealed class EndpointRouteTests
                 DateOnly.MinValue,
                 0,
                 0,
-                0,
-                UsedSampleData: false));
+                0));
         }
     }
 
@@ -388,16 +387,6 @@ public sealed class EndpointRouteTests
             Guid tenantId,
             CancellationToken cancellationToken = default) =>
             Task.FromResult(tenantId == TenantId);
-
-        public Task<bool> HasActiveMembershipAsync(
-            Guid tenantId,
-            string issuer,
-            string subject,
-            CancellationToken cancellationToken = default) =>
-            Task.FromResult(
-                tenantId == TenantId &&
-                issuer == Issuer &&
-                subject == Subject);
 
         public Task<TenantMembership?> ResolveActiveMembershipAsync(
             Guid tenantId,

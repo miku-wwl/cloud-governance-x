@@ -1,4 +1,3 @@
-using System.Text.Json;
 using FinOps.Application.Etl;
 
 namespace FinOps.Application.Cloud;
@@ -32,7 +31,6 @@ public sealed class CloudCostSyncService(
         {
             var costs = await costProvider.GetDailyCostsAsync(from, to, cancellationToken);
             recordsProcessed = costs.Count;
-            var usedSampleData = costs.Any(IsSample);
             var result = await repository.UpsertAsync(costs, cancellationToken);
 
             await jobRunRepository.CompleteAsync(
@@ -47,8 +45,7 @@ public sealed class CloudCostSyncService(
                 to,
                 costs.Count,
                 result.Inserted,
-                result.Updated,
-                usedSampleData);
+                result.Updated);
         }
         catch (Exception exception)
         {
@@ -60,13 +57,6 @@ public sealed class CloudCostSyncService(
                 CancellationToken.None);
             throw;
         }
-    }
-
-    private static bool IsSample(CloudCostDailyDto cost)
-    {
-        using var document = JsonDocument.Parse(cost.RawJson);
-        return document.RootElement.TryGetProperty("source", out var source) &&
-               string.Equals(source.GetString(), "sample", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string GetErrorSummary(Exception exception)

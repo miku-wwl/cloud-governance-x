@@ -45,14 +45,10 @@ function Invoke-PostgreSql {
 }
 
 function Start-Day6Api {
-    param([bool]$ForceSampleData)
-
     $previousDatabase = $env:PostgreSql__Database
-    $previousForceSample = $env:AzureCost__ForceSampleData
 
     try {
         $env:PostgreSql__Database = $Database
-        $env:AzureCost__ForceSampleData = $ForceSampleData.ToString().ToLowerInvariant()
 
         $startProcessArguments = @{
             FilePath = "dotnet"
@@ -70,7 +66,6 @@ function Start-Day6Api {
     }
     finally {
         $env:PostgreSql__Database = $previousDatabase
-        $env:AzureCost__ForceSampleData = $previousForceSample
     }
 }
 
@@ -142,7 +137,7 @@ try {
         -Database $Database `
         -NoBuild
 
-    $apiProcess = Start-Day6Api -ForceSampleData $false
+    $apiProcess = Start-Day6Api
     Wait-Day6Api -Process $apiProcess
 
     $actualResult = Invoke-RestMethod `
@@ -151,86 +146,20 @@ try {
         -TimeoutSec 180
 
     if ($actualResult.retrieved -le 0) {
-        throw "The real-or-fallback Azure cost query returned no rows."
+        throw "The Azure Cost Management query returned no rows."
     }
-
-    Stop-Day6Api
-    Remove-Item -LiteralPath $stdoutPath, $stderrPath -Force -ErrorAction SilentlyContinue
-
-    $apiProcess = Start-Day6Api -ForceSampleData $true
-    Wait-Day6Api -Process $apiProcess
-
-    $firstSampleResult = Invoke-RestMethod `
-        "http://localhost:$Port/api/admin/sync/azure/costs?days=7" `
-        -Method Post `
-        -TimeoutSec 120
-    $secondSampleResult = Invoke-RestMethod `
-        "http://localhost:$Port/api/admin/sync/azure/costs?days=7" `
-        -Method Post `
-        -TimeoutSec 120
-
-    if (
-        -not $firstSampleResult.usedSampleData -or
-        -not $secondSampleResult.usedSampleData
-    ) {
-        throw "Forced sample mode was not reported by the cost sync result."
-    }
-
-    if (
-        $secondSampleResult.inserted -ne 0 -or
-        $secondSampleResult.updated -ne $secondSampleResult.retrieved
-    ) {
-        throw "Repeated sample cost sync was not idempotent."
-    }
-
-    $sampleCount = [int](Invoke-PostgreSql `
-        -TargetDatabase $Database `
-        -Sql "SELECT count(*) FROM cloud_cost_daily WHERE raw_json->>'source' = 'sample';" `
-        -Scalar)
-    $sampleDateCount = [int](Invoke-PostgreSql `
-        -TargetDatabase $Database `
-        -Sql "SELECT count(DISTINCT usage_date) FROM cloud_cost_daily WHERE raw_json->>'source' = 'sample';" `
-        -Scalar)
-    $sampleServiceCount = [int](Invoke-PostgreSql `
-        -TargetDatabase $Database `
-        -Sql "SELECT count(DISTINCT service_name) FROM cloud_cost_daily WHERE raw_json->>'source' = 'sample';" `
-        -Scalar)
-    $sampleResourceGroupCount = [int](Invoke-PostgreSql `
-        -TargetDatabase $Database `
-        -Sql "SELECT count(DISTINCT resource_group) FROM cloud_cost_daily WHERE raw_json->>'source' = 'sample';" `
-        -Scalar)
     $successfulRuns = [int](Invoke-PostgreSql `
         -TargetDatabase $Database `
         -Sql "SELECT count(*) FROM etl_job_runs WHERE job_name = 'azure-cost-sync' AND status = 'Succeeded';" `
         -Scalar)
 
-    if (
-        $sampleCount -lt 14 -or
-        $sampleDateCount -ne 7 -or
-        $sampleServiceCount -lt 2 -or
-        $sampleResourceGroupCount -lt 2 -or
-        $successfulRuns -ne 3
-    ) {
-        throw (
-            "Day 6 persistence verification failed. " +
-            "sampleCount=$sampleCount, dates=$sampleDateCount, " +
-            "services=$sampleServiceCount, resourceGroups=$sampleResourceGroupCount, " +
-            "successfulRuns=$successfulRuns."
-        )
-    }
-
-    $initialSource = if ($actualResult.usedSampleData) {
-        "sample fallback"
-    }
-    else {
-        "Azure Cost Management"
+    if ($successfulRuns -ne 1) {
+        throw "Day 6 persistence verification failed. successfulRuns=$successfulRuns."
     }
 
     Write-Host (
-        "Day 6 verified: $initialSource returned " +
-        "$($actualResult.retrieved) rows; forced sample data covered 7 days, " +
-        "$sampleServiceCount services and $sampleResourceGroupCount resource groups; " +
-        "repeated sync was idempotent."
+        "Day 6 verified: Azure Cost Management returned " +
+        "$($actualResult.retrieved) rows and persisted a successful sync run."
     )
     $verified = $true
 }

@@ -63,7 +63,7 @@ Cloud Governance X 已经超过最初 Day 1-7 开发基线，也已经通过 Pha
 - 把 Day 27 RBAC 模型当作现有端点已经全面受保护；
 - 把 Day 29 追加式授权审计当作完整审计产品、RLS、rate limit 或生产安全门禁已完成；
 - 使用本地 Azure CLI identity 作为 Azure Provider runtime identity；
-- 在生产环境启用 cost sample fallback；
+- 把 cost sample fallback 重新混入真实 Azure Provider 路径；
 - 使用本地 Terraform state 管理团队或生产基础设施；
 - 宣称已经完成多云、React 前端、审计、RLS、生产 ETL 调度、备份、SLO 或灾难恢复能力。
 

@@ -14,12 +14,6 @@ public interface ITenantMembershipResolver
         Guid tenantId,
         CancellationToken cancellationToken = default);
 
-    Task<bool> HasActiveMembershipAsync(
-        Guid tenantId,
-        string issuer,
-        string subject,
-        CancellationToken cancellationToken = default);
-
     Task<TenantMembership?> ResolveActiveMembershipAsync(
         Guid tenantId,
         string issuer,

@@ -6,17 +6,13 @@ using System.Text.Json;
 using Azure.Core;
 using Azure.ResourceManager;
 using FinOps.Application.Cloud;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace FinOps.Infrastructure.Azure;
 
 internal sealed class AzureCostProvider(
     ArmClient armClient,
     TokenCredential credential,
-    HttpClient httpClient,
-    IOptions<AzureCostOptions> options,
-    ILogger<AzureCostProvider> logger) : ICloudCostProvider
+    HttpClient httpClient) : ICloudCostProvider
 {
     private const string ApiVersion = "2025-03-01";
     private static readonly string[] TokenScopes = ["https://management.azure.com/.default"];
@@ -29,11 +25,6 @@ internal sealed class AzureCostProvider(
         if (to < from)
         {
             throw new ArgumentException("The cost query end date must not precede its start date.");
-        }
-
-        if (options.Value.ForceSampleData)
-        {
-            return CreateSampleCosts("sample-subscription", from, to, "forced");
         }
 
         var subscriptions = new List<string>();
@@ -56,16 +47,7 @@ internal sealed class AzureCostProvider(
                 to,
                 cancellationToken);
 
-            if (subscriptionCosts.Count > 0)
-            {
-                costs.AddRange(subscriptionCosts);
-                continue;
-            }
-
-            if (options.Value.UseSampleDataWhenUnavailable)
-            {
-                costs.AddRange(CreateSampleCosts(subscriptionId, from, to, "empty-response"));
-            }
+            costs.AddRange(subscriptionCosts);
         }
 
         return costs;
@@ -131,110 +113,38 @@ internal sealed class AzureCostProvider(
         return costs;
     }
 
-    internal static IReadOnlyList<CloudCostDailyDto> CreateSampleCosts(
-        string accountId,
-        DateOnly from,
-        DateOnly to,
-        string reason)
-    {
-        var costs = new List<CloudCostDailyDto>();
-        var services = new[]
-        {
-            (Name: "Storage", ResourceGroup: "rg-sample-platform", BaseCost: 1.25m),
-            (Name: "Service Bus", ResourceGroup: "rg-sample-messaging", BaseCost: 0.45m)
-        };
-
-        for (var date = from; date <= to; date = date.AddDays(1))
-        {
-            var dayOffset = date.DayNumber - from.DayNumber;
-            foreach (var service in services)
-            {
-                var cost = service.BaseCost + (dayOffset * 0.05m);
-                var rawJson = JsonSerializer.Serialize(new
-                {
-                    source = "sample",
-                    reason,
-                    accountId,
-                    usageDate = date,
-                    serviceName = service.Name,
-                    resourceGroup = service.ResourceGroup,
-                    cost,
-                    currency = "USD"
-                });
-
-                costs.Add(new CloudCostDailyDto(
-                    "Azure",
-                    accountId,
-                    date,
-                    service.Name,
-                    service.ResourceGroup,
-                    cost,
-                    "USD",
-                    rawJson));
-            }
-        }
-
-        return costs;
-    }
-
     private async Task<IReadOnlyList<CloudCostDailyDto>> GetSubscriptionCostsAsync(
         string subscriptionId,
         DateOnly from,
         DateOnly to,
         CancellationToken cancellationToken)
     {
-        try
+        var token = await credential.GetTokenAsync(
+            new TokenRequestContext(TokenScopes),
+            cancellationToken);
+        using var request = new HttpRequestMessage(
+            HttpMethod.Post,
+            $"subscriptions/{subscriptionId}/providers/Microsoft.CostManagement/query?api-version={ApiVersion}");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token.Token);
+        request.Content = JsonContent.Create(CreateRequest(from, to));
+
+        using var response = await httpClient.SendAsync(request, cancellationToken);
+        if (response.StatusCode == HttpStatusCode.NoContent)
         {
-            var token = await credential.GetTokenAsync(
-                new TokenRequestContext(TokenScopes),
-                cancellationToken);
-            using var request = new HttpRequestMessage(
-                HttpMethod.Post,
-                $"subscriptions/{subscriptionId}/providers/Microsoft.CostManagement/query?api-version={ApiVersion}");
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token.Token);
-            request.Content = JsonContent.Create(CreateRequest(from, to));
-
-            using var response = await httpClient.SendAsync(request, cancellationToken);
-            if (response.StatusCode == HttpStatusCode.NoContent)
-            {
-                return [];
-            }
-
-            var responseData = await response.Content.ReadAsByteArrayAsync(cancellationToken);
-            if (!response.IsSuccessStatusCode)
-            {
-                if (!options.Value.UseSampleDataWhenUnavailable)
-                {
-                    throw new HttpRequestException(
-                        $"Azure Cost Management query failed with HTTP {(int)response.StatusCode}: " +
-                        BinaryData.FromBytes(responseData).ToString(),
-                        null,
-                        response.StatusCode);
-                }
-
-                logger.LogWarning(
-                    "Azure Cost Management returned HTTP {StatusCode} for subscription {SubscriptionId}; using sample data.",
-                    (int)response.StatusCode,
-                    subscriptionId);
-                return CreateSampleCosts(
-                    subscriptionId,
-                    from,
-                    to,
-                    $"http-{(int)response.StatusCode}");
-            }
-
-            return ParseResponse(subscriptionId, BinaryData.FromBytes(responseData));
+            return [];
         }
-        catch (Exception exception) when (
-            options.Value.UseSampleDataWhenUnavailable &&
-            exception is not OperationCanceledException)
+
+        var responseData = await response.Content.ReadAsByteArrayAsync(cancellationToken);
+        if (!response.IsSuccessStatusCode)
         {
-            logger.LogWarning(
-                exception,
-                "Azure Cost Management query failed for subscription {SubscriptionId}; using sample data.",
-                subscriptionId);
-            return CreateSampleCosts(subscriptionId, from, to, exception.GetType().Name);
+            throw new HttpRequestException(
+                $"Azure Cost Management query failed with HTTP {(int)response.StatusCode}: " +
+                BinaryData.FromBytes(responseData).ToString(),
+                null,
+                response.StatusCode);
         }
+
+        return ParseResponse(subscriptionId, BinaryData.FromBytes(responseData));
     }
 
     private static object CreateRequest(DateOnly from, DateOnly to)

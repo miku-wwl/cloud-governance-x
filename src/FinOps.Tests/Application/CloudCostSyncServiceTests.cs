@@ -1,4 +1,3 @@
-using System.Text.Json;
 using FinOps.Application.Cloud;
 using FinOps.Application.Etl;
 
@@ -12,7 +11,7 @@ public sealed class CloudCostSyncServiceTests
         var costs = new[]
         {
             CreateCost(new DateOnly(2026, 6, 12), "azure-cost-management"),
-            CreateCost(new DateOnly(2026, 6, 11), "sample")
+            CreateCost(new DateOnly(2026, 6, 11), "azure-cost-management")
         };
         var repository = new StubCostRepository(new CloudCostUpsertResult(1, 1));
         var jobRuns = new StubJobRunRepository();
@@ -29,7 +28,6 @@ public sealed class CloudCostSyncServiceTests
         Assert.Equal(2, result.Retrieved);
         Assert.Equal(1, result.Inserted);
         Assert.Equal(1, result.Updated);
-        Assert.True(result.UsedSampleData);
         Assert.Equal(2, jobRuns.CompletedRecords);
         Assert.Equal(costs, repository.Costs);
     }
@@ -50,27 +48,6 @@ public sealed class CloudCostSyncServiceTests
 
         Assert.Same(expected, actual);
         Assert.Equal(expected.Message, jobRuns.FailureMessage);
-    }
-
-    [Fact]
-    public async Task SyncRecentAsync_RejectsInvalidProvenanceBeforeUpsert()
-    {
-        var repository = new StubCostRepository(new CloudCostUpsertResult(1, 0));
-        var jobRuns = new StubJobRunRepository();
-        var invalidCost = CreateCost(new DateOnly(2026, 6, 12), "sample") with
-        {
-            RawJson = "not-json"
-        };
-        var service = new CloudCostSyncService(
-            new StubCostProvider([invalidCost]),
-            repository,
-            jobRuns,
-            new FixedTimeProvider());
-
-        await Assert.ThrowsAnyAsync<JsonException>(() => service.SyncRecentAsync());
-
-        Assert.Null(repository.Costs);
-        Assert.NotNull(jobRuns.FailureMessage);
     }
 
     private static CloudCostDailyDto CreateCost(DateOnly usageDate, string source)

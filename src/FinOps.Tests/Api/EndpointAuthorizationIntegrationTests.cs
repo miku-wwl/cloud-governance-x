@@ -198,16 +198,6 @@ public sealed class EndpointAuthorizationIntegrationTests
             CancellationToken cancellationToken = default) =>
             Task.FromResult(tenantId == TenantId);
 
-        public Task<bool> HasActiveMembershipAsync(
-            Guid tenantId,
-            string issuer,
-            string subject,
-            CancellationToken cancellationToken = default) =>
-            Task.FromResult(
-                tenantId == TenantId &&
-                issuer == Issuer &&
-                subject == Subject);
-
         public Task<TenantMembership?> ResolveActiveMembershipAsync(
             Guid tenantId,
             string issuer,
@@ -264,8 +254,7 @@ public sealed class EndpointAuthorizationIntegrationTests
                 DateOnly.MinValue,
                 0,
                 0,
-                0,
-                UsedSampleData: false));
+                0));
         }
     }
 

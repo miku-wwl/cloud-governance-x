@@ -27,8 +27,6 @@ public static class AzureServiceCollectionExtensions
             new ArmClient(serviceProvider.GetRequiredService<TokenCredential>()));
         services.AddSingleton<IAzureSubscriptionReader, AzureSubscriptionReader>();
         services.AddScoped<ICloudResourceInventoryProvider, AzureResourceInventoryProvider>();
-        services.Configure<AzureCostOptions>(
-            configuration.GetSection(AzureCostOptions.SectionName));
         services.AddHttpClient<ICloudCostProvider, AzureCostProvider>(client =>
         {
             client.BaseAddress = new Uri("https://management.azure.com/");

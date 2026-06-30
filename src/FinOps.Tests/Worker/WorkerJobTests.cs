@@ -219,8 +219,7 @@ public sealed class WorkerJobTests
                 DateOnly.MinValue,
                 1,
                 1,
-                0,
-                UsedSampleData: false));
+                0));
         }
     }
 
@@ -281,13 +280,6 @@ public sealed class WorkerJobTests
             Guid tenantId,
             CancellationToken cancellationToken = default) =>
             Task.FromResult(isActiveTenant);
-
-        public Task<bool> HasActiveMembershipAsync(
-            Guid tenantId,
-            string issuer,
-            string subject,
-            CancellationToken cancellationToken = default) =>
-            Task.FromResult(false);
 
         public Task<TenantMembership?> ResolveActiveMembershipAsync(
             Guid tenantId,

@@ -6,5 +6,4 @@ public sealed record CloudCostSyncResult(
     DateOnly To,
     int Retrieved,
     int Inserted,
-    int Updated,
-    bool UsedSampleData);
+    int Updated);
