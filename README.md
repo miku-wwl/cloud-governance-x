@@ -18,7 +18,7 @@ Web API、后台 Worker、Clean Architecture 基础分层、PostgreSQL 本地环
 `DefaultAzureCredential` 读取 Azure 订阅、资源清单和成本数据并写入
 PostgreSQL 的能力。Day 27 已建立 Membership role、tenant/CloudAccount/platform
 scope 和 RBAC 授权评估服务；Day 28 已为现有业务端点绑定 RBAC permission filter；
-Day 29 已实现授权成功/失败的追加式审计。
+Day 29 已实现授权成功/失败的追加式审计；Day 30 已完成 M4 安全门禁并由 Owner 接受，项目进入 M5 / Day31。
 
 项目指导文件现在分为五层：
 

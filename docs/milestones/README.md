@@ -15,10 +15,11 @@
 | --- | --- | --- | --- | --- |
 | M1 - 基线治理 | Phase 0 | Day 8-11 | Complete | [milestone-1.md](milestone-1.md) |
 | M2 - 工程基础 | Phase 1 | Day 12-19 | Accepted | [milestone-2.md](milestone-2.md) |
+| M3 - 身份与租户基础 | Phase 2 partial | Day 20-26 | Accepted | [milestone-3.md](milestone-3.md) |
+| M4 - RBAC、端点保护与审计 | Phase 2 partial | Day 27-30 | Accepted | [milestone-4.md](milestone-4.md) |
 
 ## 未完成 Milestone
 
 | Milestone | 历史映射 | 当前范围 | 状态 | 预计报告 |
 | --- | --- | --- | --- | --- |
-| M3 - 身份与租户基础 | Phase 2 partial | Day 20-26 | 已实现并接受，等待 M4/Day30 总门禁关联复核 | Day 30 gate 后视结论生成 `milestone-3.md` |
-| M4 - RBAC、端点保护与审计 | Phase 2 partial | Day 27-30 | Day 29 Accepted，Day 30 未完成 | Day 30 gate 后生成 `milestone-4.md` |
+| M5 - 生产数据模型 | N/A | Day 31-40 | 未开始 | M5 gate 后生成 `milestone-5.md` |

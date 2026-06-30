@@ -1,8 +1,8 @@
 # 当前施工手册
 
-- 当前里程碑：M4 - RBAC、端点保护与审计
-- 当前位置：M4 / 历史 Phase 2，Day 29 Accepted 之后
-- 当前施工单元：Day 30 - Phase 2 安全门禁
+- 当前里程碑：M5 - 生产数据模型
+- 当前位置：M4 / 历史 Phase 2 已 Accepted，Day 30 Accepted 之后
+- 当前施工单元：Day 31 - 数据分层 ADR
 
 本文只描述当前施工单元。工程总规划见
 [engineering-plan.md](engineering-plan.md)。
@@ -15,42 +15,41 @@
 2. 阅读 [docs/current-state.md](../docs/current-state.md)；
 3. 阅读 [docs/roadmap.md](../docs/roadmap.md)；
 4. 阅读 [engineering-plan.md](engineering-plan.md)；
-5. 确认当前施工单元：Day 30 - Phase 2 安全门禁；
+5. 确认当前施工单元：Day 31 - 数据分层 ADR；
 6. 检查风险登记和生产差距登记；
 7. 确认 working tree 状态，不覆盖无关用户修改；
 8. 只实现当前施工单元，除非 Owner 明确改变范围。
 
-## 2. Day 30 目标
+## 2. Day 31 目标
 
-Day 30 要执行 Phase 2 安全门禁，复核 tenant escape、IDOR、RBAC、端点保护和审计闭环，判断 Phase 2 是否可以出关。
+Day 31 要建立生产数据模型的分层 ADR，明确 Raw / Normalized / Derived / Operational 数据职责、source、job、schema/parser version、raw reference、敏感数据边界和后续 migration/backfill 约束。
 
 预期范围：
 
-- 复核 Day 20-29 的身份、租户、RBAC、端点保护和审计证据；
-- 增加 tenant escape / IDOR / missing tenant / wrong role 的组合验证；
-- 检查所有业务端点都有 permission 或 explicit anonymous 理由；
-- 确认审计成功/失败路径可追踪；
-- 更新 [docs/current-state.md](../docs/current-state.md)、Day 30 胶囊
-  以及相关风险/生产差距文档。Day 30 胶囊应在 Day 30 正式开工时创建。
+- 起草数据分层 ADR；
+- 定义当前资源、成本、ETL、授权审计数据归属；
+- 明确 raw payload/reference、schema version、parser version 和 lineage 字段；
+- 明确不在 Day31 实现大规模 schema 改造或 backfill；
+- 更新 [docs/current-state.md](../docs/current-state.md)、Day 31 胶囊以及相关风险/生产差距文档。
 
-## 3. Day 30 非目标
+## 3. Day 31 非目标
 
-Day 30 不应宣称：
+Day 31 不应宣称：
 
-- PostgreSQL RLS 已实现；
-- React 或浏览器授权体验已存在。
-- M5 生产数据模型已开始或完成。
+- 完整生产数据模型已实现；
+- 大规模 migration 或 backfill 已完成；
+- resource lifecycle、成本语义、数据质量和 retention 已完成。
 
-这些内容分别留给 M5 或后续阶段。
+这些内容分别留给 M5 后续 Day。
 
 ## 4. 设计边界
 
-Day 30 的安全门禁必须满足：
+Day 31 的设计边界必须满足：
 
-- 不用“已完成很多 Day”替代安全证据；
-- 每个通过项都必须有自动化测试或明确人工证据；
-- 未关闭的风险必须写清楚是 Phase 2 阻断项、后续阶段风险还是接受风险；
-- 不得把 Day29 Accepted 直接写成 M4 或历史 Phase2 Accepted。
+- 不把样例 raw payload 当作生产 lineage；
+- 不把 raw JSON 直接暴露给查询 API；
+- 每类数据必须有 owner、source 和 retention 问题记录；
+- 当前 ADR 必须能指导 Day32-40 的 schema 和 migration。
 
 ## 5. 验证要求
 
@@ -66,22 +65,19 @@ Day 30 的安全门禁必须满足：
 ./scripts/Test-DatabaseMigration.ps1
 ```
 
-Day 30 必须补充聚焦测试：
+Day 31 必须补充聚焦验证：
 
-- tenant escape 被拒绝；
-- IDOR 被拒绝；
-- 业务端点无匿名绕过；
-- 错误 role 被拒绝且有审计；
-- 允许路径有审计；
-- Phase 2 gate 报告清楚列出 Accept / Validation / Blocked。
+- ADR 与当前 schema / repository / ETL 事实一致；
+- Markdown local links 通过；
+- static verification 通过。
 
 ## 6. 出关规则
 
-Day 30 默认保持 `Validation`，直到 Owner 接受：
+Day 31 默认保持 `Validation`，直到 Owner 接受：
 
-- Phase 2 安全门禁；
-- tenant escape / IDOR / RBAC / endpoint / audit 证据；
-- 风险与生产差距状态；
-- 是否生成 [docs/milestones/milestone-4.md](../docs/milestones/)。
+- 数据分层 ADR；
+- 当前数据实体归层；
+- 后续 Day32-40 输入；
+- 风险与生产差距更新。
 
-Day 30 是 Phase 2 出关判断点；未通过时保持 Validation 或 Blocked，不进入 M5。
+Day 31 是 M5 开工设计 Day，不应直接实现后续 Day 的 schema 改造。
