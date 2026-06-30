@@ -11,7 +11,7 @@
 
 ## 回顾历史
 
-- [days/README.md](days/README.md)：Day 1-27 回顾胶囊。
+- [days/README.md](days/README.md)：Day 1-28 回顾胶囊。
 - [phase/README.md](phase/README.md)：Phase 完工报告索引。
 - [phase/phase-0.md](phase/phase-0.md)：Phase 0 完工报告。
 - [phase/phase-1.md](phase/phase-1.md)：Phase 1 完工报告。

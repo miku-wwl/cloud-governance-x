@@ -26,6 +26,10 @@ internal sealed class MembershipConfiguration : IEntityTypeConfiguration<Members
         builder.Property(membership => membership.DisplayName)
             .HasColumnName("display_name")
             .HasMaxLength(256);
+        builder.Property(membership => membership.Role)
+            .HasColumnName("role")
+            .HasConversion<string>()
+            .HasMaxLength(32);
         builder.Property(membership => membership.Status)
             .HasColumnName("status")
             .HasConversion<string>()

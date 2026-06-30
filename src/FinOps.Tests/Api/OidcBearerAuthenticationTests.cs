@@ -5,6 +5,7 @@ using System.Security.Cryptography;
 using FinOps.Api.Authentication;
 using FinOps.Api.Tenancy;
 using FinOps.Application.Tenancy;
+using FinOps.Domain.Tenancy;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -404,6 +405,31 @@ public sealed class OidcBearerAuthenticationTests
                 tenantId == TenantId &&
                 issuer == Issuer &&
                 subject == Subject);
+
+        public Task<TenantMembership?> ResolveActiveMembershipAsync(
+            Guid tenantId,
+            string issuer,
+            string subject,
+            CancellationToken cancellationToken = default)
+        {
+            TenantMembership? membership =
+                tenantId == TenantId &&
+                issuer == Issuer &&
+                subject == Subject
+                    ? new TenantMembership(
+                        tenantId,
+                        issuer,
+                        subject,
+                        MembershipRole.Operator)
+                    : null;
+            return Task.FromResult(membership);
+        }
+
+        public Task<bool> IsActiveCloudAccountAsync(
+            Guid tenantId,
+            Guid cloudAccountId,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult(tenantId == TenantId);
     }
 
     private sealed class SigningKeyRefreshConfigurationManager(

@@ -22,8 +22,31 @@ $migrationFiles = @(
         Sort-Object Name
 )
 $expectedMigrationCount = $migrationFiles.Count
-$previousMigration = $migrationFiles[-2].BaseName
-$tenantFoundationMigration = $migrationFiles[-3].BaseName
+$migrationBaseNames = @($migrationFiles | ForEach-Object { $_.BaseName })
+$previousMigration = (
+    $migrationBaseNames |
+        Where-Object { $_ -like "*_AddTenantAwareCoreData" } |
+        Select-Object -First 1
+)
+$tenantFoundationMigration = (
+    $migrationBaseNames |
+        Where-Object { $_ -like "*_AddTenancyFoundation" } |
+        Select-Object -First 1
+)
+if ([string]::IsNullOrWhiteSpace($previousMigration)) {
+    throw "Could not find AddTenantAwareCoreData migration."
+}
+if ([string]::IsNullOrWhiteSpace($tenantFoundationMigration)) {
+    throw "Could not find AddTenancyFoundation migration."
+}
+$previousMigrationHistoryCount =
+    [Array]::IndexOf($migrationBaseNames, $previousMigration) + 1
+$tenantFoundationHistoryCount =
+    [Array]::IndexOf($migrationBaseNames, $tenantFoundationMigration) + 1
+$previousMigrationReapplyCount =
+    $expectedMigrationCount - $previousMigrationHistoryCount
+$tenantFoundationReapplyCount =
+    $expectedMigrationCount - $tenantFoundationHistoryCount
 $suffix = "$PID$([DateTimeOffset]::UtcNow.ToUnixTimeSeconds())"
 $database = "finops_migration_$suffix"
 $secondDatabase = "finops_migration_alt_$suffix"
@@ -555,16 +578,19 @@ WHERE table_schema = 'public'
         -TargetDatabase $secondDatabase `
         -Sql 'SELECT count(*) FROM "__EFMigrationsHistory";' `
         -Scalar)
-    if ($rolledBackMigrationCount -ne ($expectedMigrationCount - 1)) {
+    if ($rolledBackMigrationCount -ne $previousMigrationHistoryCount) {
         throw (
-            "Expected $($expectedMigrationCount - 1) history rows after rollback, " +
+            "Expected $previousMigrationHistoryCount history rows after rollback, " +
             "found $rolledBackMigrationCount."
         )
     }
 
     $reapplyOutput = Invoke-Migrator -TargetDatabase $secondDatabase
-    if ($reapplyOutput -notmatch "Applied 1 migration\(s\)") {
-        throw "The rolled-back backfill control migration was not reapplied."
+    if (
+        $reapplyOutput -notmatch
+        "Applied $previousMigrationReapplyCount migration\(s\)"
+    ) {
+        throw "The rolled-back migration range was not reapplied."
     }
 
     Write-Host "==> Tenant-aware core migration Down and reapply"
@@ -589,16 +615,19 @@ WHERE table_schema = 'public'
         -TargetDatabase $secondDatabase `
         -Sql 'SELECT count(*) FROM "__EFMigrationsHistory";' `
         -Scalar)
-    if ($rolledBackMigrationCount -ne ($expectedMigrationCount - 2)) {
+    if ($rolledBackMigrationCount -ne $tenantFoundationHistoryCount) {
         throw (
-            "Expected $($expectedMigrationCount - 2) history rows after core rollback, " +
+            "Expected $tenantFoundationHistoryCount history rows after core rollback, " +
             "found $rolledBackMigrationCount."
         )
     }
 
     $reapplyOutput = Invoke-Migrator -TargetDatabase $secondDatabase
-    if ($reapplyOutput -notmatch "Applied 2 migration\(s\)") {
-        throw "The core tenant and backfill control migrations were not reapplied."
+    if (
+        $reapplyOutput -notmatch
+        "Applied $tenantFoundationReapplyCount migration\(s\)"
+    ) {
+        throw "The core tenant migration range was not reapplied."
     }
 
     Write-Host "==> Rolling-deployment legacy uniqueness"
@@ -932,8 +961,17 @@ SELECT
     (SELECT count(*) FROM "__EFMigrationsHistory");
 "@ `
         -Scalar
-    if ($postDownAttemptState -ne "3|1|$expectedMigrationCount") {
+    $blockedDownHistoryCount = $previousMigrationHistoryCount + 1
+    if ($postDownAttemptState -ne "3|1|$blockedDownHistoryCount") {
         throw "Failed schema Down changed tenant columns, marker, or migration history."
+    }
+
+    $reapplyOutput = Invoke-Migrator -TargetDatabase $secondDatabase
+    if (
+        $reapplyOutput -notmatch
+        "Applied $($expectedMigrationCount - $blockedDownHistoryCount) migration\(s\)"
+    ) {
+        throw "The post-backfill blocked Down test did not reapply later migrations."
     }
 
     Assert-PostgreSqlRejected `

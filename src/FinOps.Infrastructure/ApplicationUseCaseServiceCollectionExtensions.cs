@@ -1,3 +1,4 @@
+using FinOps.Application.Authorization;
 using FinOps.Application.Cloud;
 using FinOps.Application.Tenancy;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,6 +14,7 @@ public static class ApplicationUseCaseServiceCollectionExtensions
         services.TryAddScoped<ICloudResourceSyncService, CloudResourceSyncService>();
         services.TryAddScoped<ICloudCostSyncService, CloudCostSyncService>();
         services.TryAddScoped<ICloudCostQueryService, CloudCostQueryService>();
+        services.TryAddScoped<IFinOpsAuthorizationService, FinOpsAuthorizationService>();
         services.TryAddScoped<TenantContext>();
         services.TryAddScoped<ITenantContext>(serviceProvider =>
             serviceProvider.GetRequiredService<TenantContext>());

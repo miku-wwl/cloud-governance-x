@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using FinOps.Api.Tenancy;
 using FinOps.Application.Tenancy;
+using FinOps.Domain.Tenancy;
 using Microsoft.AspNetCore.Http;
 
 namespace FinOps.Tests.Api;
@@ -69,6 +70,7 @@ public sealed class HttpTenantContextMiddlewareTests
         Assert.Equal(TenantContextSource.HttpUser, current.Source);
         Assert.Equal("https://issuer.example", current.Issuer);
         Assert.Equal("subject-a", current.Subject);
+        Assert.Equal(MembershipRole.Operator, current.Role);
         Assert.Equal(TenantId, resolver.RequestedTenantId);
     }
 
@@ -136,5 +138,28 @@ public sealed class HttpTenantContextMiddlewareTests
             RequestedTenantId = tenantId;
             return Task.FromResult(isMember);
         }
+
+        public Task<TenantMembership?> ResolveActiveMembershipAsync(
+            Guid tenantId,
+            string issuer,
+            string subject,
+            CancellationToken cancellationToken = default)
+        {
+            RequestedTenantId = tenantId;
+            TenantMembership? membership = isMember
+                ? new TenantMembership(
+                    tenantId,
+                    issuer,
+                    subject,
+                    MembershipRole.Operator)
+                : null;
+            return Task.FromResult(membership);
+        }
+
+        public Task<bool> IsActiveCloudAccountAsync(
+            Guid tenantId,
+            Guid cloudAccountId,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult(isMember);
     }
 }

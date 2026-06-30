@@ -47,4 +47,4 @@ Day 胶囊是历史记录。项目当前整体状态以 [../current-state.md](..
 | 24 | [day-24.md](day-24.md) | 历史回填 Validation |
 | 25 | [day-25.md](day-25.md) | OIDC Bearer Validation |
 | 26 | [day-26.md](day-26.md) | Entra 开发集成 Accepted |
-| 27 | [day-27.md](day-27.md) | 下一施工单元 Validation |
+| 27 | [day-27.md](day-27.md) | RBAC 模型与范围评估 Accepted |

@@ -11,12 +11,13 @@ Day 12～19 的 Phase 1 工程门禁、架构边界、宿主模块拆分、独�
 Host 和初版 CI 已完成；`main` 已要求 `Static verification` 与
 `Database migration` 两个 required checks，并通过受保护 PR 验证阻断与放行
 行为。Phase 1 独立全面 review 已于 2026-06-19 给出 `ACCEPT`，并由 Owner
-确认结束。Day 1～26 工程交付已接受；Phase 2 已推进到 Day 26 Microsoft Entra 开发身份；
-下一施工单元是 Day 27 权限与范围 RBAC。当前包含
+确认结束。Day 1～27 工程交付已接受；Phase 2 已推进到 Day 27 权限与范围 RBAC；
+下一施工单元是 Day 28 端点保护与授权错误契约。当前包含
 Web API、后台 Worker、Clean Architecture 基础分层、PostgreSQL 本地环境、
 健康检查、可重复验证的 Azure 资源生命周期，以及通过
 `DefaultAzureCredential` 读取 Azure 订阅、资源清单和成本数据并写入
-PostgreSQL 的能力。
+PostgreSQL 的能力。Day 27 已建立 Membership role、tenant/CloudAccount/platform
+scope 和 RBAC 授权评估服务；端点级授权 policy 仍属于 Day 28。
 
 项目指导文件现在分为五层：
 
@@ -24,7 +25,7 @@ PostgreSQL 的能力。
 - [`docs/current-state.md`](docs/current-state.md)：当前真实状态和下一步；
 - [`docs/roadmap.md`](docs/roadmap.md)：11 个里程碑路线和当前施工位置；
 - [`docs/phase/`](docs/phase/)：已完工 Phase 的阶段报告；
-- [`docs/days/`](docs/days/)：Day 1～27 回顾胶囊；
+- [`docs/days/`](docs/days/)：Day 1～28 回顾胶囊；
 - [`construction/engineering-plan.md`](construction/engineering-plan.md)：Day 1～148 工程规划总纲；
 - [`construction/current-playbook.md`](construction/current-playbook.md)：当前施工手册。
 
