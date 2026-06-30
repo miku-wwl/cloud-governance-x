@@ -12,9 +12,9 @@
 ## 回顾历史
 
 - [days/README.md](days/README.md)：Day 1-28 回顾胶囊。
-- [phase/README.md](phase/README.md)：Phase 完工报告索引。
-- [phase/phase-0.md](phase/phase-0.md)：Phase 0 完工报告。
-- [phase/phase-1.md](phase/phase-1.md)：Phase 1 完工报告。
+- [milestones/README.md](milestones/README.md)：Milestone 完工报告索引。
+- [milestones/milestone-1.md](milestones/milestone-1.md)：M1 / 历史 Phase 0 完工报告。
+- [milestones/milestone-2.md](milestones/milestone-2.md)：M2 / 历史 Phase 1 完工报告。
 - [archive/phase-2/](archive/phase-2/)：原 Phase 2 Day 报告。
 
 ## 决策与风险

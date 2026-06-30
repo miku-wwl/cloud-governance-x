@@ -1,8 +1,8 @@
 # 当前施工手册
 
 - 当前里程碑：M4 - RBAC、端点保护与审计
-- 当前位置：Phase 2，Day 28 Accepted 之后
-- 当前施工单元：Day 29 - 追加式审计
+- 当前位置：M4 / 历史 Phase 2，Day 29 Accepted 之后
+- 当前施工单元：Day 30 - Phase 2 安全门禁
 
 本文只描述当前施工单元。工程总规划见
 [engineering-plan.md](engineering-plan.md)。
@@ -15,43 +15,42 @@
 2. 阅读 [docs/current-state.md](../docs/current-state.md)；
 3. 阅读 [docs/roadmap.md](../docs/roadmap.md)；
 4. 阅读 [engineering-plan.md](engineering-plan.md)；
-5. 确认当前施工单元：Day 29 - 追加式审计；
+5. 确认当前施工单元：Day 30 - Phase 2 安全门禁；
 6. 检查风险登记和生产差距登记；
 7. 确认 working tree 状态，不覆盖无关用户修改；
 8. 只实现当前施工单元，除非 Owner 明确改变范围。
 
-## 2. Day 29 目标
+## 2. Day 30 目标
 
-Day 29 要建立追加式审计模型和高权限 action record，关闭“授权已执行但不可追责”的核心缺口。
+Day 30 要执行 Phase 2 安全门禁，复核 tenant escape、IDOR、RBAC、端点保护和审计闭环，判断 Phase 2 是否可以出关。
 
 预期范围：
 
-- 定义审计事件模型；
-- 覆盖 actor、tenant、action、target、result、correlation 和时间戳；
-- 将高权限 admin/sync/ETL/query 授权结果接入审计写入路径；
-- 覆盖成功和失败路径；
-- 更新 [docs/current-state.md](../docs/current-state.md)、Day 29 胶囊
-  以及相关风险/生产差距文档。Day 29 胶囊应在 Day 29 正式开工时创建。
+- 复核 Day 20-29 的身份、租户、RBAC、端点保护和审计证据；
+- 增加 tenant escape / IDOR / missing tenant / wrong role 的组合验证；
+- 检查所有业务端点都有 permission 或 explicit anonymous 理由；
+- 确认审计成功/失败路径可追踪；
+- 更新 [docs/current-state.md](../docs/current-state.md)、Day 30 胶囊
+  以及相关风险/生产差距文档。Day 30 胶囊应在 Day 30 正式开工时创建。
 
-## 3. Day 29 非目标
+## 3. Day 30 非目标
 
-Day 29 不应宣称：
+Day 30 不应宣称：
 
 - PostgreSQL RLS 已实现；
 - React 或浏览器授权体验已存在。
-- Phase 2 安全门禁已完成。
+- M5 生产数据模型已开始或完成。
 
-这些内容分别留给 Day 30 或后续阶段。
+这些内容分别留给 M5 或后续阶段。
 
 ## 4. 设计边界
 
-Day 29 的审计模型必须满足：
+Day 30 的安全门禁必须满足：
 
-- 审计事件只追加，不允许普通业务路径修改历史；
-- actor、tenant、action、target、result 和 correlation 必须可追踪；
-- 成功和失败都要有审计路径；
-- 审计字段不得记录 token、secret 或敏感 raw payload；
-- 审计服务不能破坏 Domain、Application、Infrastructure、API、Worker 的依赖方向。
+- 不用“已完成很多 Day”替代安全证据；
+- 每个通过项都必须有自动化测试或明确人工证据；
+- 未关闭的风险必须写清楚是 Phase 2 阻断项、后续阶段风险还是接受风险；
+- 不得把 Day29 Accepted 直接写成 M4 或历史 Phase2 Accepted。
 
 ## 5. 验证要求
 
@@ -67,22 +66,22 @@ Day 29 的审计模型必须满足：
 ./scripts/Test-DatabaseMigration.ps1
 ```
 
-Day 29 必须补充聚焦测试：
+Day 30 必须补充聚焦测试：
 
-- 授权成功的高权限动作写入审计；
-- 授权失败的高权限动作写入审计；
-- 审计记录包含 actor、tenant、action、target、result 和 correlation；
-- 普通业务路径不能修改审计历史；
-- 审计字段不包含 token、secret 或 raw provider payload。
+- tenant escape 被拒绝；
+- IDOR 被拒绝；
+- 业务端点无匿名绕过；
+- 错误 role 被拒绝且有审计；
+- 允许路径有审计；
+- Phase 2 gate 报告清楚列出 Accept / Validation / Blocked。
 
 ## 6. 出关规则
 
-Day 29 默认保持 `Validation`，直到 Owner 接受：
+Day 30 默认保持 `Validation`，直到 Owner 接受：
 
-- 审计事件模型；
-- 高权限 action record；
-- 成功/失败审计路径；
-- 审计字段脱敏边界；
-- 文档和风险更新。
+- Phase 2 安全门禁；
+- tenant escape / IDOR / RBAC / endpoint / audit 证据；
+- 风险与生产差距状态；
+- 是否生成 [docs/milestones/milestone-4.md](../docs/milestones/)。
 
-Day 29 不关闭 Phase 2。Phase 2 必须等 Day 30 安全门禁后再判断是否出关。
+Day 30 是 Phase 2 出关判断点；未通过时保持 Validation 或 Blocked，不进入 M5。

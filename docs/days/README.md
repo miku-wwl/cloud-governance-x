@@ -49,3 +49,4 @@ Day 胶囊是历史记录。项目当前整体状态以 [../current-state.md](..
 | 26 | [day-26.md](day-26.md) | Entra 开发集成 Accepted |
 | 27 | [day-27.md](day-27.md) | RBAC 模型与范围评估 Accepted |
 | 28 | [day-28.md](day-28.md) | 端点保护与授权错误契约 Accepted |
+| 29 | [day-29.md](day-29.md) | 追加式审计 Accepted |

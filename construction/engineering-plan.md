@@ -6,13 +6,13 @@
 
 ## 1. 当前结论
 
-截至 2026-06-29：
+截至 2026-06-30：
 
 - 当前历史 Phase：**Phase 2 - 身份、租户、RBAC 与审计**；
 - 当前权威里程碑：**M4 - RBAC、端点保护与审计**；
-- 最新已实现 Day：**Day 28 - 端点保护与授权错误契约**；
-- 最新已接受 Day：**Day 28 - 端点保护与授权错误契约**；
-- 当前施工单元：**Day 29 - 追加式审计**；
+- 最新已实现 Day：**Day 29 - 追加式审计**；
+- 最新已接受 Day：**Day 29 - 追加式审计**；
+- 当前施工单元：**Day 30 - Phase 2 安全门禁**；
 - Phase 2 要到 **Day 30 安全门禁** 后才判断是否出关；
 - 下一里程碑是 **M5 - 生产数据模型**，从 **Day 31** 开始；
 - 当前权威总规划是 **M0-M10 共 11 个里程碑，Day 1-148 共 148 个施工单元**。
@@ -43,7 +43,7 @@ review 时，优先修复当前 Day，不用创建新 Day 掩盖阻断问题。
 | M1 基线治理 | Day 8-11 | Complete | 建立事实基线、风险、架构和 Phase 0 gate |
 | M2 工程基础 | Day 12-19 | Accepted | 建立静态门禁、架构测试、模块化和独立 Migration Host |
 | M3 身份与租户基础 | Day 20-26 | Accepted, phase open | 建立 Tenant、TenantContext、租户感知 repository、OIDC 和 Entra 开发集成 |
-| M4 RBAC、端点保护与审计 | Day 27-30 | Active，Day 28 Accepted | 关闭“已认证但未授权”和缺失审计的 Phase 2 核心风险 |
+| M4 RBAC、端点保护与审计 | Day 27-30 | Active，Day 29 Accepted | 关闭“已认证但未授权”和缺失审计的 Phase 2 核心风险 |
 | M5 生产数据模型 | Day 31-40 | Next | 建立 lineage、资源生命周期、成本语义、数据质量和 migration 演练 |
 | M6 可靠 ETL 平台 | Day 41-50 | Not started | 调度、lease、retry、checkpoint、backfill 和运维控制 |
 | M7 Release A 平台基础 | Day 51-59 | Not started | telemetry、容器、环境、CI/CD、备份恢复和发布门禁 |
@@ -99,7 +99,7 @@ review 时，优先修复当前 Day，不用创建新 Day 掩盖阻断问题。
 | --- | --- | --- |
 | Day 27 | 权限与范围 RBAC | RBAC 模型、范围评估、allow/deny matrix 和负向授权路径已完成自动化验证并接受 |
 | Day 28 | 端点保护与授权错误契约 | 现有业务端点已绑定 RBAC permission，health 保持 anonymous，基础 401/403 已验证 |
-| Day 29 | 追加式审计 | 高权限动作成功/失败都有不可篡改审计，审计字段不泄漏敏感值 |
+| Day 29 | 追加式审计 | 授权成功/失败已有追加式审计事件、migration 和高权限 action 标记 |
 | Day 30 | Phase 2 安全门禁 | tenant escape、IDOR、RBAC、端点保护、审计和真实 Entra 闭环通过 |
 
 ## 6. Day 施工总表

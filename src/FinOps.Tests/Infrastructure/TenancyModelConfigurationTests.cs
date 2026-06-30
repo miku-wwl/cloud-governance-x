@@ -1,3 +1,4 @@
+using FinOps.Domain.Auditing;
 using FinOps.Domain.CloudResources;
 using FinOps.Domain.Costs;
 using FinOps.Domain.Etl;
@@ -119,6 +120,7 @@ public sealed class TenancyModelConfigurationTests
             typeof(ProviderConnection),
             typeof(CloudAccount),
             typeof(Membership),
+            typeof(AuthorizationAuditEvent),
             typeof(CloudResource),
             typeof(CloudCostDaily),
             typeof(EtlJobRun)
@@ -136,6 +138,23 @@ public sealed class TenancyModelConfigurationTests
             foreignKey => Assert.Equal(
                 DeleteBehavior.Restrict,
                 foreignKey.DeleteBehavior));
+    }
+
+    [Fact]
+    public void Authorization_audit_indexes_support_tenant_and_high_privilege_review()
+    {
+        using var context = CreateContext();
+
+        AssertIndex<AuthorizationAuditEvent>(
+            context,
+            "ix_authorization_audit_events_tenant_occurred_at",
+            nameof(AuthorizationAuditEvent.TenantId),
+            nameof(AuthorizationAuditEvent.OccurredAt));
+        AssertIndex<AuthorizationAuditEvent>(
+            context,
+            "ix_authorization_audit_events_high_privilege_occurred_at",
+            nameof(AuthorizationAuditEvent.IsHighPrivilege),
+            nameof(AuthorizationAuditEvent.OccurredAt));
     }
 
     private static FinOpsDbContext CreateContext()
@@ -175,6 +194,21 @@ public sealed class TenancyModelConfigurationTests
 
         Assert.True(index.IsUnique);
         Assert.Equal(filter, index.GetFilter());
+        Assert.Equal(
+            propertyNames,
+            index.Properties.Select(property => property.Name));
+    }
+
+    private static void AssertIndex<TEntity>(
+        FinOpsDbContext context,
+        string databaseName,
+        params string[] propertyNames)
+    {
+        var entityType = context.Model.FindEntityType(typeof(TEntity));
+        var index = Assert.Single(
+            entityType!.GetIndexes(),
+            candidate => candidate.GetDatabaseName() == databaseName);
+
         Assert.Equal(
             propertyNames,
             index.Properties.Select(property => property.Name));
