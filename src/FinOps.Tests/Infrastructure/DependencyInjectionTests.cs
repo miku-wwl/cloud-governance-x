@@ -150,9 +150,7 @@ public sealed class DependencyInjectionTests
             ["PostgreSql:Username"] = "finops",
             ["PostgreSql:Password"] = "finops_dev_password",
             ["PostgreSql:TimeoutSeconds"] = "3",
-            ["Azure:TenantId"] = "",
-            ["AzureCost:UseSampleDataWhenUnavailable"] = "true",
-            ["AzureCost:ForceSampleData"] = "false"
+            ["Azure:TenantId"] = ""
         };
 
         return new ConfigurationBuilder()

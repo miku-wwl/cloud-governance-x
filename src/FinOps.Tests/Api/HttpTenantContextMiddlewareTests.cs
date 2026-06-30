@@ -129,16 +129,6 @@ public sealed class HttpTenantContextMiddlewareTests
             CancellationToken cancellationToken = default) =>
             Task.FromResult(isMember);
 
-        public Task<bool> HasActiveMembershipAsync(
-            Guid tenantId,
-            string issuer,
-            string subject,
-            CancellationToken cancellationToken = default)
-        {
-            RequestedTenantId = tenantId;
-            return Task.FromResult(isMember);
-        }
-
         public Task<TenantMembership?> ResolveActiveMembershipAsync(
             Guid tenantId,
             string issuer,

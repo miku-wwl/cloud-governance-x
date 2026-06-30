@@ -67,7 +67,6 @@ $previousEnvironment = @{
     Username = $env:PostgreSql__Username
     Password = $env:PostgreSql__Password
     TimeoutSeconds = $env:PostgreSql__TimeoutSeconds
-    ForceSampleData = $env:AzureCost__ForceSampleData
     Job = $env:Etl__Job
     TenantId = $env:Etl__TenantId
     TenantTestConnection = $env:FINOPS_TENANT_TEST_CONNECTION
@@ -1108,15 +1107,6 @@ INSERT INTO tenants
 VALUES
     ('20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', 'worker-tenant', 'Worker Tenant', 'Active', '2026-06-19T00:00:00Z', '2026-06-19T00:00:00Z');
 
-INSERT INTO provider_connections
-    (id, tenant_id, provider, display_name, credential_reference, status, created_at, updated_at)
-VALUES
-    ('30000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001', 'azure', 'Worker Azure', 'development://worker', 'Active', '2026-06-19T00:00:00Z', '2026-06-19T00:00:00Z');
-
-INSERT INTO cloud_accounts
-    (id, tenant_id, provider_connection_id, provider, external_account_id, display_name, status, created_at, updated_at)
-VALUES
-    ('40000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000001', 'azure', 'sample-subscription', 'Worker Sample Subscription', 'Active', '2026-06-19T00:00:00Z', '2026-06-19T00:00:00Z');
 "@ | Out-Null
 
     Write-Host "==> Tenant A/B Repository integration"
@@ -1182,20 +1172,39 @@ VALUES
     }
     $apiProcess = $null
 
-    $env:AzureCost__ForceSampleData = "true"
-    $env:Etl__Job = "Costs"
-    $env:Etl__TenantId = "20000000-0000-0000-0000-000000000001"
-    & dotnet $workerAssembly
+    $runtimeDmlOutput = & docker exec `
+        -e "PGPASSWORD=$runtimeCredential" `
+        finops-postgres `
+        psql `
+        -v ON_ERROR_STOP=1 `
+        -U $runtimeRole `
+        -d $database `
+        -tAc @"
+INSERT INTO etl_job_runs
+    (id, tenant_id, job_name, provider, started_at, status, records_processed)
+VALUES
+    ('81000000-0000-0000-0000-000000000003',
+     '20000000-0000-0000-0000-000000000001',
+     'runtime-role-smoke',
+     'Azure',
+     '2026-06-30T00:00:00Z',
+     'Succeeded',
+     1);
+SELECT count(*) FROM etl_job_runs
+WHERE id = '81000000-0000-0000-0000-000000000003';
+DELETE FROM etl_job_runs
+WHERE id = '81000000-0000-0000-0000-000000000003';
+"@
     if ($LASTEXITCODE -ne 0) {
-        throw "Worker Costs failed with restricted runtime role."
+        throw "Runtime role DML verification failed."
     }
 
-    $costRowCount = [int](Invoke-PostgreSql `
-        -TargetDatabase $database `
-        -Sql "SELECT count(*) FROM cloud_cost_daily;" `
-        -Scalar)
-    if ($costRowCount -le 0) {
-        throw "Worker Costs did not write any rows."
+    $runtimeDmlCount = ($runtimeDmlOutput |
+        ForEach-Object { ([string]$_).Trim() } |
+        Where-Object { $_ -eq "1" } |
+        Select-Object -First 1)
+    if ($runtimeDmlCount -ne "1") {
+        throw "Runtime role DML verification returned unexpected count '$runtimeDmlCount'."
     }
 
     Write-Host "==> Missing Worker tenant exit code"
@@ -1298,7 +1307,6 @@ finally {
     $env:PostgreSql__Username = $previousEnvironment.Username
     $env:PostgreSql__Password = $previousEnvironment.Password
     $env:PostgreSql__TimeoutSeconds = $previousEnvironment.TimeoutSeconds
-    $env:AzureCost__ForceSampleData = $previousEnvironment.ForceSampleData
     $env:Etl__Job = $previousEnvironment.Job
     $env:Etl__TenantId = $previousEnvironment.TenantId
     $env:FINOPS_TENANT_TEST_CONNECTION = $previousEnvironment.TenantTestConnection

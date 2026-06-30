@@ -166,17 +166,6 @@ public sealed class FinOpsAuthorizationServiceTests
             CancellationToken cancellationToken = default) =>
             Task.FromResult(tenantId == TenantId);
 
-        public Task<bool> HasActiveMembershipAsync(
-            Guid tenantId,
-            string issuer,
-            string subject,
-            CancellationToken cancellationToken = default) =>
-            Task.FromResult(
-                Role is not null &&
-                tenantId == TenantId &&
-                issuer == Issuer &&
-                subject == Subject);
-
         public Task<TenantMembership?> ResolveActiveMembershipAsync(
             Guid tenantId,
             string issuer,

@@ -17,11 +17,10 @@ internal sealed class CostSyncJobHandler(
             cancellationToken);
 
         logger.LogInformation(
-            "Azure cost sync completed. Job run: {JobRunId}, retrieved: {Retrieved}, inserted: {Inserted}, updated: {Updated}, sample data: {UsedSampleData}.",
+            "Azure cost sync completed. Job run: {JobRunId}, retrieved: {Retrieved}, inserted: {Inserted}, updated: {Updated}.",
             result.JobRunId,
             result.Retrieved,
             result.Inserted,
-            result.Updated,
-            result.UsedSampleData);
+            result.Updated);
     }
 }

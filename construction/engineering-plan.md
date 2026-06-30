@@ -211,7 +211,7 @@ review 时，优先修复当前 Day，不用创建新 Day 掩盖阻断问题。
 | Day 62 | permission preflight、capability discovery、connection health | 缺权限能指出 scope/action，能力差异不伪装成功 |
 | Day 63 | Resource Graph 多 subscription、分页、限流、重试、query version | 大结果分页、429、单订阅失败和取消可测 |
 | Day 64 | full-scan、一致性、关系、inactive、partial failure | 部分扫描不误失活，关系与 lifecycle E2E 通过 |
-| Day 65 | Cost Management 生产语义，移除生产 sample fallback | actual/amortized、动态列、币种、空账单和错误响应可测 |
+| Day 65 | Cost Management 生产语义与错误契约 | actual/amortized、动态列、币种、空账单和错误响应可测 |
 | Day 66 | 成本 backfill、迟到修订、重算、source reconciliation | 同一账期重跑安全，修订可追溯 |
 | Day 67 | Azure Policy Insights | definition、assignment、state、exemption 来源清楚 |
 | Day 68 | Azure Monitor 批量指标 | missing metric、窗口、限流和批量查询可测 |

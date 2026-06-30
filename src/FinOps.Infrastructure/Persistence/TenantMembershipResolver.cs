@@ -22,30 +22,6 @@ internal sealed class TenantMembershipResolver(FinOpsDbContext dbContext) :
                 cancellationToken);
     }
 
-    public Task<bool> HasActiveMembershipAsync(
-        Guid tenantId,
-        string issuer,
-        string subject,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentOutOfRangeException.ThrowIfEqual(tenantId, Guid.Empty);
-        ArgumentException.ThrowIfNullOrWhiteSpace(issuer);
-        ArgumentException.ThrowIfNullOrWhiteSpace(subject);
-
-        return dbContext.Memberships
-            .AsNoTracking()
-            .AnyAsync(
-                membership =>
-                    membership.TenantId == tenantId &&
-                    membership.Issuer == issuer &&
-                    membership.Subject == subject &&
-                    membership.Status == MembershipStatus.Active &&
-                    dbContext.Tenants.Any(tenant =>
-                        tenant.Id == membership.TenantId &&
-                        tenant.Status == TenantStatus.Active),
-                cancellationToken);
-    }
-
     public async Task<TenantMembership?> ResolveActiveMembershipAsync(
         Guid tenantId,
         string issuer,
