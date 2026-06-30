@@ -65,6 +65,12 @@ public sealed record FinOpsAuthorizationScope
             FinOpsAuthorizationScopeKind.Platform,
             tenantId: null,
             cloudAccountId: null);
+
+    public static FinOpsAuthorizationScope TenantFromNullable(Guid? tenantId) =>
+        new(
+            FinOpsAuthorizationScopeKind.Tenant,
+            tenantId,
+            cloudAccountId: null);
 }
 
 public sealed record FinOpsAuthorizationDecision(

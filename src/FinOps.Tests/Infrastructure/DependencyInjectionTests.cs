@@ -1,5 +1,6 @@
 using Azure.Core;
 using Azure.ResourceManager;
+using FinOps.Application.Authorization;
 using FinOps.Application.Cloud;
 using FinOps.Application.Cloud.Azure;
 using FinOps.Application.Etl;
@@ -33,6 +34,12 @@ public sealed class DependencyInjectionTests
         AssertService<ICloudCostQueryService, CloudCostQueryService>(
             services,
             ServiceLifetime.Scoped);
+        AssertService<IFinOpsAuthorizationService, FinOpsAuthorizationService>(
+            services,
+            ServiceLifetime.Scoped);
+        AssertService<IFinOpsAuthorizationAuditSink, NoOpFinOpsAuthorizationAuditSink>(
+            services,
+            ServiceLifetime.Scoped);
         AssertService<ITenantContext>(services, ServiceLifetime.Scoped);
         AssertService<ITenantContextInitializer>(services, ServiceLifetime.Scoped);
         AssertService<TenantContext>(services, ServiceLifetime.Scoped);
@@ -60,6 +67,12 @@ public sealed class DependencyInjectionTests
         AssertService<ICloudCostQueryRepository>(services, ServiceLifetime.Scoped);
         AssertService<IEtlJobRunRepository>(services, ServiceLifetime.Scoped);
         AssertService<ITenantMembershipResolver>(services, ServiceLifetime.Scoped);
+        Assert.Contains(
+            services,
+            service =>
+                service.ServiceType == typeof(IFinOpsAuthorizationAuditSink) &&
+                service.ImplementationType?.Name == "AuthorizationAuditSink" &&
+                service.Lifetime == ServiceLifetime.Scoped);
         AssertService<TokenCredential>(services, ServiceLifetime.Singleton);
         AssertService<ArmClient>(services, ServiceLifetime.Singleton);
         Assert.Contains(services, service =>

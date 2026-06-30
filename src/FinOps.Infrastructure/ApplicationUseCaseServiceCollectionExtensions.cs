@@ -15,6 +15,7 @@ public static class ApplicationUseCaseServiceCollectionExtensions
         services.TryAddScoped<ICloudCostSyncService, CloudCostSyncService>();
         services.TryAddScoped<ICloudCostQueryService, CloudCostQueryService>();
         services.TryAddScoped<IFinOpsAuthorizationService, FinOpsAuthorizationService>();
+        services.TryAddScoped<IFinOpsAuthorizationAuditSink, NoOpFinOpsAuthorizationAuditSink>();
         services.TryAddScoped<TenantContext>();
         services.TryAddScoped<ITenantContext>(serviceProvider =>
             serviceProvider.GetRequiredService<TenantContext>());

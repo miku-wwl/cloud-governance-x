@@ -1,3 +1,4 @@
+using FinOps.Domain.Auditing;
 using FinOps.Domain.CloudResources;
 using FinOps.Domain.Costs;
 using FinOps.Domain.Etl;
@@ -23,6 +24,9 @@ public sealed class FinOpsDbContext(DbContextOptions<FinOpsDbContext> options) :
     public DbSet<CloudAccount> CloudAccounts => Set<CloudAccount>();
 
     public DbSet<Membership> Memberships => Set<Membership>();
+
+    public DbSet<AuthorizationAuditEvent> AuthorizationAuditEvents =>
+        Set<AuthorizationAuditEvent>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

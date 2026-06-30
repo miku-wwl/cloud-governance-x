@@ -35,6 +35,13 @@ public sealed class EndpointAuthorizationIntegrationTests
         using var response = await app.GetTestClient().SendAsync(request);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var audit = app.Services.GetRequiredService<CapturingAuthorizationAuditSink>();
+        var entry = Assert.Single(audit.Entries);
+        Assert.True(entry.IsAllowed);
+        Assert.Equal(FinOpsPermission.CostSync, entry.Permission);
+        Assert.Equal(TenantId, entry.Scope.TenantId);
+        Assert.Equal("/api/admin/sync/azure/costs", entry.Path);
+        Assert.Equal(200, entry.StatusCode);
     }
 
     [Fact]
@@ -46,6 +53,12 @@ public sealed class EndpointAuthorizationIntegrationTests
             .GetAsync("/api/costs/daily");
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        var audit = app.Services.GetRequiredService<CapturingAuthorizationAuditSink>();
+        var entry = Assert.Single(audit.Entries);
+        Assert.False(entry.IsAllowed);
+        Assert.Equal(FinOpsPermission.CostRead, entry.Permission);
+        Assert.Null(entry.Scope.TenantId);
+        Assert.Equal(403, entry.StatusCode);
     }
 
     [Fact]
@@ -62,6 +75,12 @@ public sealed class EndpointAuthorizationIntegrationTests
         using var response = await app.GetTestClient().SendAsync(request);
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        var audit = app.Services.GetRequiredService<CapturingAuthorizationAuditSink>();
+        var entry = Assert.Single(audit.Entries);
+        Assert.False(entry.IsAllowed);
+        Assert.Equal(FinOpsPermission.ResourceSync, entry.Permission);
+        Assert.Equal(TenantId, entry.Scope.TenantId);
+        Assert.Equal(403, entry.StatusCode);
     }
 
     private static async Task<WebApplication> CreateApplicationAsync(
@@ -86,6 +105,9 @@ public sealed class EndpointAuthorizationIntegrationTests
         builder.Services.AddScoped<ITenantContextInitializer>(
             provider => provider.GetRequiredService<TenantContext>());
         builder.Services.AddScoped<IFinOpsAuthorizationService, FinOpsAuthorizationService>();
+        builder.Services.AddSingleton<CapturingAuthorizationAuditSink>();
+        builder.Services.AddSingleton<IFinOpsAuthorizationAuditSink>(
+            provider => provider.GetRequiredService<CapturingAuthorizationAuditSink>());
         builder.Services.AddScoped<ITenantMembershipResolver>(_ =>
             new StubTenantMembershipResolver(role));
         builder.Services.AddSingleton<IAzureSubscriptionReader, StubAzureSubscriptionReader>();
@@ -104,6 +126,21 @@ public sealed class EndpointAuthorizationIntegrationTests
         app.MapFinOpsEndpoints();
         await app.StartAsync();
         return app;
+    }
+
+    private sealed class CapturingAuthorizationAuditSink : IFinOpsAuthorizationAuditSink
+    {
+        private readonly List<FinOpsAuthorizationAuditEntry> entries = [];
+
+        public IReadOnlyList<FinOpsAuthorizationAuditEntry> Entries => entries;
+
+        public Task AppendAsync(
+            FinOpsAuthorizationAuditEntry entry,
+            CancellationToken cancellationToken = default)
+        {
+            entries.Add(entry);
+            return Task.CompletedTask;
+        }
     }
 
     private sealed class StubTenantMembershipResolver(MembershipRole role) :

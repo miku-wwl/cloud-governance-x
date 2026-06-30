@@ -133,6 +133,7 @@ public sealed class EndpointRouteTests
         builder.Services.AddScoped<ITenantContextInitializer>(
             provider => provider.GetRequiredService<TenantContext>());
         builder.Services.AddScoped<IFinOpsAuthorizationService, FinOpsAuthorizationService>();
+        builder.Services.AddScoped<IFinOpsAuthorizationAuditSink, NoOpFinOpsAuthorizationAuditSink>();
         builder.Services.AddScoped<ITenantMembershipResolver, StubTenantMembershipResolver>();
         builder.Services
             .AddHealthChecks()
