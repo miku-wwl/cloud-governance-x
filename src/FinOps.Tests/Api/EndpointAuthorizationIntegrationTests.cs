@@ -20,6 +20,8 @@ public sealed class EndpointAuthorizationIntegrationTests
 {
     private static readonly Guid TenantId =
         Guid.Parse("50000000-0000-0000-0000-000000000128");
+    private static readonly Guid OtherTenantId =
+        Guid.Parse("50000000-0000-0000-0000-000000000129");
 
     [Fact]
     public async Task E2e_identity_and_active_role_can_call_authorized_endpoint()
@@ -62,6 +64,42 @@ public sealed class EndpointAuthorizationIntegrationTests
     }
 
     [Fact]
+    public async Task Tenant_escape_header_for_unowned_tenant_is_forbidden_before_endpoint()
+    {
+        await using var app = await CreateApplicationAsync(MembershipRole.Operator);
+        using var request = new HttpRequestMessage(
+            HttpMethod.Post,
+            "/api/admin/sync/azure/costs");
+        request.Headers.Add(
+            HttpTenantContextMiddleware.TenantSelectionHeader,
+            OtherTenantId.ToString());
+
+        using var response = await app.GetTestClient().SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        var audit = app.Services.GetRequiredService<CapturingAuthorizationAuditSink>();
+        Assert.Empty(audit.Entries);
+        var syncService = app.Services.GetRequiredService<StubCloudCostSyncService>();
+        Assert.Equal(0, syncService.CallCount);
+    }
+
+    [Fact]
+    public async Task Query_string_tenant_does_not_create_authority_for_business_endpoint()
+    {
+        await using var app = await CreateApplicationAsync(MembershipRole.Operator);
+
+        using var response = await app.GetTestClient()
+            .GetAsync($"/api/costs/daily?tenantId={TenantId}");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        var audit = app.Services.GetRequiredService<CapturingAuthorizationAuditSink>();
+        var entry = Assert.Single(audit.Entries);
+        Assert.False(entry.IsAllowed);
+        Assert.Equal(FinOpsPermission.CostRead, entry.Permission);
+        Assert.Null(entry.Scope.TenantId);
+    }
+
+    [Fact]
     public async Task Authenticated_role_without_permission_is_forbidden()
     {
         await using var app = await CreateApplicationAsync(MembershipRole.Auditor);
@@ -81,6 +119,8 @@ public sealed class EndpointAuthorizationIntegrationTests
         Assert.Equal(FinOpsPermission.ResourceSync, entry.Permission);
         Assert.Equal(TenantId, entry.Scope.TenantId);
         Assert.Equal(403, entry.StatusCode);
+        var syncService = app.Services.GetRequiredService<StubCloudResourceSyncService>();
+        Assert.Equal(0, syncService.CallCount);
     }
 
     private static async Task<WebApplication> CreateApplicationAsync(
@@ -111,8 +151,12 @@ public sealed class EndpointAuthorizationIntegrationTests
         builder.Services.AddScoped<ITenantMembershipResolver>(_ =>
             new StubTenantMembershipResolver(role));
         builder.Services.AddSingleton<IAzureSubscriptionReader, StubAzureSubscriptionReader>();
-        builder.Services.AddSingleton<ICloudResourceSyncService, StubCloudResourceSyncService>();
-        builder.Services.AddSingleton<ICloudCostSyncService, StubCloudCostSyncService>();
+        builder.Services.AddSingleton<StubCloudResourceSyncService>();
+        builder.Services.AddSingleton<ICloudResourceSyncService>(
+            provider => provider.GetRequiredService<StubCloudResourceSyncService>());
+        builder.Services.AddSingleton<StubCloudCostSyncService>();
+        builder.Services.AddSingleton<ICloudCostSyncService>(
+            provider => provider.GetRequiredService<StubCloudCostSyncService>());
         builder.Services.AddSingleton<ICloudCostQueryService, StubCloudCostQueryService>();
         builder.Services.AddSingleton<IEtlJobRunRepository, StubEtlJobRunRepository>();
         builder.Services
@@ -195,17 +239,26 @@ public sealed class EndpointAuthorizationIntegrationTests
 
     private sealed class StubCloudResourceSyncService : ICloudResourceSyncService
     {
+        public int CallCount { get; private set; }
+
         public Task<CloudResourceSyncResult> SyncAsync(
-            CancellationToken cancellationToken = default) =>
-            Task.FromResult(new CloudResourceSyncResult(Guid.Empty, 0, 0, 0));
+            CancellationToken cancellationToken = default)
+        {
+            CallCount++;
+            return Task.FromResult(new CloudResourceSyncResult(Guid.Empty, 0, 0, 0));
+        }
     }
 
     private sealed class StubCloudCostSyncService : ICloudCostSyncService
     {
+        public int CallCount { get; private set; }
+
         public Task<CloudCostSyncResult> SyncRecentAsync(
             int days = 7,
-            CancellationToken cancellationToken = default) =>
-            Task.FromResult(new CloudCostSyncResult(
+            CancellationToken cancellationToken = default)
+        {
+            CallCount++;
+            return Task.FromResult(new CloudCostSyncResult(
                 Guid.Empty,
                 DateOnly.MinValue,
                 DateOnly.MinValue,
@@ -213,6 +266,7 @@ public sealed class EndpointAuthorizationIntegrationTests
                 0,
                 0,
                 UsedSampleData: false));
+        }
     }
 
     private sealed class StubCloudCostQueryService : ICloudCostQueryService

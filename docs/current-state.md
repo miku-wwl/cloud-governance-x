@@ -12,12 +12,12 @@ Cloud Governance X 已经超过最初 Day 1-7 开发基线，也已经通过 Pha
 
 | 维度 | 状态 |
 | --- | --- |
-| 当前 phase | Phase 2 - 身份、租户、RBAC 与审计 |
-| 最新已实现 Day | Day 29 - 追加式审计 |
-| 最新已接受 Day | Day 29 - 追加式审计 |
-| 下一施工单元 | Day 30 - Phase 2 安全门禁 |
+| 当前 Milestone | M5 - 生产数据模型 |
+| 最新已实现 Day | Day 30 - M4 安全门禁 |
+| 最新已接受 Day | Day 30 - M4 安全门禁 |
+| 下一施工单元 | Day 31 - 数据分层 ADR |
 | 生产可用性 | 尚未生产可用 |
-| 本地测试快照 | `dotnet test FinOpsPlatform.slnx --no-restore`：111 passed，1 skipped |
+| 本地测试快照 | `dotnet test FinOpsPlatform.slnx --no-restore`：113 passed，1 skipped |
 | 当前规划方式 | M0-M10 共 11 个里程碑，Day 1-148 共 148 个施工单元 |
 
 项目不应再用旧 148-Day 长表作为主事实来源。新的 Day 1-148 施工总表已经迁入
@@ -31,7 +31,8 @@ Cloud Governance X 已经超过最初 Day 1-7 开发基线，也已经通过 Pha
 | 开发基线 | Day 1-7 Azure 数据底座 | 本地/开发基线完成 | [Day 胶囊](days/README.md)、[baseline summary](archive/phase-0/baseline-verification-summary.md) |
 | M1 / 历史 Phase 0 | Day 8-11 基线审计、风险、架构和出关 | Complete | [milestone-1.md](milestones/milestone-1.md) |
 | M2 / 历史 Phase 1 | Day 12-19 工程治理和 migration 分离 | Accepted | [milestone-2.md](milestones/milestone-2.md) |
-| Phase 2 partial / M3-M4 | Day 20-29 租户、可信上下文、OIDC、Entra 开发身份、RBAC、端点保护和授权审计 | Day 29 Accepted，M4 / 历史 Phase 2 未关闭 | [Day 胶囊](days/README.md) |
+| M3 / 历史 Phase 2 partial | Day 20-26 身份与租户基础 | Accepted | [milestone-3.md](milestones/milestone-3.md) |
+| M4 / 历史 Phase 2 partial | Day 27-30 RBAC、端点保护、授权审计和安全门禁 | Accepted | [milestone-4.md](milestones/milestone-4.md) |
 
 ## 3. 当前能力
 
@@ -49,7 +50,8 @@ Cloud Governance X 已经超过最初 Day 1-7 开发基线，也已经通过 Pha
 - 可重复的 Microsoft Entra 开发 App Registration 和真实 token E2E 验证；
 - Membership role、tenant/CloudAccount/platform scope 和 RBAC 授权评估服务；
 - 现有业务端点的 RBAC permission filter 和基础 401/403 行为；
-- 授权成功/失败的追加式审计事件、migration 和高权限 action 标记。
+- 授权成功/失败的追加式审计事件、migration 和高权限 action 标记；
+- tenant escape、query string tenant 伪造、RBAC deny handler bypass 和 endpoint protection gate 测试。
 
 这些能力仍是开发和治理基础，不授权公开或生产部署。
 
@@ -67,14 +69,14 @@ Cloud Governance X 已经超过最初 Day 1-7 开发基线，也已经通过 Pha
 
 ## 5. 立即下一步
 
-Day 30 应执行 tenant escape、IDOR、RBAC、端点保护和审计 gate，判断 Phase 2 是否出关。
+Day 31 应启动 M5 - 生产数据模型，从 Raw / Normalized / Derived / Operational 数据分层 ADR 开始。
 
 当前工程规划和施工手册：
 
 - [construction/engineering-plan.md](../construction/engineering-plan.md)
 - [construction/current-playbook.md](../construction/current-playbook.md)
 
-Day 30 不能悄悄吞并 M5 生产数据模型。除非 Owner 明确改变
+Day 31 不能悄悄吞并 M5 后续 Day 的 schema、migration、backfill 或数据质量工作。除非 Owner 明确改变
 里程碑范围，否则这些仍是独立 gate。
 
 ## 6. 文档权威顺序
