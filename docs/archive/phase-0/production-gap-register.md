@@ -14,7 +14,7 @@ Day 11 的正式风险登记册，因此本日不虚构 Owner、概率和风险�
 
 | ID | 差距 | 当前证据 | 为什么阻止生产 | 临时边界 | 目标阶段 | 主要依赖 |
 | --- | --- | --- | --- | --- | --- | --- |
-| GAP-001 | 管理 API 和查询 API 匿名 | Day 25 已接入标准 OIDC JWT Bearer 验证；Day 26 已用真实 Microsoft Entra delegated token、metadata/JWKS 和 Tenant Membership 完成 API 调用；Day 27 已建立 RBAC 权限与范围评估服务；现有业务端点尚未绑定授权 policy | 身份可真实验证，RBAC 可评估，但匿名调用者仍可到达未显式保护的 endpoint | 仅绑定本机并保持非公开 | 阶段 2、8 | Day 28 API policy 与稳定错误 |
+| GAP-001 | 管理 API 和查询 API 匿名 | Day 25 已接入标准 OIDC JWT Bearer 验证；Day 26 已用真实 Microsoft Entra delegated token、metadata/JWKS 和 Tenant Membership 完成 API 调用；Day 27 已建立 RBAC 权限与范围评估服务；Day 28 已为现有业务端点绑定 RBAC permission filter，health 保持 explicit anonymous | 当前业务端点匿名访问已缓解；生产仍需要审计、端点清单复核、rate limit 和 Phase 2 gate | 仅绑定本机并保持非公开 | 阶段 2、8 | Day 29 审计、Day 30 gate、后续 API hardening |
 | GAP-002 | 无业务 tenant 隔离 | Day 20～23 已建立 tenant 模型、可信上下文和 tenant-aware Repository；Day 24 backfill 增加数据库护栏；Day 25 已把验证后的 OIDC `iss/sub` 接入 Membership 和 TenantContext；Day 27 已建立 tenant/CloudAccount/platform scope RBAC | 新写入、历史迁移、HTTP 身份转换和 RBAC 范围评估已有隔离机制，但各环境 backfill、全端点授权和 RLS 尚未完成 | 仅受控开发 Tenant；生产不得运行 Development backfill | 阶段 2～3 | 环境 backfill 证据、API policy、RLS 评估与阶段 2 escape E2E |
 | GAP-003 | migration 发布编排不足 | Day 18 已由独立 `FinOps.Migrator` 替代；API/Worker 无 migration API，IL 门禁覆盖直接调用和方法组别名；Migrator 使用 advisory lock | 自动 migration 和同库 Migrator 并发风险已关闭；仍缺发布审批、生产身份和回滚编排 | Migrator 必须先于业务宿主运行 | 阶段 12 | CI/CD migration gate、部署顺序 |
 | GAP-004 | 成本 sample fallback 默认开启 | 两个 appsettings 中为 `true` | Provider 故障或空数据可能表现为成功数据 | 只允许明确标记的本地演示 | 阶段 5～6 | 环境隔离、数据 provenance |
@@ -33,7 +33,7 @@ Day 11 的正式风险登记册，因此本日不虚构 Owner、概率和风险�
 
 | ID | 差距 | 当前证据 | 影响 | 目标阶段 |
 | --- | --- | --- | --- | --- |
-| GAP-015 | 测试层次不足 | Day 27 增加 RBAC role/permission、tenant scope、CloudAccount scope、platform deny、inactive membership、cross-tenant deny 和数据库 migration 回归；Day 26 已有真实 Entra token→JWKS→Membership→API E2E | 仍缺端点级授权 policy E2E、Provider 故障注入、负载和生产规模回归 | 阶段 2～4、14 |
+| GAP-015 | 测试层次不足 | Day 28 增加端点级 authorization metadata、匿名 401、无 TenantContext 403、无权限 role 403 和 TestServer E2E identity→TenantContext→UseAuthorization→endpoint filter 测试；Day 27 已有 RBAC 矩阵和数据库 migration 回归 | 仍缺审计 E2E、Provider 故障注入、负载和生产规模回归 | 阶段 2～4、14 |
 | GAP-016 | API 契约未生产化 | Minimal API 已拆分为按领域组织的 endpoint modules | 无版本、分页、稳定错误码、限流和 OpenAPI 治理 | 阶段 8 |
 | GAP-017 | Provider 可靠性策略不统一 | 外部调用无统一 retry/backoff/错误分类 | 限流、暂时故障和永久错误无法稳定区分 | 阶段 4～7 |
 | GAP-018 | 资源同步无 checkpoint | Resource Graph 仅单次内消费 SkipToken | 大规模扫描中断后需要从头开始 | 阶段 4～5 |

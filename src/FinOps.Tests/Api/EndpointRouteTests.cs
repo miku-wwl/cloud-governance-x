@@ -1,8 +1,12 @@
+using System.Security.Claims;
 using System.Text.Json;
 using FinOps.Api.Endpoints;
+using FinOps.Application.Authorization;
 using FinOps.Application.Cloud;
 using FinOps.Application.Cloud.Azure;
 using FinOps.Application.Etl;
+using FinOps.Application.Tenancy;
+using FinOps.Domain.Tenancy;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -122,6 +126,14 @@ public sealed class EndpointRouteTests
         builder.Services.AddSingleton<ICloudCostSyncService, StubCloudCostSyncService>();
         builder.Services.AddSingleton<ICloudCostQueryService, StubCloudCostQueryService>();
         builder.Services.AddSingleton<IEtlJobRunRepository, StubEtlJobRunRepository>();
+        builder.Services.AddAuthorization();
+        builder.Services.AddScoped<TenantContext>();
+        builder.Services.AddScoped<ITenantContext>(
+            provider => provider.GetRequiredService<TenantContext>());
+        builder.Services.AddScoped<ITenantContextInitializer>(
+            provider => provider.GetRequiredService<TenantContext>());
+        builder.Services.AddScoped<IFinOpsAuthorizationService, FinOpsAuthorizationService>();
+        builder.Services.AddScoped<ITenantMembershipResolver, StubTenantMembershipResolver>();
         builder.Services
             .AddHealthChecks()
             .AddCheck("self", () => HealthCheckResult.Healthy(), tags: ["live", "ready"]);
@@ -129,6 +141,26 @@ public sealed class EndpointRouteTests
         var app = builder.Build();
         app.MapFinOpsEndpoints();
         return app;
+    }
+
+    [Fact]
+    public void Business_routes_require_authorization_metadata()
+    {
+        var app = BuildRouteOnlyApplication();
+        var businessRoutes = ((IEndpointRouteBuilder)app)
+            .DataSources
+            .SelectMany(dataSource => dataSource.Endpoints)
+            .OfType<RouteEndpoint>()
+            .Where(endpoint => endpoint.RoutePattern.RawText?.StartsWith(
+                "/api/",
+                StringComparison.Ordinal) == true)
+            .ToArray();
+
+        Assert.Equal(7, businessRoutes.Length);
+        Assert.All(
+            businessRoutes,
+            endpoint => Assert.NotNull(
+                endpoint.Metadata.GetMetadata<IAuthorizeData>()));
     }
 
     private static void AssertRoute(
@@ -152,20 +184,49 @@ public sealed class EndpointRouteTests
         WebApplication app,
         string method,
         string path,
-        string queryString = "")
+        string queryString = "",
+        bool authenticated = true,
+        bool initializeTenant = true,
+        MembershipRole role = MembershipRole.Operator)
     {
         var endpoint = ((IEndpointRouteBuilder)app)
             .DataSources
             .SelectMany(dataSource => dataSource.Endpoints)
             .OfType<RouteEndpoint>()
             .Single(route => route.RoutePattern.RawText == path);
+        await using var scope = app.Services.CreateAsyncScope();
         var context = new DefaultHttpContext
         {
-            RequestServices = app.Services
+            RequestServices = scope.ServiceProvider
         };
         context.Request.Method = method;
         context.Request.Path = path;
         context.Request.QueryString = new QueryString(queryString);
+        if (authenticated)
+        {
+            context.User = new ClaimsPrincipal(new ClaimsIdentity(
+            [
+                new Claim("iss", StubTenantMembershipResolver.Issuer),
+                new Claim("sub", StubTenantMembershipResolver.Subject)
+            ],
+            authenticationType: "test"));
+        }
+
+        var resolver = scope.ServiceProvider
+            .GetRequiredService<ITenantMembershipResolver>();
+        Assert.IsType<StubTenantMembershipResolver>(resolver).Role = role;
+
+        if (initializeTenant)
+        {
+            var initializer = scope.ServiceProvider
+                .GetRequiredService<ITenantContextInitializer>();
+            initializer.Initialize(TrustedTenantContext.ForHttpUser(
+                StubTenantMembershipResolver.TenantId,
+                StubTenantMembershipResolver.Issuer,
+                StubTenantMembershipResolver.Subject,
+                role));
+        }
+
         await using var responseBody = new MemoryStream();
         context.Response.Body = responseBody;
 
@@ -174,6 +235,49 @@ public sealed class EndpointRouteTests
         using var reader = new StreamReader(responseBody);
         var body = await reader.ReadToEndAsync();
         return (context.Response.StatusCode, body);
+    }
+
+    [Fact]
+    public async Task Business_endpoint_rejects_anonymous_request()
+    {
+        var app = BuildRouteOnlyApplication();
+
+        var response = await InvokeEndpointAsync(
+            app,
+            "GET",
+            "/api/costs/daily",
+            authenticated: false,
+            initializeTenant: false);
+
+        Assert.Equal(StatusCodes.Status401Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Business_endpoint_rejects_authenticated_request_without_tenant_context()
+    {
+        var app = BuildRouteOnlyApplication();
+
+        var response = await InvokeEndpointAsync(
+            app,
+            "GET",
+            "/api/costs/daily",
+            initializeTenant: false);
+
+        Assert.Equal(StatusCodes.Status403Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Business_endpoint_rejects_role_without_permission()
+    {
+        var app = BuildRouteOnlyApplication();
+
+        var response = await InvokeEndpointAsync(
+            app,
+            "POST",
+            "/api/admin/sync/azure/resources",
+            role: MembershipRole.Auditor);
+
+        Assert.Equal(StatusCodes.Status403Forbidden, response.StatusCode);
     }
 
     private sealed class StubAzureSubscriptionReader : IAzureSubscriptionReader
@@ -268,5 +372,51 @@ public sealed class EndpointRouteTests
             LastTake = take;
             return Task.FromResult<IReadOnlyList<EtlJobRunDto>>([]);
         }
+    }
+
+    private sealed class StubTenantMembershipResolver : ITenantMembershipResolver
+    {
+        public const string Issuer = "https://issuer.example";
+        public const string Subject = "subject-a";
+        public static readonly Guid TenantId =
+            Guid.Parse("50000000-0000-0000-0000-000000000028");
+
+        public MembershipRole Role { get; set; } = MembershipRole.Operator;
+
+        public Task<bool> IsActiveTenantAsync(
+            Guid tenantId,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult(tenantId == TenantId);
+
+        public Task<bool> HasActiveMembershipAsync(
+            Guid tenantId,
+            string issuer,
+            string subject,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult(
+                tenantId == TenantId &&
+                issuer == Issuer &&
+                subject == Subject);
+
+        public Task<TenantMembership?> ResolveActiveMembershipAsync(
+            Guid tenantId,
+            string issuer,
+            string subject,
+            CancellationToken cancellationToken = default)
+        {
+            TenantMembership? membership =
+                tenantId == TenantId &&
+                issuer == Issuer &&
+                subject == Subject
+                    ? new TenantMembership(tenantId, issuer, subject, Role)
+                    : null;
+            return Task.FromResult(membership);
+        }
+
+        public Task<bool> IsActiveCloudAccountAsync(
+            Guid tenantId,
+            Guid cloudAccountId,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult(tenantId == TenantId);
     }
 }

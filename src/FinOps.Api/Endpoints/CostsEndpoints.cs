@@ -1,3 +1,5 @@
+using FinOps.Api.Authorization;
+using FinOps.Application.Authorization;
 using FinOps.Application.Cloud;
 
 namespace FinOps.Api.Endpoints;
@@ -14,7 +16,8 @@ internal static class CostsEndpoints
                 DateOnly? from,
                 DateOnly? to,
                 CancellationToken cancellationToken) =>
-                queryService.GetDailyAsync(provider, from, to, cancellationToken));
+                queryService.GetDailyAsync(provider, from, to, cancellationToken))
+            .RequireFinOpsPermission(FinOpsPermission.CostRead);
 
         endpoints.MapGet(
             "/api/costs/by-service",
@@ -24,7 +27,8 @@ internal static class CostsEndpoints
                 DateOnly? from,
                 DateOnly? to,
                 CancellationToken cancellationToken) =>
-                queryService.GetByServiceAsync(provider, from, to, cancellationToken));
+                queryService.GetByServiceAsync(provider, from, to, cancellationToken))
+            .RequireFinOpsPermission(FinOpsPermission.CostRead);
 
         endpoints.MapGet(
             "/api/costs/by-resource-group",
@@ -34,7 +38,8 @@ internal static class CostsEndpoints
                 DateOnly? from,
                 DateOnly? to,
                 CancellationToken cancellationToken) =>
-                queryService.GetByResourceGroupAsync(provider, from, to, cancellationToken));
+                queryService.GetByResourceGroupAsync(provider, from, to, cancellationToken))
+            .RequireFinOpsPermission(FinOpsPermission.CostRead);
 
         endpoints.MapPost(
             "/api/admin/sync/azure/costs",
@@ -45,7 +50,8 @@ internal static class CostsEndpoints
             {
                 var result = await syncService.SyncRecentAsync(days ?? 7, cancellationToken);
                 return Results.Ok(result);
-            });
+            })
+            .RequireFinOpsPermission(FinOpsPermission.CostSync);
 
         return endpoints;
     }

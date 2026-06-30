@@ -1,3 +1,5 @@
+using FinOps.Api.Authorization;
+using FinOps.Application.Authorization;
 using FinOps.Application.Cloud;
 
 namespace FinOps.Api.Endpoints;
@@ -14,7 +16,8 @@ internal static class ResourcesEndpoints
             {
                 var result = await syncService.SyncAsync(cancellationToken);
                 return Results.Ok(result);
-            });
+            })
+            .RequireFinOpsPermission(FinOpsPermission.ResourceSync);
 
         return endpoints;
     }

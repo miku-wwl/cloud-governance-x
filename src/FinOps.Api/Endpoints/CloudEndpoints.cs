@@ -1,3 +1,5 @@
+using FinOps.Api.Authorization;
+using FinOps.Application.Authorization;
 using FinOps.Application.Cloud.Azure;
 
 namespace FinOps.Api.Endpoints;
@@ -15,7 +17,8 @@ internal static class CloudEndpoints
                 var subscriptions =
                     await subscriptionReader.GetSubscriptionsAsync(cancellationToken);
                 return Results.Ok(subscriptions);
-            });
+            })
+            .RequireFinOpsPermission(FinOpsPermission.ResourceRead);
 
         return endpoints;
     }
