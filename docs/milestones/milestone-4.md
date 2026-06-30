@@ -30,8 +30,9 @@ M4 要解决的问题是：认证和 TenantContext 已存在后，业务端点�
 签发信息：
 
 - 审查日期：2026-06-30；
-- Owner 决策：Day30 Accepted，M4 出关；
-- 后续授权：允许进入 M5 / Day31。
+- 正式签发日期：2026-07-01；
+- Owner 决策：`M4 - RBAC、端点保护与审计：ACCEPT`；
+- 后续授权：正式进入 `M5 - 生产数据模型 / Day31`。
 
 M4 acceptance 不代表生产可用，不代表 RLS、完整审计产品、rate limit、Problem Details、staging、备份或生产运行身份已经完成。
 
@@ -69,7 +70,9 @@ Day30 本地 gate 证据：
 
 ## 6. Review 结论
 
-Day30 QA 和项目经理接受性审计均建议 Accept。Owner 已批准 Day30，M4 出关。
+Day30 QA、项目经理和软件总工复核均未发现 M4 范围内阻断项。Owner 已批准 Day30，并于 2026-07-01 正式签发：
+
+`M4 - RBAC、端点保护与审计：ACCEPT。授权进入 M5 - 生产数据模型 / Day31。`
 
 接受边界：
 
