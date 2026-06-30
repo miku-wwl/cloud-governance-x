@@ -20,4 +20,4 @@
 
 | Phase | 当前范围 | 状态 | 预计报告 |
 | --- | --- | --- | --- |
-| Phase 2 | Day 20-30 | Day 27 已实现，Day 28-30 未完成 | Day 30 gate 后生成 `phase-2.md` |
+| Phase 2 | Day 20-30 | Day 28 Accepted，Day 29-30 未完成 | Day 30 gate 后生成 `phase-2.md` |

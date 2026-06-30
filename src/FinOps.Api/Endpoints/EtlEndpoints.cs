@@ -1,3 +1,5 @@
+using FinOps.Api.Authorization;
+using FinOps.Application.Authorization;
 using FinOps.Application.Etl;
 
 namespace FinOps.Api.Endpoints;
@@ -19,7 +21,8 @@ internal static class EtlEndpoints
                     take ?? 20,
                     cancellationToken);
                 return Results.Ok(runs);
-            });
+            })
+            .RequireFinOpsPermission(FinOpsPermission.EtlRunRead);
 
         return endpoints;
     }

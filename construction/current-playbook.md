@@ -1,8 +1,8 @@
 # 当前施工手册
 
 - 当前里程碑：M4 - RBAC、端点保护与审计
-- 当前位置：Phase 2，Day 27 Accepted 之后
-- 当前施工单元：Day 28 - 端点保护与授权错误契约
+- 当前位置：Phase 2，Day 28 Accepted 之后
+- 当前施工单元：Day 29 - 追加式审计
 
 本文只描述当前施工单元。工程总规划见
 [engineering-plan.md](engineering-plan.md)。
@@ -15,44 +15,43 @@
 2. 阅读 [docs/current-state.md](../docs/current-state.md)；
 3. 阅读 [docs/roadmap.md](../docs/roadmap.md)；
 4. 阅读 [engineering-plan.md](engineering-plan.md)；
-5. 确认当前施工单元：Day 28 - 端点保护与授权错误契约；
+5. 确认当前施工单元：Day 29 - 追加式审计；
 6. 检查风险登记和生产差距登记；
 7. 确认 working tree 状态，不覆盖无关用户修改；
 8. 只实现当前施工单元，除非 Owner 明确改变范围。
 
-## 2. Day 28 目标
+## 2. Day 29 目标
 
-Day 28 要把 Day 27 RBAC 授权模型应用到现有业务端点，关闭“模型存在但端点未保护”的核心缺口。
+Day 29 要建立追加式审计模型和高权限 action record，关闭“授权已执行但不可追责”的核心缺口。
 
 预期范围：
 
-- 为现有业务端点建立授权 policy 映射；
-- 区分 anonymous health、query、admin sync、ETL run 查询等端点意图；
-- 将 `IFinOpsAuthorizationService` 接入 API 最小授权路径；
-- 稳定无 token、无 TenantContext、无权限、跨 tenant target 的 401/403 行为；
-- 覆盖端点级正向和负向测试；
-- 更新 [docs/current-state.md](../docs/current-state.md)、Day 28 胶囊
-  以及相关风险/生产差距文档。Day 28 胶囊应在 Day 28 正式开工时创建。
+- 定义审计事件模型；
+- 覆盖 actor、tenant、action、target、result、correlation 和时间戳；
+- 将高权限 admin/sync/ETL/query 授权结果接入审计写入路径；
+- 覆盖成功和失败路径；
+- 更新 [docs/current-state.md](../docs/current-state.md)、Day 29 胶囊
+  以及相关风险/生产差距文档。Day 29 胶囊应在 Day 29 正式开工时创建。
 
-## 3. Day 28 非目标
+## 3. Day 29 非目标
 
-Day 28 不应宣称：
+Day 29 不应宣称：
 
-- 追加式审计存储已完成；
 - PostgreSQL RLS 已实现；
 - React 或浏览器授权体验已存在。
+- Phase 2 安全门禁已完成。
 
-这些内容分别留给 Day 29 或后续阶段。
+这些内容分别留给 Day 30 或后续阶段。
 
 ## 4. 设计边界
 
-Day 28 的端点保护必须满足：
+Day 29 的审计模型必须满足：
 
-- 不信任客户端传入的任意租户或范围；
-- 授权输入来自认证主体、Membership、TenantContext 和受控目标范围；
-- 没有显式 anonymous 理由的业务端点默认拒绝匿名；
-- deny path 必须和 allow path 一样有测试；
-- 授权服务不能破坏 Domain、Application、Infrastructure、API、Worker 的依赖方向。
+- 审计事件只追加，不允许普通业务路径修改历史；
+- actor、tenant、action、target、result 和 correlation 必须可追踪；
+- 成功和失败都要有审计路径；
+- 审计字段不得记录 token、secret 或敏感 raw payload；
+- 审计服务不能破坏 Domain、Application、Infrastructure、API、Worker 的依赖方向。
 
 ## 5. 验证要求
 
@@ -68,22 +67,22 @@ Day 28 的端点保护必须满足：
 ./scripts/Test-DatabaseMigration.ps1
 ```
 
-Day 28 必须补充聚焦测试：
+Day 29 必须补充聚焦测试：
 
-- 匿名访问业务端点被拒绝；
-- health/live 等明确 anonymous 端点仍可访问；
-- 无 TenantContext、未知 Membership、inactive Membership、跨 tenant target 被拒绝；
-- 不同 role 调用 query/admin/sync/ETL endpoint 的 allow/deny 行为；
-- 401/403 行为稳定且不泄漏内部异常。
+- 授权成功的高权限动作写入审计；
+- 授权失败的高权限动作写入审计；
+- 审计记录包含 actor、tenant、action、target、result 和 correlation；
+- 普通业务路径不能修改审计历史；
+- 审计字段不包含 token、secret 或 raw provider payload。
 
 ## 6. 出关规则
 
-Day 28 默认保持 `Validation`，直到 Owner 接受：
+Day 29 默认保持 `Validation`，直到 Owner 接受：
 
-- 端点授权 policy 清单；
-- anonymous endpoint 白名单；
-- 401/403 行为；
-- 端点级负向授权路径；
+- 审计事件模型；
+- 高权限 action record；
+- 成功/失败审计路径；
+- 审计字段脱敏边界；
 - 文档和风险更新。
 
-Day 28 不关闭 Phase 2。Phase 2 必须等 Day 30 安全门禁后再判断是否出关。
+Day 29 不关闭 Phase 2。Phase 2 必须等 Day 30 安全门禁后再判断是否出关。
