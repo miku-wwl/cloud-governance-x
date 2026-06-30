@@ -27,5 +27,4 @@ Day 26 未把委托 scope 强制为授权策略；业务端点在 Day 28 前仍�
 ## 9. 相关链接
 - Commit: `2189cde` - `feat: integrate Microsoft Entra development identity`
 - PR: `#12` - `feat/day26-entra-development-integration`
-- [docs/archive/phase-2/day-26-entra-development-integration.md](../archive/phase-2/day-26-entra-development-integration.md)
 - [docs/archive/adr/ADR-0004-entra-and-development-identity.md](../archive/adr/ADR-0004-entra-and-development-identity.md)

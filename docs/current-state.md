@@ -91,7 +91,7 @@ Day 31 不能悄悄吞并 M5 后续 Day 的 schema、migration、backfill 或数
 6. [docs/archive/adr](archive/adr/) 中已接受的 ADR；
 7. [docs/days](days/) 中的 Day 胶囊；
 8. Milestone 报告、风险登记和生产差距登记；
-9. 归档施工计划和本地 review transcript。
+9. 归档报告和历史专题参考。
 
-`review.txt`、`website-reivew.md` 等本地 ignored 文件是外部 review transcript，可以辅助分析，
-但其中结论只有复制到 tracked docs 后才成为项目事实。
+本地 ignored 文件、临时审计报告、构建产物、Terraform cache 和外部 review transcript
+不属于项目事实源；长期有效结论必须沉淀到 tracked docs 后才有效。

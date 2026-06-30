@@ -1,15 +1,14 @@
 # Cloud Governance X 工程规划总纲
 
-本文是当前权威工程规划。旧的
-`construction/archive/02-★★★-day8-production-roadmap.md` 只作为历史材料保留，
-不再作为施工依据。
+本文是当前权威工程规划。旧施工手册已经清理，当前只保留本文和
+`current-playbook.md` 作为施工入口。
 
 ## 1. 当前结论
 
 截至 2026-06-30：
 
-- 当前历史 Phase：**Phase 2 - 身份、租户、RBAC 与审计**；
-- 当前权威里程碑：**M4 - RBAC、端点保护与审计**；
+- 最近完成历史 Phase：**Phase 2 - 身份、租户、RBAC 与审计**；
+- 当前权威里程碑：**M5 - 生产数据模型**；
 - 最新已实现 Day：**Day 30 - M4 安全门禁**；
 - 最新已接受 Day：**Day 30 - M4 安全门禁**；
 - 当前施工单元：**Day 31 - 数据分层 ADR**；
@@ -31,7 +30,7 @@ review 时，优先修复当前 Day，不用创建新 Day 掩盖阻断问题。
 5. 本文；
 6. [current-playbook.md](current-playbook.md)；
 7. [docs/days/](../docs/days/) 中的 Day 胶囊；
-8. [archive/](archive/) 中的历史施工材料。
+8. `docs/archive/` 中的历史报告和专题参考。
 
 `current-playbook.md` 可以比本文更细，但不能扩大本文和 roadmap 明确排除的范围。
 

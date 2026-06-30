@@ -16,7 +16,7 @@
 整理自动化工具、build/test、API health、Terraform、Azure E2E 和 cleanup 的复验结果；加入严格真实成本路径。
 
 ## 6. 验证证据
-记录结果包括 build 0 warning/0 error、测试通过、6 个 Azure/Terraform E2E 脚本通过、严格真实成本返回 28 行、cleanup 检查通过。证据包括 [baseline-verification-summary.md](../archive/phase-0/baseline-verification-summary.md)、[02-★★★-day9-baseline-verification.md](../../construction/archive/phase-0/02-★★★-day9-baseline-verification.md) 和 `tmp/phase-0-evidence/day09/` 原始输出。
+记录结果包括 build 0 warning/0 error、测试通过、6 个 Azure/Terraform E2E 脚本通过、严格真实成本返回 28 行、cleanup 检查通过。证据包括 [baseline-verification-summary.md](../archive/phase-0/baseline-verification-summary.md) 和 `tmp/phase-0-evidence/day09/` 原始输出。
 
 ## 7. Review 结论
 Accepted。Phase 0 gate 接受该复验证据。
@@ -27,4 +27,3 @@ Accepted。Phase 0 gate 接受该复验证据。
 ## 9. 相关链接
 - Commit: `3c5dbd4` - `docs: complete day 9 baseline verification`
 - [docs/archive/phase-0/baseline-verification-summary.md](../archive/phase-0/baseline-verification-summary.md)
-- [construction/archive/phase-0/02-★★★-day9-baseline-verification.md](../../construction/archive/phase-0/02-★★★-day9-baseline-verification.md)

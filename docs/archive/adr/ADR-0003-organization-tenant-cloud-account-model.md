@@ -351,7 +351,7 @@ Rejected。client-controlled tenant context 会直接形成 tenant-escape 路径
 - `docs/archive/phase-0/adr-backlog.md`
 - `docs/archive/phase-0/risk-register.md`
 - `docs/archive/phase-0/production-gap-register.md`
-- `docs/archive/phase-2/day-20-tenancy-model-review.md`
+- `docs/days/day-20.md`
 
 ## 验证
 

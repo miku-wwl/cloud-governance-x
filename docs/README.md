@@ -11,11 +11,12 @@
 
 ## 回顾历史
 
-- [days/README.md](days/README.md)：Day 1-28 回顾胶囊。
+- [days/README.md](days/README.md)：Day 1-30 回顾胶囊。
 - [milestones/README.md](milestones/README.md)：Milestone 完工报告索引。
 - [milestones/milestone-1.md](milestones/milestone-1.md)：M1 / 历史 Phase 0 完工报告。
 - [milestones/milestone-2.md](milestones/milestone-2.md)：M2 / 历史 Phase 1 完工报告。
-- [archive/phase-2/](archive/phase-2/)：原 Phase 2 Day 报告。
+- [milestones/milestone-3.md](milestones/milestone-3.md)：M3 / 历史 Phase 2 前半段报告。
+- [milestones/milestone-4.md](milestones/milestone-4.md)：M4 / 历史 Phase 2 后半段报告。
 
 ## 决策与风险
 
@@ -36,7 +37,5 @@
 
 - [archive/README.md](archive/README.md)
 
-历史施工文件位于 [../construction/archive/](../construction/archive/)。当前施工入口是：
-
-- [../construction/engineering-plan.md](../construction/engineering-plan.md)
-- [../construction/current-playbook.md](../construction/current-playbook.md)
+当前施工入口是 [../construction/engineering-plan.md](../construction/engineering-plan.md)
+和 [../construction/current-playbook.md](../construction/current-playbook.md)。

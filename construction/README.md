@@ -1,7 +1,7 @@
 # Construction 施工入口
 
-`construction/` 只放当前仍有执行价值的施工文档。历史施工手册和旧长路线已经放入
-[archive/](archive/)，只作为回顾材料。
+`construction/` 只放当前仍有执行价值的施工文档。旧施工手册和旧长路线已经由
+`engineering-plan.md` 与 `current-playbook.md` 取代，不再保留为正式资产。
 
 ## 当前入口
 
@@ -21,5 +21,5 @@
 
 ## 历史材料
 
-- [archive/](archive/)：旧施工手册、旧 Day8-148 路线和 Phase 0 施工资料。
 - [../docs/days/README.md](../docs/days/README.md)：按 Day 回顾项目历史。
+- [../docs/archive/](../docs/archive/)：历史阶段报告、ADR 和专题参考。
