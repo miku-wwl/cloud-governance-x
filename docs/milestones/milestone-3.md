@@ -60,7 +60,7 @@ M3 acceptance 只接受身份与租户基础，不证明系统已经生产可用
 - [day-24.md](../days/day-24.md)
 - [day-25.md](../days/day-25.md)
 - [day-26.md](../days/day-26.md)
-- [ADR-0003](../archive/adr/ADR-0003-organization-tenant-cloud-account-model.md)
+- [ADR-0003](../adr/ADR-0003-organization-tenant-cloud-account-model.md)
 
 关键验证结论：
 

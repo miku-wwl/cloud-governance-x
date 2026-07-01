@@ -20,7 +20,7 @@
 
 ## 决策与风险
 
-- [archive/adr/](archive/adr/)：已接受和拟议中的架构决策。
+- [adr/](adr/)：已接受和拟议中的架构决策。
 - [archive/phase-0/risk-register.md](archive/phase-0/risk-register.md)：风险登记。
 - [archive/phase-0/production-gap-register.md](archive/phase-0/production-gap-register.md)：生产差距登记。
 

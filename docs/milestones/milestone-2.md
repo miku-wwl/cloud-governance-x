@@ -69,9 +69,9 @@ Phase 1 形成了以下长期有效能力：
 - [stage-1-gate-report.md](../archive/phase-1/stage-1-gate-report.md)
 - [engineering-governance.md](../archive/phase-1/engineering-governance.md)
 - [third-review-remediation-report.md](../archive/phase-1/third-review-remediation-report.md)
-- [ADR-0001](../archive/adr/ADR-0001-module-boundaries-and-architecture-tests.md)
-- [ADR-0002](../archive/adr/ADR-0002-migration-host-and-release-flow.md)
-- [ADR-0018](../archive/adr/ADR-0018-dependency-and-toolchain-governance.md)
+- [ADR-0001](../adr/ADR-0001-module-boundaries-and-architecture-tests.md)
+- [ADR-0002](../adr/ADR-0002-migration-host-and-release-flow.md)
+- [ADR-0018](../adr/ADR-0018-dependency-and-toolchain-governance.md)
 
 本地验证摘要：
 

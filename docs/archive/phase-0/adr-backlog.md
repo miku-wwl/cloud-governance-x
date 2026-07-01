@@ -11,12 +11,12 @@
 
 | ADR ID | 标题 | 触发原因 | 备选方向 | 决策期限 | Owner | 状态 | 相关风险 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [ADR-0001](../adr/ADR-0001-module-boundaries-and-architecture-tests.md) | 模块边界与架构测试规则 | 当前依赖仅靠人工检查 | 反射架构测试；专用架构测试库；编译边界 | 阶段 1 | Platform Architect | Accepted | RISK-0013 |
-| [ADR-0002](../adr/ADR-0002-migration-host-and-release-flow.md) | 独立 Migration Host 与发布流程 | API/Worker 自动 migration | 独立 Host；CI migration Job；显式 CLI command | 阶段 1 | Platform SRE | Accepted | RISK-0003 |
-| [ADR-0003](../adr/ADR-0003-organization-tenant-cloud-account-model.md) | Organization/Tenant/CloudAccount 模型 | Azure tenant 不等于业务 tenant | 单库共享 schema；schema-per-tenant；database-per-tenant | 阶段 2 | Platform Architect | Accepted | RISK-0002 |
-| [ADR-0004](../adr/ADR-0004-entra-and-development-identity.md) | Entra ID、service identity 与本地身份 | 当前依赖 Azure CLI 用户 | Managed Identity；Workload Identity；受控服务主体 | 阶段 2 | Security Owner | Accepted | RISK-0001、RISK-0018 |
-| ADR-0005 | tenant 隔离与 PostgreSQL RLS | 查询和唯一键无 tenant 条件 | 应用过滤 + RLS；仅应用过滤；物理隔离 | 阶段 2～3 | Security Owner | Proposed | RISK-0002 |
-| ADR-0006 | Raw/Normalized/Derived/Operational 数据分层 | raw JSON、业务表和运行状态混合 | PostgreSQL 分层；对象存储 Raw + DB；事件流分层 | 阶段 3 | Data Owner | Proposed | RISK-0008、RISK-0020、RISK-0021 |
+| [ADR-0001](../../adr/ADR-0001-module-boundaries-and-architecture-tests.md) | 模块边界与架构测试规则 | 当前依赖仅靠人工检查 | 反射架构测试；专用架构测试库；编译边界 | 阶段 1 | Platform Architect | Accepted | RISK-0013 |
+| [ADR-0002](../../adr/ADR-0002-migration-host-and-release-flow.md) | 独立 Migration Host 与发布流程 | API/Worker 自动 migration | 独立 Host；CI migration Job；显式 CLI command | 阶段 1 | Platform SRE | Accepted | RISK-0003 |
+| [ADR-0003](../../adr/ADR-0003-organization-tenant-cloud-account-model.md) | Organization/Tenant/CloudAccount 模型 | Azure tenant 不等于业务 tenant | 单库共享 schema；schema-per-tenant；database-per-tenant | 阶段 2 | Platform Architect | Accepted | RISK-0002 |
+| [ADR-0004](../../adr/ADR-0004-entra-and-development-identity.md) | Entra ID、service identity 与本地身份 | 当前依赖 Azure CLI 用户 | Managed Identity；Workload Identity；受控服务主体 | 阶段 2 | Security Owner | Accepted | RISK-0001、RISK-0018 |
+| ADR-0005 | Raw/Normalized/Derived/Operational 数据分层 | raw JSON、业务表和运行状态混合 | PostgreSQL 分层；对象存储 Raw + DB；事件流分层 | 阶段 3 / M5 Day31 | Data Owner | Proposed | RISK-0008、RISK-0020、RISK-0021 |
+| ADR-TBD-RLS | tenant 隔离与 PostgreSQL RLS | 查询和唯一键无 tenant 条件 | 应用过滤 + RLS；仅应用过滤；物理隔离 | 后续安全加固 | Security Owner | Proposed | RISK-0002 |
 | ADR-0007 | 资源 full-scan 与 inactive/deleted 语义 | 删除资源仍保留为当前数据 | scan ID + mark inactive；事件增量；双轨 reconciliation | 阶段 3 | Data Owner | Proposed | RISK-0007 |
 | ADR-0008 | Job queue、scheduler、lease 与 checkpoint | ETL 仅手工且可并发 | PostgreSQL queue；Service Bus；平台原生调度 | 阶段 4 | Application Owner | Proposed | RISK-0004、RISK-0005、RISK-0019 |
 | ADR-0009 | production sample 物理隔离策略 | fallback 可将故障变为样例成功 | 编译/部署排除；环境启动失败；独立 demo Provider | 阶段 5 | FinOps Product Owner | Proposed | RISK-0006 |
@@ -28,7 +28,7 @@
 | ADR-0015 | 成本事实、修订、币种与 lineage | 当前聚合语义不足 | Actual/Amortized 分表；统一事实模型；Provider 原生模型 | 阶段 3、6 | FinOps Product Owner | Proposed | RISK-0008 |
 | ADR-0016 | 数据 retention、删除和合法保留 | 分类已建立但期限未定 | 分类默认期限；按租户策略；法规/地区策略 | 阶段 3 | Data Owner | Proposed | RISK-0020 |
 | ADR-0017 | API 契约、版本、分页和错误模型 | 当前 Minimal API 契约有限 | URI/version header；cursor/offset；统一 Problem Details | 阶段 8 | Application Owner | Proposed | RISK-0026 |
-| [ADR-0018](../adr/ADR-0018-dependency-and-toolchain-governance.md) | 依赖和工具链版本治理 | NuGet 与 Terraform CLI 已出现版本漂移 | 固定升级节奏；Renovate/Dependabot；人工批量升级；CI 门禁 | 阶段 1、14 | Application Owner / Platform SRE | Accepted | RISK-0027 |
+| [ADR-0018](../../adr/ADR-0018-dependency-and-toolchain-governance.md) | 依赖和工具链版本治理 | NuGet 与 Terraform CLI 已出现版本漂移 | 固定升级节奏；Renovate/Dependabot；人工批量升级；CI 门禁 | 阶段 1、14 | Application Owner / Platform SRE | Accepted | RISK-0027 |
 
 ## 3. 阶段 1 最小决策输入
 
@@ -47,4 +47,4 @@ ADR-0001、ADR-0002 和 ADR-0018 均已于 2026-06-18 由项目 Owner 接受。
 - Git 垃圾文件、`tmp/`、`bin/obj`、Terraform state/plan 检查。
 
 ADR-0003 已于 2026-06-19 在 Day 20 接受。ADR-0004 已于 2026-06-21 在
-Day 26 接受。ADR-0005 必须在 RLS 实现前完成审批。
+Day 26 接受。ADR-0005 已在 Day31 用于生产数据分层；RLS 必须在实现前另建独立 ADR 并完成审批。

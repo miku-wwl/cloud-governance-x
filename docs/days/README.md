@@ -51,3 +51,4 @@ Day 胶囊是历史记录。项目当前整体状态以 [../current-state.md](..
 | 28 | [day-28.md](day-28.md) | 端点保护与授权错误契约 Accepted |
 | 29 | [day-29.md](day-29.md) | 追加式审计 Accepted |
 | 30 | [day-30.md](day-30.md) | M4 安全门禁 Accepted |
+| 31 | [day-31.md](day-31.md) | 数据分层 ADR Validation |
