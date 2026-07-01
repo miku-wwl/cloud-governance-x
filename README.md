@@ -117,7 +117,7 @@ PR 约束、责任边界和建议的 required checks 见归档的
 [`docs/archive/phase-1/engineering-governance.md`](docs/archive/phase-1/engineering-governance.md)。
 
 架构边界由 `src/FinOps.Tests/Architecture/` 下的测试执行，规则来源于
-[`ADR-0001`](docs/archive/adr/ADR-0001-module-boundaries-and-architecture-tests.md)：
+[`ADR-0001`](docs/adr/ADR-0001-module-boundaries-and-architecture-tests.md)：
 Domain 不反向依赖 Application/Infrastructure/宿主或云 SDK，Application 不依赖
 Infrastructure/宿主/云 SDK，Azure 和 PostgreSQL 实现包只允许出现在
 Infrastructure。
@@ -209,7 +209,7 @@ App Registration 是 Entra Tenant 目录对象，不属于 Resource Group，清�
 ```
 
 只有人工确认后才增加 `-Apply`。详细边界见
-[`ADR-0004`](docs/archive/adr/ADR-0004-entra-and-development-identity.md)。
+[`ADR-0004`](docs/adr/ADR-0004-entra-and-development-identity.md)。
 
 ## 配置
 

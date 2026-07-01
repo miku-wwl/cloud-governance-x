@@ -4,7 +4,7 @@
 使用真实 Microsoft Entra ID token 调用本地 API，同时保持 API caller identity 与 Azure Provider runtime identity 分离，解决认证链路只停留在内存 token 测试的风险。
 
 ## 2. 前置条件
-依赖 Day 25 OIDC Bearer authentication、Day 22 TenantContext 和 [ADR-0004](../archive/adr/ADR-0004-entra-and-development-identity.md)。
+依赖 Day 25 OIDC Bearer authentication、Day 22 TenantContext 和 [ADR-0004](../adr/ADR-0004-entra-and-development-identity.md)。
 
 ## 3. 施工范围
 允许新增可重复开发 App Registration 初始化脚本、API 委托 `access_as_user` scope、本地 public client Device Code flow、dry-run 默认 cleanup、真实 token E2E、OIDC metadata/JWKS 证据、signing-key rollover 和 metadata failure regression。不允许把委托 scope 当作已执行授权策略，也不允许改变 Azure Provider runtime identity。
@@ -27,4 +27,4 @@ Day 26 未把委托 scope 强制为授权策略；业务端点在 Day 28 前仍�
 ## 9. 相关链接
 - Commit: `2189cde` - `feat: integrate Microsoft Entra development identity`
 - PR: `#12` - `feat/day26-entra-development-integration`
-- [docs/archive/adr/ADR-0004-entra-and-development-identity.md](../archive/adr/ADR-0004-entra-and-development-identity.md)
+- [docs/adr/ADR-0004-entra-and-development-identity.md](../adr/ADR-0004-entra-and-development-identity.md)

@@ -4,7 +4,7 @@
 
 /.github/ @miku-wwl
 /construction/ @miku-wwl
-/docs/archive/adr/ @miku-wwl
+/docs/adr/ @miku-wwl
 /scripts/ @miku-wwl
 /src/FinOps.Domain/ @miku-wwl
 /src/FinOps.Application/ @miku-wwl

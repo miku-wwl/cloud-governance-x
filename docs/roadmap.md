@@ -10,8 +10,8 @@
 - **M0-M10 共 11 个里程碑**；
 - **Day 1-148 共 148 个施工单元**；
 - 当前处于 **M5**；
-- 最新已实现 **Day 30**，最新已接受 **Day 30**；
-- 当前施工单元是 **Day 31**；
+- 最新已实现 **Day 31**，最新已接受 **Day 30**；
+- 当前施工单元是 **Day 31 Validation**，Owner 接受后进入 **Day 32**；
 - M4 / 历史 Phase 2 已正式签发：**M4 - RBAC、端点保护与审计：ACCEPT**；
 - 下一里程碑 **M5** 已授权从 **Day 31** 开始。
 
@@ -57,8 +57,11 @@ Day 编号用于施工和回顾，不等于自然日，也不代表生产成熟�
 | Day 28 | 保护现有业务端点，并稳定授权错误契约：Accepted |
 | Day 29 | 建立追加式审计模型和高权限 action record：Accepted |
 | Day 30 | 执行 tenant escape、IDOR、RBAC 和审计 gate，判断 M4 / 历史 Phase 2 是否出关：Accepted |
+| Day 31 | 建立 Raw / Normalized / Derived / Operational 数据分层 ADR：Validation |
 
 签发结论：`M4 - RBAC、端点保护与审计：ACCEPT。授权进入 M5 - 生产数据模型 / Day31。`
+
+Day31 已形成数据分层 ADR 草案，等待 Owner 对 Day31 作出 ACCEPT / DECLINE 签发。
 
 工程规划和当前施工手册：
 

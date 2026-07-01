@@ -254,7 +254,7 @@ cross-tenant platform administration 是单独的 platform-level grant，不是 
 - cache key、job message、object path 和 audit record 包含 tenant；
 - 生产执行中不存在 default 或 empty Tenant。
 
-PostgreSQL Row Level Security 推迟到 ADR-0005，作为 defense in depth。RLS 不能替代显式 Application 和 Repository tenant boundary。
+PostgreSQL Row Level Security 推迟到后续独立 ADR，作为 defense in depth。RLS 不能替代显式 Application 和 Repository tenant boundary。
 
 ### 生命周期
 

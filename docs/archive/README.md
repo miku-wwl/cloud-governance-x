@@ -4,7 +4,6 @@
 
 内容：
 
-- [adr/](adr/)：已接受和拟议中的架构决策。
 - [reference/](reference/)：旧配置、Terraform、Azure 和数据模型专题手册。
 - [phase-0/](phase-0/)：Phase 0 报告和基线证据摘要。
 - [phase-1/](phase-1/)：Phase 1 出关、整改和验收报告。
@@ -13,6 +12,10 @@
 当前状态见：
 
 - [../current-state.md](../current-state.md)
+
+当前架构决策记录见：
+
+- [../adr/README.md](../adr/README.md)
 
 当前工程规划见：
 

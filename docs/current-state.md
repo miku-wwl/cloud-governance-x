@@ -13,12 +13,12 @@ Cloud Governance X 已经超过最初 Day 1-7 开发基线，也已经通过 Pha
 | 维度 | 状态 |
 | --- | --- |
 | 当前 Milestone | M5 - 生产数据模型 |
-| 最新已实现 Day | Day 30 - M4 安全门禁 |
+| 最新已实现 Day | Day 31 - 数据分层 ADR |
 | 最新已接受 Day | Day 30 - M4 安全门禁 |
 | 最近签发结论 | M4 - RBAC、端点保护与审计：ACCEPT。授权进入 M5 - 生产数据模型 / Day31 |
-| 下一施工单元 | Day 31 - 数据分层 ADR |
+| 下一施工单元 | Day 31 - 数据分层 ADR 待 Owner 接受；接受后进入 Day 32 - ingestion metadata 和 raw payload reference |
 | 生产可用性 | 尚未生产可用 |
-| 本地测试快照 | `dotnet test FinOpsPlatform.slnx --no-restore`：113 passed，1 skipped |
+| 本地测试快照 | `dotnet test FinOpsPlatform.slnx --no-restore`：109 passed，1 skipped |
 | 当前规划方式 | M0-M10 共 11 个里程碑，Day 1-148 共 148 个施工单元 |
 
 项目不应再用旧 148-Day 长表作为主事实来源。新的 Day 1-148 施工总表已经迁入
@@ -52,7 +52,8 @@ Cloud Governance X 已经超过最初 Day 1-7 开发基线，也已经通过 Pha
 - Membership role、tenant/CloudAccount/platform scope 和 RBAC 授权评估服务；
 - 现有业务端点的 RBAC permission filter 和基础 401/403 行为；
 - 授权成功/失败的追加式审计事件、migration 和高权限 action 标记；
-- tenant escape、query string tenant 伪造、RBAC deny handler bypass 和 endpoint protection gate 测试。
+- tenant escape、query string tenant 伪造、RBAC deny handler bypass 和 endpoint protection gate 测试；
+- M5 生产数据模型分层 ADR 草案：Raw / Normalized / Derived / Operational、lineage、schema/parser version 和 raw reference 边界。
 
 这些能力仍是开发和治理基础，不授权公开或生产部署。
 
@@ -64,13 +65,14 @@ Cloud Governance X 已经超过最初 Day 1-7 开发基线，也已经通过 Pha
 - 把 Day 27 RBAC 模型当作现有端点已经全面受保护；
 - 把 Day 29 追加式授权审计当作完整审计产品、RLS、rate limit 或生产安全门禁已完成；
 - 使用本地 Azure CLI identity 作为 Azure Provider runtime identity；
+- 把 Day31 数据分层 ADR 当作生产数据模型 schema、migration、backfill 或数据质量已经完成；
 - 把 cost sample fallback 重新混入真实 Azure Provider 路径；
 - 使用本地 Terraform state 管理团队或生产基础设施；
 - 宣称已经完成多云、React 前端、审计、RLS、生产 ETL 调度、备份、SLO 或灾难恢复能力。
 
 ## 5. 立即下一步
 
-M4 已正式签发。Day 31 已获授权启动 M5 - 生产数据模型，从 Raw / Normalized / Derived / Operational 数据分层 ADR 开始。
+M4 已正式签发。Day 31 已完成 M5 - 生产数据模型的分层 ADR 草案，当前处于 Validation，等待 Owner 对 Day31 是否 ACCEPT 作出签发结论。
 
 当前工程规划和施工手册：
 
@@ -89,7 +91,7 @@ Day 31 不能悄悄吞并 M5 后续 Day 的 schema、migration、backfill 或数
 3. 本 current-state 文件；
 4. [docs/roadmap.md](roadmap.md)；
 5. [construction/engineering-plan.md](../construction/engineering-plan.md)；
-6. [docs/archive/adr](archive/adr/) 中已接受的 ADR；
+6. [docs/adr](adr/) 中已接受的 ADR；
 7. [docs/days](days/) 中的 Day 胶囊；
 8. Milestone 报告、风险登记和生产差距登记；
 9. 归档报告和历史专题参考。

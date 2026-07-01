@@ -61,7 +61,7 @@ test 检查串成一个可重复入口。任何阻断性子检查失败时，脚
 
 Workflow YAML 由固定版本和 SHA-256 的 actionlint 检查。PR 模板、
 CODEOWNERS、ADR 模板、required check 名称和责任边界见 `.github/`、
-`docs/archive/adr/ADR-template.md` 与
+`docs/adr/ADR-template.md` 与
 `docs/archive/phase-1/engineering-governance.md`。
 
 ### `global.json`
